@@ -45,19 +45,29 @@ class ShopController extends Controller
 
     public function reviews(Request $request): JsonResponse
     {
-        $limit = min((int) $request->input('limit', 6), 20);
+        $query = Review::with(['user', 'product'])
+            ->where('status', 'approved');
 
-        $reviews = Review::with(['user', 'product'])
-            ->where('status', 'approved')
-            ->latest()
-            ->limit($limit)
-            ->get();
+        if ($request->filled('category')) {
+            $query->where('review_category', $request->category);
+        }
+
+        $perPage = min((int) $request->input('per_page', $request->input('limit', 6)), 50);
+        $reviews = $query->latest()->paginate($perPage);
 
         return response()->json([
-            'reviews' => $reviews->map(fn ($r) => array_merge(ApiFormatter::review($r), [
+            'reviews' => $reviews->getCollection()->map(fn ($r) => array_merge(ApiFormatter::review($r), [
                 'purchasedProduct' => $r->product?->name,
                 'purchasedProductSlug' => $r->product?->slug,
             ]))->values(),
+            'meta' => [
+                'currentPage' => $reviews->currentPage(),
+                'lastPage' => $reviews->lastPage(),
+                'perPage' => $reviews->perPage(),
+                'total' => $reviews->total(),
+                'from' => $reviews->firstItem(),
+                'to' => $reviews->lastItem(),
+            ],
             'insights' => ReviewInsights::forShop(),
         ]);
     }

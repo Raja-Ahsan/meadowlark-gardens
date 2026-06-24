@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Star, MessageCircle, Truck, Sparkles, Users } from 'lucide-react'
 import type { CustomerReview, ShopProfile } from '@/types'
-import { formatReviewDate, StarRating } from '@/components/product/reviewUtils'
+import ShopReviewCard from '@/components/product/ShopReviewCard'
 import { mediaUrl } from '@/lib/media'
 
 const badgeIcons: Record<string, typeof Truck> = {
@@ -87,32 +87,12 @@ export default function ShopSidebar({ shop, shopReviews }: Props) {
             <h2 className="font-display font-700 text-xl text-forest-900">
               All reviews from this shop ({shop.reviewCount.toLocaleString()})
             </h2>
-            <Link to="/shop" className="text-sm font-sans font-600 text-forest-700 hover:underline">Show all</Link>
+            <Link to="/shop/reviews" className="text-sm font-sans font-600 text-forest-700 hover:underline">Show all</Link>
           </div>
 
           <div className="space-y-5">
             {shopReviews.map(review => (
-              <article key={review.id} className="bg-white rounded-xl border border-forest-100 p-5">
-                <p className="text-sm text-forest-800 leading-relaxed mb-2">{review.body}</p>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-sans font-600 text-sm text-forest-900">{review.userName}</span>
-                  <span className="text-xs text-sage-500">{formatReviewDate(review.createdAt)}</span>
-                  <StarRating rating={review.rating} />
-                </div>
-                {review.purchasedProduct && (
-                  <p className="text-xs text-sage-500 mt-2">
-                    Purchased:{' '}
-                    {review.purchasedProductSlug ? (
-                      <Link to={`/product/${review.purchasedProductSlug}`} className="text-forest-600 hover:underline">
-                        {review.purchasedProduct}
-                      </Link>
-                    ) : review.purchasedProduct}
-                  </p>
-                )}
-                {review.images && review.images[0] && (
-                  <img src={mediaUrl(review.images[0])} alt="" className="w-16 h-16 rounded-lg object-cover mt-3 border border-forest-100" />
-                )}
-              </article>
+              <ShopReviewCard key={review.id} review={review} />
             ))}
           </div>
         </div>

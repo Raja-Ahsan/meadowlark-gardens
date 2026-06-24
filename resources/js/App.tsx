@@ -5,6 +5,7 @@ import Layout from '@/components/layout/Layout'
 import AdminLayout from '@/components/admin/AdminLayout'
 import HomePage from '@/pages/HomePage'
 import ShopPage from '@/pages/ShopPage'
+import ShopReviewsPage from '@/pages/ShopReviewsPage'
 import AboutPage from '@/pages/AboutPage'
 import ContactPage from '@/pages/ContactPage'
 import WholesaleApplyPage from '@/pages/WholesaleApplyPage'
@@ -51,6 +52,7 @@ export default function App() {
             <Route element={<Layout />}>
               <Route path="/" element={<HomePage />} />
               <Route path="/shop" element={<ShopPage />} />
+              <Route path="/shop/reviews" element={<ShopReviewsPage />} />
               <Route path="/product/:slug" element={<ProductDetailPage />} />
               <Route path="/checkout" element={<CheckoutPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />

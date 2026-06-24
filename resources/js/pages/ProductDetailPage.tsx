@@ -62,7 +62,7 @@ export default function ProductDetailPage() {
       setSelectedImage(imgs[0].path)
     }).catch(() => {})
     api.getShopProfile().then(r => setShop(r.shop)).catch(() => {})
-    api.getShopReviews(6).then(r => setShopReviews(r.reviews)).catch(() => {})
+    api.getShopReviews(1, 6).then(r => setShopReviews(r.reviews)).catch(() => {})
   }, [slug])
 
   useEffect(() => {

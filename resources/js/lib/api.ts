@@ -449,11 +449,12 @@ export const api = {
   getShopProfile: () =>
     request<{ shop: import('@/types').ShopProfile }>('/shop'),
 
-  getShopReviews: (limit = 6) =>
+  getShopReviews: (page = 1, perPage = 6, category?: string) =>
     request<{
       reviews: import('@/types').CustomerReview[]
       insights: import('@/types').ReviewInsights
-    }>(`/shop/reviews${buildQuery({ limit })}`),
+      meta: import('@/types/admin').PaginatedMeta
+    }>(`/shop/reviews${buildQuery({ page, per_page: perPage, category })}`),
 
   submitReview: (payload: { productId: string; rating: number; title?: string; body: string }) =>
     request<{ message: string }>('/reviews', { method: 'POST', body: JSON.stringify(payload) }),
