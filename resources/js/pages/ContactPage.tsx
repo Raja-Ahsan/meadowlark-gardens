@@ -2,13 +2,38 @@ import { useState } from 'react'
 import { motion } from 'motion/react'
 import { Mail, Phone, MapPin, Clock, Send, CheckCircle } from 'lucide-react'
 import { api } from '@/lib/api'
+import { useSiteSettings } from '@/context/SiteSettingsContext'
+import { splitSettingLines } from '@/components/layout/SocialLinks'
 
 export default function ContactPage() {
+  const {
+    siteEmail,
+    sitePhone,
+    contactPageSubtitle,
+    contactAddress,
+    contactPhoneNote,
+    contactEmailNote,
+    businessHoursWeekday,
+    businessHoursSunday,
+  } = useSiteSettings()
+
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' })
   const [errors, setErrors] = useState<Partial<typeof form>>({})
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
   const [submitError, setSubmitError] = useState('')
+
+  const addressLines = splitSettingLines(contactAddress)
+  const phoneLines = [sitePhone, contactPhoneNote].filter(Boolean)
+  const emailLines = [siteEmail, contactEmailNote].filter(Boolean)
+  const hoursLines = [businessHoursWeekday, businessHoursSunday].filter(Boolean)
+
+  const contactItems = [
+    addressLines.length > 0 && { icon: MapPin, label: 'Visit Us', lines: addressLines },
+    phoneLines.length > 0 && { icon: Phone, label: 'Call Us', lines: phoneLines },
+    emailLines.length > 0 && { icon: Mail, label: 'Email Us', lines: emailLines },
+    hoursLines.length > 0 && { icon: Clock, label: 'Hours', lines: hoursLines },
+  ].filter(Boolean) as { icon: typeof MapPin; label: string; lines: string[] }[]
 
   const validate = () => {
     const e: Partial<typeof form> = {}
@@ -38,7 +63,6 @@ export default function ContactPage() {
 
   return (
     <div className="min-h-screen bg-cream-50 pt-20">
-      {/* Header */}
       <div className="bg-white border-b border-forest-100 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.h1
@@ -50,20 +74,16 @@ export default function ContactPage() {
           >
             Get in Touch
           </motion.h1>
-          <p className="text-sage-600 font-body mt-2">We'd love to hear from you. Our team usually responds within one business day.</p>
+          {contactPageSubtitle && (
+            <p className="text-sage-600 font-body mt-2">{contactPageSubtitle}</p>
+          )}
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid lg:grid-cols-3 gap-12">
-          {/* Contact Info */}
           <div className="space-y-6">
-            {[
-              { icon: MapPin, label: 'Visit Us', lines: ['1247 Meadowlark Lane', 'Franklin, TN 37064'] },
-              { icon: Phone, label: 'Call Us', lines: ['(615) 555-0182', 'Mon–Sat 8am – 5pm'] },
-              { icon: Mail, label: 'Email Us', lines: ['hello@meadowlarkgardens.com', 'We reply within 24 hours'] },
-              { icon: Clock, label: 'Hours', lines: ['Mon–Sat: 8:00am – 5:30pm', 'Sunday: 10:00am – 3:00pm'] },
-            ].map((item, i) => (
+            {contactItems.map((item, i) => (
               <motion.div
                 key={item.label}
                 initial={{ opacity: 0, x: -20 }}
@@ -85,7 +105,6 @@ export default function ContactPage() {
             ))}
           </div>
 
-          {/* Contact Form */}
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
@@ -109,6 +128,9 @@ export default function ContactPage() {
             ) : (
               <>
                 <h2 className="font-display font-700 text-forest-900 text-2xl mb-6">Send Us a Message</h2>
+                {submitError && (
+                  <p className="mb-4 text-sm text-terra-600 bg-terra-50 border border-terra-200 rounded-xl px-4 py-3">{submitError}</p>
+                )}
                 <form onSubmit={handleSubmit} noValidate className="space-y-5">
                   <div className="grid sm:grid-cols-2 gap-5">
                     <div>

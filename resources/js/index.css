@@ -27,6 +27,14 @@ body {
   h1, h2, h3, h4 {
     font-family: 'Playfair Display', serif;
   }
+
+  button,
+  input,
+  select,
+  textarea,
+  label {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
 }
 
 @layer utilities {

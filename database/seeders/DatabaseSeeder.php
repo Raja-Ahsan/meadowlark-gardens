@@ -14,7 +14,12 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             UserSeeder::class,
+            CategorySeeder::class,
             ProductSeeder::class,
+            BrandSeeder::class,
+            EcommerceSeeder::class,
+            AttributeSeeder::class,
+            ReviewSeeder::class,
         ]);
 
         WholesaleApplication::create([
@@ -56,8 +61,8 @@ class DatabaseSeeder extends Seeder
             ]);
 
             $order->items()->createMany([
-                ['product_id' => $products['Tennessee Redbud']->id, 'quantity' => 10, 'unit_price' => 22.00],
-                ['product_id' => $products['Purple Coneflower']->id, 'quantity' => 25, 'unit_price' => 4.50],
+                ['product_id' => $products->first()->id, 'quantity' => 10, 'unit_price' => 22.00],
+                ['product_id' => $products->skip(1)->first()->id, 'quantity' => 25, 'unit_price' => 4.50],
             ]);
         }
     }

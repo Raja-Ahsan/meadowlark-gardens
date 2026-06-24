@@ -10,11 +10,11 @@ export default function WholesaleLoginPage() {
   const [showPass, setShowPass] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const { login, isAuthenticated, isAdmin } = useAuth()
+  const { login, logout, isAuthenticated, isWholesale } = useAuth()
   const navigate = useNavigate()
 
-  if (isAuthenticated) {
-    navigate(isAdmin ? '/admin' : '/wholesale/portal')
+  if (isAuthenticated && isWholesale) {
+    navigate('/wholesale/portal')
     return null
   }
 
@@ -28,12 +28,27 @@ export default function WholesaleLoginPage() {
     setError('')
     const result = await login(email, password)
     setLoading(false)
-    if (result.success) {
-      const stored = localStorage.getItem('mg_user')
-      const user = stored ? JSON.parse(stored) : null
-      navigate(user?.role === 'admin' ? '/admin' : '/wholesale/portal')
-    } else {
+
+    if (!result.success) {
       setError(result.message)
+      return
+    }
+
+    const stored = localStorage.getItem('mg_user')
+    const user = stored ? JSON.parse(stored) : null
+
+    if (user?.role === 'wholesale') {
+      navigate('/wholesale/portal')
+      return
+    }
+
+    await logout()
+    if (user?.role === 'admin') {
+      setError('Admin accounts must sign in at /admin/login')
+    } else if (user?.role === 'customer') {
+      setError('Retail customers should sign in at /login')
+    } else {
+      setError('You do not have wholesale partner access.')
     }
   }
 
@@ -51,13 +66,12 @@ export default function WholesaleLoginPage() {
               <Leaf className="w-7 h-7 text-white" />
             </div>
             <h1 className="font-display font-700 text-forest-900 text-2xl">Wholesale Portal</h1>
-            <p className="text-sage-500 font-body text-sm mt-1">Sign in to access your partner account</p>
+            <p className="text-sage-500 font-body text-sm mt-1">Sign in to your partner account</p>
           </div>
 
           <div className="mb-6 p-3 bg-forest-50 rounded-xl border border-forest-200 text-xs font-body text-forest-700">
             <p className="font-sans font-600 mb-1">Demo Credentials:</p>
-            <p>Wholesale: <code className="bg-white px-1 rounded">wholesale@demo.com</code></p>
-            <p>Admin: <code className="bg-white px-1 rounded">admin@meadowlarkgardens.com</code></p>
+            <p>Email: <code className="bg-white px-1 rounded">wholesale@demo.com</code></p>
             <p className="text-sage-500 mt-1">Password: <code className="bg-white px-1 rounded">password123</code></p>
           </div>
 

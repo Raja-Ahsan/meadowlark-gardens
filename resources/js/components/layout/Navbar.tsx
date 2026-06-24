@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
-import { Menu, X, Leaf, ShoppingBag, LogIn, LayoutDashboard } from 'lucide-react'
+import { Menu, X, ShoppingBag, ShoppingCart, LogIn, LayoutDashboard } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
+import { useSiteSettings } from '@/context/SiteSettingsContext'
+import { useRetailCart } from '@/context/RetailCartContext'
+import RetailCartDrawer from '@/components/cart/RetailCartDrawer'
+import SiteLogo from './SiteLogo'
 
 const navLinks = [
   { label: 'Shop', to: '/shop' },
@@ -14,8 +18,11 @@ const navLinks = [
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [cartOpen, setCartOpen] = useState(false)
   const { pathname } = useLocation()
-  const { isAuthenticated, isAdmin, user, logout } = useAuth()
+  const { isAuthenticated, isAdmin, isWholesale, user, logout } = useAuth()
+  const { siteName, headerLogo } = useSiteSettings()
+  const { count: cartCount } = useRetailCart()
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
@@ -39,19 +46,7 @@ export default function Navbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 md:h-20">
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-2 group focus-ring rounded-lg">
-              <div className="w-9 h-9 bg-forest-600 rounded-xl flex items-center justify-center group-hover:bg-forest-700 transition-colors">
-                <Leaf className="w-5 h-5 text-cream-100" strokeWidth={2} />
-              </div>
-              <div className="leading-tight">
-                <span className="font-display font-bold text-forest-800 text-base block leading-none">
-                  Meadowlark
-                </span>
-                <span className="text-[10px] font-sans font-500 text-sage-600 tracking-widest uppercase block">
-                  Gardens TN
-                </span>
-              </div>
-            </Link>
+            <SiteLogo siteName={siteName} logo={headerLogo} variant="header" />
 
             {/* Desktop Nav */}
             <nav className="hidden md:flex items-center gap-1">
@@ -72,14 +67,27 @@ export default function Navbar() {
 
             {/* Desktop Auth */}
             <div className="hidden md:flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setCartOpen(true)}
+                className="relative p-2.5 rounded-xl text-forest-700 hover:bg-forest-50 transition-colors focus-ring"
+                aria-label="Open cart"
+              >
+                <ShoppingCart className="w-5 h-5" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[1.125rem] h-[1.125rem] px-0.5 bg-terra-500 text-white text-[10px] font-sans font-700 rounded-full flex items-center justify-center">
+                    {cartCount > 99 ? '99+' : cartCount}
+                  </span>
+                )}
+              </button>
               {isAuthenticated ? (
                 <>
                   <Link
-                    to={isAdmin ? '/admin' : '/wholesale/portal'}
+                    to={isAdmin ? '/admin' : isWholesale ? '/wholesale/portal' : '/account'}
                     className="flex items-center gap-2 px-4 py-2 text-sm font-sans font-600 text-forest-700 hover:bg-forest-50 rounded-lg transition-colors focus-ring"
                   >
                     <LayoutDashboard className="w-4 h-4" />
-                    {isAdmin ? 'Admin' : 'Portal'}
+                    {isAdmin ? 'Admin' : isWholesale ? 'Portal' : 'My Account'}
                   </Link>
                   <button
                     onClick={logout}
@@ -91,11 +99,17 @@ export default function Navbar() {
               ) : (
                 <>
                   <Link
-                    to="/wholesale/login"
+                    to="/login"
                     className="flex items-center gap-2 px-4 py-2 text-sm font-sans font-600 text-forest-700 hover:bg-forest-50 rounded-lg transition-colors focus-ring"
                   >
                     <LogIn className="w-4 h-4" />
-                    Wholesale Login
+                    Sign In
+                  </Link>
+                  <Link
+                    to="/wholesale/login"
+                    className="px-4 py-2 text-sm font-sans font-600 text-sage-600 hover:text-forest-700 hover:bg-forest-50 rounded-lg transition-colors focus-ring"
+                  >
+                    Wholesale
                   </Link>
                   <Link
                     to="/shop"
@@ -109,13 +123,28 @@ export default function Navbar() {
             </div>
 
             {/* Mobile Menu Toggle */}
-            <button
-              onClick={() => setMenuOpen(o => !o)}
-              className="md:hidden p-2 rounded-lg text-forest-700 hover:bg-forest-100 transition-colors focus-ring"
-              aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-            >
-              {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
+            <div className="md:hidden flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setCartOpen(true)}
+                className="relative p-2 rounded-lg text-forest-700 hover:bg-forest-100 transition-colors focus-ring"
+                aria-label="Open cart"
+              >
+                <ShoppingCart className="w-5 h-5" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[1.125rem] h-[1.125rem] px-0.5 bg-terra-500 text-white text-[10px] font-sans font-700 rounded-full flex items-center justify-center">
+                    {cartCount > 99 ? '99+' : cartCount}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => setMenuOpen(o => !o)}
+                className="p-2 rounded-lg text-forest-700 hover:bg-forest-100 transition-colors focus-ring"
+                aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+              >
+                {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -152,14 +181,22 @@ export default function Navbar() {
               ))}
             </nav>
             <div className="mt-6 flex flex-col gap-3">
+              <button
+                type="button"
+                onClick={() => { setMenuOpen(false); setCartOpen(true) }}
+                className="flex items-center justify-center gap-2 py-3 rounded-xl font-sans font-700 text-forest-700 border-2 border-forest-200 hover:bg-forest-50 transition-colors"
+              >
+                <ShoppingCart className="w-4 h-4" />
+                Cart{cartCount > 0 ? ` (${cartCount})` : ''}
+              </button>
               {isAuthenticated ? (
                 <>
                   <Link
-                    to={isAdmin ? '/admin' : '/wholesale/portal'}
+                    to={isAdmin ? '/admin' : isWholesale ? '/wholesale/portal' : '/account'}
                     className="flex items-center justify-center gap-2 py-3 rounded-xl font-sans font-700 bg-forest-600 text-white"
                   >
                     <LayoutDashboard className="w-4 h-4" />
-                    {isAdmin ? 'Admin Dashboard' : 'Wholesale Portal'}
+                    {isAdmin ? 'Admin Dashboard' : isWholesale ? 'Wholesale Portal' : 'My Account'}
                   </Link>
                   <button
                     onClick={logout}
@@ -171,11 +208,17 @@ export default function Navbar() {
               ) : (
                 <>
                   <Link
-                    to="/wholesale/login"
+                    to="/login"
                     className="flex items-center justify-center gap-2 py-3 rounded-xl font-sans font-700 text-forest-700 border-2 border-forest-200 hover:bg-forest-50 transition-colors"
                   >
                     <LogIn className="w-4 h-4" />
-                    Wholesale Login
+                    Sign In
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="flex items-center justify-center gap-2 py-3 rounded-xl font-sans font-700 bg-forest-600 text-white hover:bg-forest-700 transition-colors"
+                  >
+                    Create Account
                   </Link>
                   <Link
                     to="/shop"
@@ -188,11 +231,13 @@ export default function Navbar() {
               )}
             </div>
             <p className="mt-auto text-center text-xs text-sage-500 font-sans">
-              {user ? `Logged in as ${user.businessName}` : 'demo: wholesale@demo.com / admin@meadowlarkgardens.com · any 4+ char password'}
+              {user ? `Logged in as ${user.name || user.businessName}` : 'Retail customers: sign in or create an account'}
             </p>
           </motion.div>
         )}
       </AnimatePresence>
+
+      <RetailCartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
     </>
   )
 }

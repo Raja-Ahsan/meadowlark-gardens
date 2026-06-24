@@ -1,11 +1,18 @@
 import { createContext, useContext, useState, ReactNode } from 'react'
-import { CartItem, Product } from '@/types'
+import type { Product, ProductVariation } from '@/types'
+import { cartLineKey, getWholesaleLinePrice } from '@/lib/cart'
+
+export interface WholesaleCartItem {
+  product: Product
+  quantity: number
+  variation?: ProductVariation
+}
 
 interface CartContextType {
-  items: CartItem[]
-  addItem: (product: Product, quantity: number) => void
-  updateQuantity: (productId: string, quantity: number) => void
-  removeItem: (productId: string) => void
+  items: WholesaleCartItem[]
+  addItem: (product: Product, quantity: number, variation?: ProductVariation) => void
+  updateQuantity: (productId: string, quantity: number, variationId?: string) => void
+  removeItem: (productId: string, variationId?: string) => void
   clearCart: () => void
   total: number
   itemCount: number
@@ -13,35 +20,45 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | null>(null)
 
-export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([])
+function findLineIndex(items: WholesaleCartItem[], productId: string, variationId?: string) {
+  const key = cartLineKey(productId, variationId)
+  return items.findIndex(i => cartLineKey(i.product.id, i.variation?.id) === key)
+}
 
-  const addItem = (product: Product, quantity: number) => {
+export function CartProvider({ children }: { children: ReactNode }) {
+  const [items, setItems] = useState<WholesaleCartItem[]>([])
+
+  const addItem = (product: Product, quantity: number, variation?: ProductVariation) => {
     setItems(prev => {
-      const existing = prev.find(i => i.product.id === product.id)
-      if (existing) {
-        return prev.map(i =>
-          i.product.id === product.id
-            ? { ...i, quantity: i.quantity + quantity }
-            : i
-        )
+      const idx = findLineIndex(prev, product.id, variation?.id)
+      if (idx >= 0) {
+        return prev.map((i, n) => (n === idx ? { ...i, quantity: i.quantity + quantity } : i))
       }
-      return [...prev, { product, quantity }]
+      return [...prev, { product, quantity, variation }]
     })
   }
 
-  const updateQuantity = (productId: string, quantity: number) => {
-    if (quantity < 5) return
-    setItems(prev => prev.map(i => i.product.id === productId ? { ...i, quantity } : i))
+  const removeItem = (productId: string, variationId?: string) => {
+    const key = cartLineKey(productId, variationId)
+    setItems(prev => prev.filter(i => cartLineKey(i.product.id, i.variation?.id) !== key))
   }
 
-  const removeItem = (productId: string) => {
-    setItems(prev => prev.filter(i => i.product.id !== productId))
+  const updateQuantity = (productId: string, quantity: number, variationId?: string) => {
+    const key = cartLineKey(productId, variationId)
+    setItems(prev => {
+      const item = prev.find(i => cartLineKey(i.product.id, i.variation?.id) === key)
+      if (!item) return prev
+      const min = Math.max(1, item.product.minWholesaleQty ?? 1)
+      if (quantity < min) return prev
+      return prev.map(i => (
+        cartLineKey(i.product.id, i.variation?.id) === key ? { ...i, quantity } : i
+      ))
+    })
   }
 
   const clearCart = () => setItems([])
 
-  const total = items.reduce((sum, i) => sum + i.product.wholesalePrice * i.quantity, 0)
+  const total = items.reduce((sum, i) => sum + getWholesaleLinePrice(i) * i.quantity, 0)
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0)
 
   return (

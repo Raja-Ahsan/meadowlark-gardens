@@ -5,10 +5,13 @@ interface AuthContextType {
   user: AuthUser | null
   loading: boolean
   login: (email: string, password: string) => Promise<{ success: boolean; message: string }>
+  register: (name: string, email: string, password: string, passwordConfirmation: string) => Promise<{ success: boolean; message: string }>
   logout: () => Promise<void>
+  refreshUser: () => Promise<void>
   isAuthenticated: boolean
   isAdmin: boolean
   isWholesale: boolean
+  isCustomer: boolean
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -54,6 +57,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const register = async (name: string, email: string, password: string, passwordConfirmation: string) => {
+    try {
+      const { token, user: newUser, message } = await api.register(name, email, password, passwordConfirmation)
+      setToken(token)
+      setUser(newUser)
+      localStorage.setItem('mg_user', JSON.stringify(newUser))
+      return { success: true, message }
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Registration failed.',
+      }
+    }
+  }
+
   const logout = async () => {
     try {
       if (getToken()) await api.logout()
@@ -66,16 +84,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const refreshUser = async () => {
+    const { user: currentUser } = await api.getUser()
+    setUser(currentUser)
+    localStorage.setItem('mg_user', JSON.stringify(currentUser))
+  }
+
   return (
     <AuthContext.Provider
       value={{
         user,
         loading,
         login,
+        register,
         logout,
+        refreshUser,
         isAuthenticated: !!user,
         isAdmin: user?.role === 'admin',
         isWholesale: user?.role === 'wholesale',
+        isCustomer: user?.role === 'customer',
       }}
     >
       {children}

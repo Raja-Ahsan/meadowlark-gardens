@@ -31,5 +31,15 @@ class UserSeeder extends Seeder
                 'approved' => true,
             ]
         );
+
+        User::updateOrCreate(
+            ['email' => 'customer@demo.com'],
+            [
+                'name' => 'Emily Carter',
+                'password' => Hash::make('password123'),
+                'role' => 'customer',
+                'approved' => true,
+            ]
+        );
     }
 }

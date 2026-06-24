@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('business_name')->nullable();
             $table->enum('type', ['retail', 'wholesale']);
             $table->decimal('total', 10, 2);
-            $table->enum('status', ['processing', 'shipped', 'delivered', 'cancelled'])->default('processing');
+            $table->string('status', 32)->default('pending');
             $table->string('payment_method');
             $table->timestamps();
         });

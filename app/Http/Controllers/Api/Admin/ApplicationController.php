@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\WholesaleApplication;
+use App\Services\EmailService;
 use App\Support\ApiFormatter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -43,6 +44,11 @@ class ApplicationController extends Controller
                     'approved' => true,
                 ]
             );
+
+            EmailService::send('wholesale_approved', $application->email, [
+                'name' => $application->contact_name,
+                'business_name' => $application->business_name,
+            ]);
         }
 
         return response()->json([

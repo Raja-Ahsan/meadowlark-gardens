@@ -1,6 +1,9 @@
+import { Link } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { ShoppingCart, Tag } from 'lucide-react'
 import { Product } from '@/types'
+import { mediaUrl } from '@/lib/media'
+import { truncateWords } from '@/lib/text'
 
 interface Props {
   product: Product
@@ -8,6 +11,9 @@ interface Props {
   onAddToCart?: (product: Product, qty: number) => void
   onViewDetails?: (product: Product) => void
 }
+
+const NAME_WORD_LIMIT = 6
+const DESCRIPTION_WORD_LIMIT = 14
 
 const badgeColors: Record<string, string> = {
   Native: 'bg-forest-100 text-forest-700 border border-forest-200',
@@ -17,6 +23,11 @@ const badgeColors: Record<string, string> = {
 
 export default function ProductCard({ product, isWholesale = false, onAddToCart, onViewDetails }: Props) {
   const price = isWholesale ? product.wholesalePrice : product.price
+  const displayName = truncateWords(product.name, NAME_WORD_LIMIT)
+  const displayDescription = truncateWords(
+    product.shortDescription || product.description,
+    DESCRIPTION_WORD_LIMIT,
+  )
 
   return (
     <motion.div
@@ -26,7 +37,7 @@ export default function ProductCard({ product, isWholesale = false, onAddToCart,
     >
       <div className="relative overflow-hidden aspect-[4/3]">
         <img
-          src={product.image}
+          src={mediaUrl(product.image)}
           alt={product.name}
           loading="lazy"
           decoding="async"
@@ -47,10 +58,16 @@ export default function ProductCard({ product, isWholesale = false, onAddToCart,
       </div>
 
       <div className="p-5 flex flex-col flex-1">
-        <div className="flex-1">
-          <p className="text-xs text-sage-500 font-sans font-500 uppercase tracking-wide mb-1">{product.category}</p>
-          <h3 className="font-display font-700 text-forest-800 text-lg leading-snug mb-2">{product.name}</h3>
-          <p className="text-sage-600 text-sm font-body leading-relaxed line-clamp-2">{product.description}</p>
+        <div className="flex-1 min-h-[7.5rem]">
+          <p className="text-xs text-sage-500 font-sans font-500 uppercase tracking-wide mb-1 truncate">{product.category}</p>
+          <Link to={`/product/${product.slug || product.id}`} title={product.name}>
+            <h3 className="font-display font-700 text-forest-800 text-lg leading-snug mb-2 line-clamp-2 min-h-[3.25rem] hover:text-forest-600 transition-colors">
+              {displayName}
+            </h3>
+          </Link>
+          <p className="text-sage-600 text-sm font-body leading-relaxed line-clamp-2 min-h-[2.75rem]" title={product.shortDescription || product.description}>
+            {displayDescription}
+          </p>
         </div>
 
         <div className="mt-4 flex items-center justify-between">
