@@ -24,9 +24,13 @@ export default function ShopSidebar({ shop, shopReviews }: Props) {
         {/* Shop card */}
         <div className="bg-white rounded-2xl border border-forest-100 p-6 h-fit lg:sticky lg:top-24">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-14 h-14 rounded-full bg-forest-100 flex items-center justify-center text-forest-700 font-display font-700 text-lg">
-              {shop.displayName.charAt(0)}
-            </div>
+            {shop.avatar ? (
+              <img src={mediaUrl(shop.avatar)} alt={shop.displayName} className="w-14 h-14 rounded-full object-cover border border-forest-100" />
+            ) : (
+              <div className="w-14 h-14 rounded-full bg-forest-100 flex items-center justify-center text-forest-700 font-display font-700 text-lg">
+                {shop.displayName.charAt(0)}
+              </div>
+            )}
             <div>
               <p className="font-sans font-700 text-forest-900">{shop.name}</p>
               <p className="text-sm text-sage-600">{shop.owner}</p>

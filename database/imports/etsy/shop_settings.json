@@ -1,0 +1,26 @@
+{
+  "name": "MeadowlarkGardensTN",
+  "icon_url": "https://i.etsystatic.com/20088520/r/isla/68e441/52495456/isla_180x180.52495456_6ox4xa8x.jpg",
+  "shipping_profile_zip_code": ["37355", "37355", "37355"],
+  "phone_number": "6155869872",
+  "members": [
+    {
+      "name": "Tracy",
+      "portrait_url": "https://i.etsystatic.com/isc/e6389b/1220305966059/isc_190x190.1220305966059_fpyg.jpg?version=0",
+      "roles": "owner, Grower",
+      "bio": "I'm in love with plants!! Propagating and growing plants has always been my passion and it's so awesome to be able to do it as a business in our own backyard!"
+    },
+    {
+      "name": "John",
+      "portrait_url": "https://i.etsystatic.com/site-assets/images/avatars/default_avatar.png?width=190",
+      "roles": "owner, Grower",
+      "bio": "I grew up around a grandmother who loved plants, and it just came natural for me. Propagating, growing and caring for the wonderful variety of plants that we have is awesome! This is a passion that we both share and is wonderful!!"
+    }
+  ],
+  "billing_address": {
+    "first_line": "1200 Meadowlark Place",
+    "city": "Manchester",
+    "state": "TN",
+    "zip_code": "37355"
+  }
+}
