@@ -14,6 +14,9 @@ interface Props {
   onCategoryChange: (category: string) => void
   onLoadMore?: () => void
   loadingMore?: boolean
+  loading?: boolean
+  productAverageRating?: number
+  productReviewCount?: number
   sellerName?: string
 }
 
@@ -25,12 +28,15 @@ export default function ProductReviewsSection({
   onCategoryChange,
   onLoadMore,
   loadingMore,
+  loading = false,
+  productAverageRating,
+  productReviewCount,
   sellerName = 'John Moser',
 }: Props) {
   const [showAllReviews, setShowAllReviews] = useState(false)
   const visibleReviews = showAllReviews ? reviews : reviews.slice(0, 4)
-  const avg = insights?.averageRating ?? 0
-  const total = insights?.totalReviews ?? meta?.total ?? reviews.length
+  const avg = insights?.averageRating ?? productAverageRating ?? 0
+  const total = insights?.totalReviews ?? productReviewCount ?? meta?.total ?? reviews.length
 
   return (
     <section className="mt-16 border-t border-forest-100 pt-12">
@@ -109,7 +115,13 @@ export default function ProductReviewsSection({
 
         {/* Review list */}
         <div className="space-y-6">
-          {reviews.length === 0 ? (
+          {loading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="h-24 bg-cream-50 rounded-xl border border-forest-100 animate-pulse" />
+              ))}
+            </div>
+          ) : reviews.length === 0 ? (
             <p className="text-sage-500 py-8">No reviews yet for this filter. Be the first to share your experience!</p>
           ) : (
             visibleReviews.map(review => (

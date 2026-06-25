@@ -30,7 +30,10 @@ class CustomerReviewController extends Controller
             'meta' => [
                 'currentPage' => $reviews->currentPage(),
                 'lastPage' => $reviews->lastPage(),
+                'perPage' => $reviews->perPage(),
                 'total' => $reviews->total(),
+                'from' => $reviews->firstItem(),
+                'to' => $reviews->lastItem(),
             ],
             'insights' => ReviewInsights::forProduct($product->id),
         ]);

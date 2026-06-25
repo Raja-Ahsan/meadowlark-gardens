@@ -84,4 +84,16 @@ class Product extends Model
 
         return $this->stock_quantity > 0 || $this->allow_backorder;
     }
+
+    public function resolveRouteBinding($value, $field = null): ?self
+    {
+        if ($field) {
+            return parent::resolveRouteBinding($value, $field);
+        }
+
+        return static::query()
+            ->where('slug', $value)
+            ->when(is_numeric($value), fn ($q) => $q->orWhere('id', $value))
+            ->firstOrFail();
+    }
 }

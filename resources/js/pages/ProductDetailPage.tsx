@@ -23,6 +23,7 @@ export default function ProductDetailPage() {
   const [reviewMeta, setReviewMeta] = useState<PaginatedMeta | null>(null)
   const [reviewPage, setReviewPage] = useState(1)
   const [categoryFilter, setCategoryFilter] = useState('')
+  const [loadingReviews, setLoadingReviews] = useState(false)
   const [loadingMoreReviews, setLoadingMoreReviews] = useState(false)
   const [shop, setShop] = useState<ShopProfile | null>(null)
   const [shopReviews, setShopReviews] = useState<CustomerReview[]>([])
@@ -35,24 +36,37 @@ export default function ProductDetailPage() {
   const { addItem } = useRetailCart()
   const { isCustomer, isAuthenticated } = useAuth()
 
-  const loadReviews = (page = 1, category = categoryFilter, append = false) => {
-    if (!slug) return
-    const setLoading = page > 1
-    if (setLoading) setLoadingMoreReviews(true)
+  const loadReviews = (productId: string, page = 1, category = categoryFilter, append = false) => {
+    if (!productId) return
+    if (page > 1) setLoadingMoreReviews(true)
+    else setLoadingReviews(true)
 
-    api.getProductReviews(slug, page, category || undefined)
+    api.getProductReviews(productId, page, category || undefined)
       .then(r => {
         setReviews(prev => append ? [...prev, ...r.reviews] : r.reviews)
         setInsights(r.insights)
         setReviewMeta(r.meta)
         setReviewPage(page)
       })
-      .catch(() => {})
-      .finally(() => setLoadingMoreReviews(false))
+      .catch(() => {
+        if (!append) {
+          setReviews([])
+          setInsights(null)
+          setReviewMeta(null)
+        }
+      })
+      .finally(() => {
+        setLoadingReviews(false)
+        setLoadingMoreReviews(false)
+      })
   }
 
   useEffect(() => {
     if (!slug) return
+    setProduct(null)
+    setReviews([])
+    setInsights(null)
+    setReviewMeta(null)
     api.getProduct(slug).then(r => {
       setProduct(r.product)
       setRelated(r.related ?? [])
@@ -66,9 +80,9 @@ export default function ProductDetailPage() {
   }, [slug])
 
   useEffect(() => {
-    if (!slug) return
-    loadReviews(1, categoryFilter)
-  }, [categoryFilter, slug])
+    if (!product?.id) return
+    loadReviews(product.id, 1, categoryFilter, false)
+  }, [product?.id, categoryFilter])
 
   useEffect(() => {
     if (isAuthenticated && product) {
@@ -233,8 +247,11 @@ export default function ProductDetailPage() {
           meta={reviewMeta}
           categoryFilter={categoryFilter}
           onCategoryChange={setCategoryFilter}
-          onLoadMore={() => loadReviews(reviewPage + 1, categoryFilter, true)}
+          onLoadMore={() => loadReviews(product.id, reviewPage + 1, categoryFilter, true)}
           loadingMore={loadingMoreReviews}
+          loading={loadingReviews}
+          productAverageRating={product.averageRating}
+          productReviewCount={product.reviewCount}
           sellerName={shop?.owner}
         />
 
