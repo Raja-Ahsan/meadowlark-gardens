@@ -77,6 +77,9 @@ export interface Order {
   discount?: number
   tax?: number
   shippingCost?: number
+  shippingCarrier?: string | null
+  shippingMethodCode?: string | null
+  shippingMethodName?: string | null
   total: number
   status: string
   createdAt: string

@@ -102,6 +102,19 @@ class EcommerceSeeder extends Seeder
             'paypal_enabled' => 'false',
             'bank_transfer_enabled' => 'true',
             'cod_enabled' => 'true',
+            'ups_enabled' => 'false',
+            'ups_sandbox' => 'true',
+            'ups_client_id' => '',
+            'ups_client_secret' => '',
+            'ups_account_number' => '',
+            'ups_shipper_name' => 'Meadowlark Gardens TN',
+            'ups_shipper_address_line' => '1200 Meadowlark Place',
+            'ups_shipper_city' => 'Manchester',
+            'ups_shipper_state' => 'TN',
+            'ups_shipper_postal_code' => '37355',
+            'ups_shipper_country' => 'US',
+            'ups_fallback_flat_rate' => '9.99',
+            'ups_free_shipping_threshold' => '75',
         ];
 
         foreach ($settings as $key => $value) {

@@ -4,8 +4,9 @@ import { ShoppingBag, Tag, CheckCircle, ArrowLeft } from 'lucide-react'
 import { useRetailCart } from '@/context/RetailCartContext'
 import { cartLineKey, formatVariationLabel, getCartLineImage, getCartLinePrice } from '@/lib/cart'
 import { useAuth } from '@/context/AuthContext'
-import { api } from '@/lib/api'
+import { api, type ShippingRate } from '@/lib/api'
 import { mediaUrl } from '@/lib/media'
+import ShippingMethodSelector from '@/components/checkout/ShippingMethodSelector'
 
 const inputClass = 'w-full px-4 py-3 rounded-xl border border-forest-200 text-sm focus:outline-none focus:ring-2 focus:ring-forest-500/30'
 const labelClass = 'block text-xs font-sans font-600 text-forest-700 mb-1.5'
@@ -179,14 +180,43 @@ export default function CheckoutPage() {
   const [couponCode, setCouponCode] = useState('')
   const [discount, setDiscount] = useState(0)
   const [couponApplied, setCouponApplied] = useState('')
+  const [freeShippingCoupon, setFreeShippingCoupon] = useState(false)
+  const [selectedShipping, setSelectedShipping] = useState<ShippingRate | null>(null)
+  const [taxRate, setTaxRate] = useState(9.25)
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
 
-  const taxRate = 9.25
-  const shipping = total >= 75 ? 0 : 9.99
   const subtotal = total
+  const shipping = selectedShipping?.cost ?? 0
   const tax = Math.round((subtotal - discount) * (taxRate / 100) * 100) / 100
   const grandTotal = Math.max(0, subtotal - discount + tax + shipping)
+
+  const cartItems = items.map(i => ({
+    productId: i.product.id,
+    quantity: i.quantity,
+    variationId: i.variation?.id,
+  }))
+
+  const getShippingAddress = () => {
+    if (form.sameShipping) {
+      return {
+        firstName: form.firstName,
+        lastName: form.lastName,
+        addressLine1: form.address1,
+        city: form.city,
+        state: form.state,
+        postalCode: form.postalCode,
+        country: form.country,
+      }
+    }
+    return {
+      addressLine1: form.shipAddress1,
+      city: form.shipCity,
+      state: form.shipState,
+      postalCode: form.shipPostalCode,
+      country: 'US',
+    }
+  }
 
   useEffect(() => {
     api.getPaymentConfig()
@@ -207,6 +237,7 @@ export default function CheckoutPage() {
       const res = await api.validateCoupon(couponCode, subtotal, 'retail')
       setDiscount(res.coupon.discount)
       setCouponApplied(res.coupon.code)
+      setFreeShippingCoupon(res.coupon.freeShipping)
     } catch (e) {
       alert(e instanceof Error ? e.message : 'Invalid coupon')
     }
@@ -214,7 +245,7 @@ export default function CheckoutPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (items.length === 0 || !form.paymentMethod) return
+    if (items.length === 0 || !form.paymentMethod || !selectedShipping) return
 
     setSubmitting(true)
     try {
@@ -235,11 +266,13 @@ export default function CheckoutPage() {
         orderNotes: form.orderNotes || undefined,
         billingAddress,
         shippingAddress,
-        items: items.map(i => ({
-          productId: i.product.id,
-          quantity: i.quantity,
-          variationId: i.variation?.id,
-        })),
+        shippingMethod: {
+          carrier: selectedShipping.carrier,
+          code: selectedShipping.code,
+          name: selectedShipping.name,
+          cost: selectedShipping.cost,
+        },
+        items: cartItems,
       }
 
       if (isCustomer) {
@@ -314,7 +347,7 @@ export default function CheckoutPage() {
             applyCoupon={applyCoupon}
             couponApplied={couponApplied}
             submitting={submitting}
-            canSubmit={!!form.paymentMethod}
+            canSubmit={!!form.paymentMethod && !!selectedShipping}
           />
         </div>
 
@@ -361,6 +394,20 @@ export default function CheckoutPage() {
           </section>
 
           <section className="bg-white rounded-2xl border border-forest-100 p-5 md:p-6 shadow-sm">
+            <h2 className="font-sans font-700 text-lg text-forest-900 mb-4">Shipping method</h2>
+            <ShippingMethodSelector
+              shippingAddress={getShippingAddress()}
+              items={cartItems}
+              subtotal={subtotal - discount}
+              type="retail"
+              freeShipping={freeShippingCoupon}
+              selected={selectedShipping}
+              onSelect={setSelectedShipping}
+              onQuote={q => setTaxRate(q.taxRate)}
+            />
+          </section>
+
+          <section className="bg-white rounded-2xl border border-forest-100 p-5 md:p-6 shadow-sm">
             <h2 className="font-sans font-700 text-lg text-forest-900 mb-4">Payment method</h2>
             {!paymentsLoaded ? (
               <p className="text-sm text-sage-500">Loading payment options...</p>
@@ -390,7 +437,7 @@ export default function CheckoutPage() {
 
           <button
             type="submit"
-            disabled={submitting || !form.paymentMethod}
+            disabled={submitting || !form.paymentMethod || !selectedShipping}
             className="lg:hidden w-full py-3.5 bg-forest-700 text-white rounded-xl font-sans font-600 hover:bg-forest-800 disabled:opacity-50 transition-colors"
           >
             {submitting ? 'Processing...' : `Place order — $${grandTotal.toFixed(2)}`}

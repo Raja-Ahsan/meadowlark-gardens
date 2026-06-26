@@ -263,7 +263,12 @@ export default function AdminOrderDetailModal({ orderId, open, onClose, onUpdate
                 <div className="flex justify-between text-sage-600"><span>Tax</span><span>${order.tax!.toFixed(2)}</span></div>
               )}
               <div className="flex justify-between text-sage-600">
-                <span>Shipping</span>
+                <span>
+                  Shipping
+                  {order.shippingMethodName && (
+                    <span className="block text-xs text-sage-500 font-normal">{order.shippingMethodName}</span>
+                  )}
+                </span>
                 <span>{(order.shippingCost ?? 0) > 0 ? `$${order.shippingCost!.toFixed(2)}` : 'Free'}</span>
               </div>
               <div className="flex justify-between font-700 text-forest-900 text-base pt-2 border-t border-forest-100">

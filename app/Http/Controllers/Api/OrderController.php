@@ -10,6 +10,7 @@ use App\Support\ApiFormatter;
 use App\Services\AuditService;
 use App\Services\EmailService;
 use App\Services\PaymentMethodService;
+use App\Services\ShippingQuoteService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -27,6 +28,11 @@ class OrderController extends Controller
             'orderNotes' => ['nullable', 'string'],
             'billingAddress' => ['nullable', 'array'],
             'shippingAddress' => ['nullable', 'array'],
+            'shippingMethod' => ['required', 'array'],
+            'shippingMethod.carrier' => ['required', 'string', 'max:32'],
+            'shippingMethod.code' => ['required', 'string', 'max:32'],
+            'shippingMethod.name' => ['required', 'string', 'max:255'],
+            'shippingMethod.cost' => ['required', 'numeric', 'min:0'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.productId' => ['required', 'exists:products,id'],
             'items.*.variationId' => ['nullable', 'exists:product_variations,id'],
@@ -81,6 +87,11 @@ class OrderController extends Controller
             'orderNotes' => ['nullable', 'string'],
             'billingAddress' => ['nullable', 'array'],
             'shippingAddress' => ['nullable', 'array'],
+            'shippingMethod' => ['required', 'array'],
+            'shippingMethod.carrier' => ['required', 'string', 'max:32'],
+            'shippingMethod.code' => ['required', 'string', 'max:32'],
+            'shippingMethod.name' => ['required', 'string', 'max:255'],
+            'shippingMethod.cost' => ['required', 'numeric', 'min:0'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.productId' => ['required', 'exists:products,id'],
             'items.*.variationId' => ['nullable', 'exists:product_variations,id'],
@@ -105,6 +116,11 @@ class OrderController extends Controller
             'orderNotes' => ['nullable', 'string'],
             'billingAddress' => ['nullable', 'array'],
             'shippingAddress' => ['nullable', 'array'],
+            'shippingMethod' => ['required', 'array'],
+            'shippingMethod.carrier' => ['required', 'string', 'max:32'],
+            'shippingMethod.code' => ['required', 'string', 'max:32'],
+            'shippingMethod.name' => ['required', 'string', 'max:255'],
+            'shippingMethod.cost' => ['required', 'numeric', 'min:0'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.productId' => ['required', 'exists:products,id'],
             'items.*.variationId' => ['nullable', 'exists:product_variations,id'],
@@ -180,6 +196,7 @@ class OrderController extends Controller
             }
 
             $discount = 0;
+            $freeShipping = false;
             $couponCode = $data['couponCode'] ?? null;
             if ($couponCode) {
                 $couponRes = app(CouponController::class)->validateCode(new Request([
@@ -190,16 +207,23 @@ class OrderController extends Controller
                 if ($couponRes->getStatusCode() === 200) {
                     $couponData = json_decode($couponRes->getContent(), true);
                     $discount = $couponData['coupon']['discount'] ?? 0;
+                    $freeShipping = (bool) ($couponData['coupon']['freeShipping'] ?? false);
                 }
             }
+
+            $shipping = app(ShippingQuoteService::class)->resolveShippingCost([
+                'shippingAddress' => $data['shippingAddress'] ?? [],
+                'items' => $data['items'],
+                'subtotal' => $subtotal,
+                'type' => $type,
+                'freeShipping' => $freeShipping,
+                'shippingMethod' => $data['shippingMethod'],
+            ]);
 
             $taxRate = (float) (\App\Models\Setting::get('tax_rate', 9.25));
             $taxable = max(0, $subtotal - $discount);
             $tax = round($taxable * ($taxRate / 100), 2);
-            $shippingCost = 9.99;
-            if ($subtotal >= 75) {
-                $shippingCost = 0;
-            }
+            $shippingCost = $shipping['cost'];
             $total = max(0, $subtotal - $discount + $tax + $shippingCost);
 
             $order = Order::create([
@@ -213,6 +237,9 @@ class OrderController extends Controller
                 'discount' => $discount,
                 'tax' => $tax,
                 'shipping_cost' => $shippingCost,
+                'shipping_carrier' => $shipping['carrier'],
+                'shipping_method_code' => $shipping['code'],
+                'shipping_method_name' => $shipping['name'],
                 'total' => $total,
                 'coupon_code' => $couponCode,
                 'billing_address' => $data['billingAddress'] ?? null,

@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Api\Admin\SettingController as AdminSettingController;
 use App\Http\Controllers\Api\Admin\ShippingController as AdminShippingController;
 use App\Http\Controllers\Api\Admin\StatsController;
+use App\Http\Controllers\Api\Admin\UpsController;
 use App\Http\Controllers\Api\Admin\VariationController;
 use App\Http\Controllers\Api\AddressController;
 use App\Http\Controllers\Api\AuthController;
@@ -25,6 +26,7 @@ use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\ShippingController;
 use App\Http\Controllers\Api\ShopController;
 use App\Http\Controllers\Api\SiteSettingController;
 use App\Http\Controllers\Api\UploadController;
@@ -47,6 +49,7 @@ Route::get('/shop/reviews', [ShopController::class, 'reviews']);
 Route::get('/site-settings', [SiteSettingController::class, 'index']);
 
 Route::get('/payments/config', [PaymentController::class, 'config']);
+Route::post('/shipping/quote', [ShippingController::class, 'quote']);
 
 Route::post('/contact', [ContactController::class, 'store']);
 Route::post('/wholesale/applications', [WholesaleApplicationController::class, 'store']);
@@ -137,5 +140,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/shipping/methods', [AdminShippingController::class, 'storeMethod']);
         Route::put('/shipping/methods/{method}', [AdminShippingController::class, 'updateMethod']);
         Route::delete('/shipping/methods/{method}', [AdminShippingController::class, 'destroyMethod']);
+        Route::post('/ups/test', [UpsController::class, 'test']);
     });
 });

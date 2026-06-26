@@ -5,7 +5,7 @@ import SettingImageUpload from '@/components/admin/SettingImageUpload'
 const inputClass = 'w-full px-3 py-2 rounded-xl border border-forest-200 text-sm focus:outline-none focus:ring-2 focus:ring-forest-500/30'
 const labelClass = 'block text-xs font-sans font-600 text-forest-700 mb-1'
 
-type Tab = 'general' | 'contact' | 'payments' | 'smtp'
+type Tab = 'general' | 'contact' | 'payments' | 'ups' | 'smtp'
 
 const CONTACT_KEYS = [
   'site_email', 'site_phone', 'contact_page_subtitle', 'contact_address',
@@ -18,6 +18,7 @@ export default function AdminSettingsPage() {
   const [settings, setSettings] = useState<Record<string, Record<string, string>>>({})
   const [saving, setSaving] = useState(false)
   const [testEmail, setTestEmail] = useState('')
+  const [testingUps, setTestingUps] = useState(false)
   const [message, setMessage] = useState('')
 
   useEffect(() => {
@@ -55,10 +56,24 @@ export default function AdminSettingsPage() {
     }
   }
 
+  const handleTestUps = async () => {
+    setTestingUps(true)
+    setMessage('')
+    try {
+      const res = await api.testUpsConnection()
+      setMessage(res.message)
+    } catch (e) {
+      setMessage(e instanceof Error ? e.message : 'UPS test failed')
+    } finally {
+      setTestingUps(false)
+    }
+  }
+
   const tabs: { id: Tab; label: string }[] = [
     { id: 'general', label: 'General' },
     { id: 'contact', label: 'Contact & Footer' },
     { id: 'payments', label: 'Payment Gateways' },
+    { id: 'ups', label: 'UPS Shipping' },
     { id: 'smtp', label: 'SMTP' },
   ]
 
@@ -217,6 +232,67 @@ export default function AdminSettingsPage() {
             <div><label className={labelClass}>Stripe Publishable Key</label><input className={inputClass} value={get('general', 'stripe_key')} onChange={e => set('general', 'stripe_key', e.target.value)} placeholder="pk_live_..." /></div>
             <div><label className={labelClass}>Stripe Secret Key</label><input type="password" className={inputClass} value={get('general', 'stripe_secret')} onChange={e => set('general', 'stripe_secret', e.target.value)} /></div>
             <button onClick={() => save('general')} disabled={saving} className="px-6 py-2.5 bg-forest-700 text-white rounded-xl text-sm font-600">{saving ? 'Saving...' : 'Save Payment Settings'}</button>
+          </div>
+        )}
+
+        {tab === 'ups' && (
+          <div className="space-y-6">
+            <p className="text-sm text-sage-600">
+              Connect your UPS Developer account for live rate quotes at checkout. Get credentials at{' '}
+              <a href="https://developer.ups.com" target="_blank" rel="noreferrer" className="text-forest-700 underline">developer.ups.com</a>.
+            </p>
+
+            <label className="flex items-center justify-between p-3 rounded-xl border border-forest-100">
+              <span className="font-600 text-sm">Enable UPS shipping</span>
+              <input type="checkbox" checked={get('general', 'ups_enabled') === 'true'} onChange={e => set('general', 'ups_enabled', e.target.checked ? 'true' : 'false')} />
+            </label>
+            <label className="flex items-center justify-between p-3 rounded-xl border border-forest-100">
+              <span className="font-600 text-sm">Use sandbox (testing)</span>
+              <input type="checkbox" checked={get('general', 'ups_sandbox') === 'true'} onChange={e => set('general', 'ups_sandbox', e.target.checked ? 'true' : 'false')} />
+            </label>
+
+            <div className="space-y-4">
+              <div><label className={labelClass}>Client ID</label><input className={inputClass} value={get('general', 'ups_client_id')} onChange={e => set('general', 'ups_client_id', e.target.value)} /></div>
+              <div><label className={labelClass}>Client Secret</label><input type="password" className={inputClass} value={get('general', 'ups_client_secret')} onChange={e => set('general', 'ups_client_secret', e.target.value)} /></div>
+              <div><label className={labelClass}>UPS Account Number</label><input className={inputClass} value={get('general', 'ups_account_number')} onChange={e => set('general', 'ups_account_number', e.target.value)} placeholder="Shipper account #" /></div>
+            </div>
+
+            <div className="pt-4 border-t border-forest-100">
+              <h2 className="font-sans font-700 text-forest-900 text-sm mb-4">Ship-from address</h2>
+              <div className="space-y-4">
+                {[
+                  ['ups_shipper_name', 'Business name'],
+                  ['ups_shipper_address_line', 'Street address'],
+                  ['ups_shipper_city', 'City'],
+                  ['ups_shipper_state', 'State'],
+                  ['ups_shipper_postal_code', 'ZIP code'],
+                  ['ups_shipper_country', 'Country code'],
+                ].map(([key, label]) => (
+                  <div key={key}><label className={labelClass}>{label}</label><input className={inputClass} value={get('general', key)} onChange={e => set('general', key, e.target.value)} /></div>
+                ))}
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-forest-100">
+              <h2 className="font-sans font-700 text-forest-900 text-sm mb-4">Fallback & promotions</h2>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label className={labelClass}>Flat rate fallback ($)</label>
+                  <input className={inputClass} value={get('general', 'ups_fallback_flat_rate')} onChange={e => set('general', 'ups_fallback_flat_rate', e.target.value)} placeholder="9.99" />
+                  <p className="text-xs text-sage-500 mt-1">Used when UPS is disabled or unavailable.</p>
+                </div>
+                <div>
+                  <label className={labelClass}>Free shipping threshold ($)</label>
+                  <input className={inputClass} value={get('general', 'ups_free_shipping_threshold')} onChange={e => set('general', 'ups_free_shipping_threshold', e.target.value)} placeholder="75" />
+                  <p className="text-xs text-sage-500 mt-1">Orders at or above this subtotal ship free.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <button onClick={() => save('general')} disabled={saving} className="px-6 py-2.5 bg-forest-700 text-white rounded-xl text-sm font-600">{saving ? 'Saving...' : 'Save UPS Settings'}</button>
+              <button type="button" onClick={handleTestUps} disabled={testingUps} className="px-6 py-2.5 border border-forest-200 rounded-xl text-sm font-600">{testingUps ? 'Testing...' : 'Test UPS Connection'}</button>
+            </div>
           </div>
         )}
 

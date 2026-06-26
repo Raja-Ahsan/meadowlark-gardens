@@ -77,8 +77,34 @@ interface RetailOrderPayload {
   customerName: string
   customerEmail: string
   paymentMethod: string
-  items: { productId: string; quantity: number }[]
+  items: { productId: string; quantity: number; variationId?: string }[]
   couponCode?: string
+  orderNotes?: string
+  billingAddress?: Record<string, string>
+  shippingAddress?: Record<string, string>
+  shippingMethod: ShippingMethodPayload
+}
+
+export interface ShippingMethodPayload {
+  carrier: string
+  code: string
+  name: string
+  cost: number
+}
+
+export interface ShippingRate extends ShippingMethodPayload {
+  currency: string
+  etaDays: number | null
+}
+
+export interface ShippingQuoteResponse {
+  rates: ShippingRate[]
+  source: string
+  upsEnabled: boolean
+  weightLbs: number
+  subtotal: number
+  taxRate: number
+  freeShippingThreshold: number
 }
 
 interface WholesaleOrderPayload {
@@ -88,6 +114,7 @@ interface WholesaleOrderPayload {
   orderNotes?: string
   billingAddress?: Record<string, string>
   shippingAddress?: Record<string, string>
+  shippingMethod: ShippingMethodPayload
 }
 
 export interface ShopCategory {
@@ -172,6 +199,18 @@ export const api = {
       '/coupons/validate',
       { method: 'POST', body: JSON.stringify({ code, cartTotal, type }) }
     ),
+
+  getShippingQuote: (payload: {
+    shippingAddress: Record<string, string>
+    items: { productId: string; quantity: number; variationId?: string }[]
+    subtotal?: number
+    type?: 'retail' | 'wholesale'
+    freeShipping?: boolean
+  }) =>
+    request<ShippingQuoteResponse>('/shipping/quote', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 
   submitContact: (payload: ContactPayload) =>
     request<{ message: string }>('/contact', { method: 'POST', body: JSON.stringify(payload) }),
@@ -337,6 +376,11 @@ export const api = {
   testEmail: (to: string) =>
     request<{ message: string }>('/admin/test-email', {
       method: 'POST', body: JSON.stringify({ to }),
+    }),
+
+  testUpsConnection: () =>
+    request<{ message: string; result?: { connected: boolean; environment: string } }>('/admin/ups/test', {
+      method: 'POST',
     }),
 
   getShipping: () => request<{ zones: ShippingZone[] }>('/admin/shipping'),
