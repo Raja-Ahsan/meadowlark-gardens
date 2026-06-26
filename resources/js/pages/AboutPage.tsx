@@ -2,27 +2,6 @@ import { motion } from 'motion/react'
 import { Leaf, Award, Sprout, Heart } from 'lucide-react'
 import SectionHeader from '@/components/ui/SectionHeader'
 
-const team = [
-  {
-    name: 'Ruth Calloway',
-    role: 'Founder & Head Horticulturist',
-    image: 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&w=300&q=80',
-    bio: '30+ years cultivating native Tennessee plants. Ruth started Meadowlark from a single backyard greenhouse.',
-  },
-  {
-    name: 'James Calloway',
-    role: 'Operations & Wholesale Director',
-    image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=300&q=80',
-    bio: 'James manages our wholesale partnerships and oversees daily nursery operations.',
-  },
-  {
-    name: 'Priya Nair',
-    role: 'Plant Specialist & Educator',
-    image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=300&q=80',
-    bio: 'A botanist with a passion for pollinator conservation and native plant education.',
-  },
-]
-
 const milestones = [
   { year: '1998', title: 'Founded', desc: 'Ruth planted the first seeds in her Franklin backyard.' },
   { year: '2005', title: 'First Storefront', desc: 'Opened our first permanent nursery location on Meadowlark Lane.' },
@@ -121,35 +100,6 @@ export default function AboutPage() {
                 <p className="text-sage-500 text-sm">Years of Growing</p>
               </div>
             </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* Team */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <SectionHeader eyebrow="Our People" title="The Team Behind the Gardens" />
-          <div className="grid md:grid-cols-3 gap-8">
-            {team.map((member, i) => (
-              <motion.div
-                key={member.name}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1, duration: 0.5 }}
-                className="text-center"
-              >
-                <img
-                  src={member.image}
-                  alt={member.name}
-                  className="w-28 h-28 rounded-full object-cover mx-auto mb-4 border-4 border-forest-100 shadow-md"
-                  loading="lazy"
-                />
-                <h3 className="font-display font-700 text-forest-900 text-xl mb-1">{member.name}</h3>
-                <p className="text-forest-500 font-sans font-500 text-sm mb-3">{member.role}</p>
-                <p className="text-sage-600 font-body text-sm leading-relaxed">{member.bio}</p>
-              </motion.div>
-            ))}
           </div>
         </div>
       </section>
