@@ -11,6 +11,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             UserSeeder::class,
             EcommerceSeeder::class,
+            LegalPageSeeder::class,
             EtsyImportSeeder::class,
         ]);
     }

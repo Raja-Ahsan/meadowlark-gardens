@@ -5,7 +5,7 @@ import SiteLogo from './SiteLogo'
 import SocialLinks, { splitSettingLines } from './SocialLinks'
 
 export default function Footer() {
-  const { siteName, footerLogo, siteEmail, sitePhone, contactAddress, footerDescription, social } = useSiteSettings()
+  const { siteName, headerLogo, footerLogo, siteEmail, sitePhone, contactAddress, footerDescription, social, ready: settingsReady } = useSiteSettings()
   const addressLines = splitSettingLines(contactAddress)
 
   return (
@@ -14,7 +14,12 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
           <div className="lg:col-span-1">
             <div className="mb-4">
-              <SiteLogo siteName={siteName} logo={footerLogo} variant="footer" />
+              <SiteLogo
+                siteName={siteName}
+                logo={footerLogo || headerLogo}
+                variant="footer"
+                settingsReady={settingsReady}
+              />
             </div>
             {footerDescription && (
               <p className="text-sage-300 text-sm font-body leading-relaxed mb-5">
@@ -98,11 +103,19 @@ export default function Footer() {
 
         <div className="mt-12 pt-8 border-t border-forest-800 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sage-500 text-xs font-body">© {new Date().getFullYear()} {siteName}. All rights reserved.</p>
-          <div className="flex gap-4">
-            {['Privacy Policy', 'Terms of Service', 'Cookies'].map(item => (
-              <a key={item} href="#" className="text-sage-500 hover:text-sage-300 text-xs font-body transition-colors focus-ring rounded">
-                {item}
-              </a>
+          <div className="flex flex-wrap gap-4 justify-center sm:justify-end">
+            {[
+              { label: 'Privacy Policy', to: '/privacy-policy' },
+              { label: 'Terms of Service', to: '/terms-of-service' },
+              { label: 'Cookies', to: '/cookies' },
+            ].map(item => (
+              <Link
+                key={item.to}
+                to={item.to}
+                className="text-sage-500 hover:text-sage-300 text-xs font-body transition-colors focus-ring rounded"
+              >
+                {item.label}
+              </Link>
             ))}
           </div>
         </div>

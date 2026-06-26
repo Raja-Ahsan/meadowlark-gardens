@@ -3,6 +3,8 @@ import { api } from '@/lib/api'
 import { mediaUrl } from '@/lib/media'
 import type { PublicSiteSettings } from '@/types'
 
+const STORAGE_KEY = 'mg_site_settings'
+
 const defaults: PublicSiteSettings = {
   siteName: 'Meadowlark Gardens',
   siteEmail: '',
@@ -20,7 +22,29 @@ const defaults: PublicSiteSettings = {
   social: { facebook: '', instagram: '', twitter: '', youtube: '', pinterest: '' },
 }
 
-const SiteSettingsContext = createContext<PublicSiteSettings>(defaults)
+type SiteSettingsContextValue = PublicSiteSettings & { ready: boolean }
+
+const SiteSettingsContext = createContext<SiteSettingsContextValue>({ ...defaults, ready: false })
+
+function readCachedSettings(): PublicSiteSettings | null {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY)
+    if (!raw) return null
+    return { ...defaults, ...JSON.parse(raw) }
+  } catch {
+    return null
+  }
+}
+
+function readInitialSettings(): PublicSiteSettings {
+  const fromWindow = window.__SITE_SETTINGS__
+  if (fromWindow) return { ...defaults, ...fromWindow }
+
+  const cached = readCachedSettings()
+  if (cached) return cached
+
+  return defaults
+}
 
 function applyFavicon(url: string | null) {
   if (!url) return
@@ -35,20 +59,29 @@ function applyFavicon(url: string | null) {
 }
 
 export function SiteSettingsProvider({ children }: { children: ReactNode }) {
-  const [settings, setSettings] = useState<PublicSiteSettings>(defaults)
+  const [settings, setSettings] = useState<PublicSiteSettings>(readInitialSettings)
+  const [ready, setReady] = useState(() => Boolean(window.__SITE_SETTINGS__ || readCachedSettings()))
+
+  useEffect(() => {
+    const initial = readInitialSettings()
+    applyFavicon(initial.favicon)
+    if (initial.siteName) document.title = initial.siteName
+  }, [])
 
   useEffect(() => {
     api.getSiteSettings()
       .then(({ settings: s }) => {
         setSettings(s)
+        setReady(true)
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(s))
         applyFavicon(s.favicon)
         if (s.siteName) document.title = s.siteName
       })
-      .catch(() => {})
+      .catch(() => setReady(true))
   }, [])
 
   return (
-    <SiteSettingsContext.Provider value={settings}>
+    <SiteSettingsContext.Provider value={{ ...settings, ready }}>
       {children}
     </SiteSettingsContext.Provider>
   )

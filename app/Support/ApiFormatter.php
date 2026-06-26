@@ -283,4 +283,18 @@ class ApiFormatter
             'isActive' => (bool) $template->is_active,
         ];
     }
+
+    public static function legalPage(\App\Models\LegalPage $page): array
+    {
+        return [
+            'id' => (string) $page->id,
+            'slug' => $page->slug,
+            'title' => $page->title,
+            'content' => $page->content ?? '',
+            'metaTitle' => $page->meta_title,
+            'metaDescription' => $page->meta_description,
+            'isPublished' => (bool) $page->is_published,
+            'updatedAt' => $page->updated_at?->toIso8601String(),
+        ];
+    }
 }

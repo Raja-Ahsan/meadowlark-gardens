@@ -212,6 +212,12 @@ export const api = {
       body: JSON.stringify(payload),
     }),
 
+  getLegalPages: () =>
+    request<{ pages: { slug: string; title: string }[] }>('/legal-pages'),
+
+  getLegalPage: (slug: string) =>
+    request<{ page: import('@/types').LegalPage }>(`/legal-pages/${slug}`),
+
   submitContact: (payload: ContactPayload) =>
     request<{ message: string }>('/contact', { method: 'POST', body: JSON.stringify(payload) }),
 
@@ -381,6 +387,21 @@ export const api = {
   testUpsConnection: () =>
     request<{ message: string; result?: { connected: boolean; environment: string } }>('/admin/ups/test', {
       method: 'POST',
+    }),
+
+  getAdminLegalPages: () =>
+    request<{ pages: import('@/types').LegalPage[] }>('/admin/legal-pages'),
+
+  updateAdminLegalPage: (slug: string, payload: {
+    title?: string
+    content?: string
+    metaTitle?: string
+    metaDescription?: string
+    isPublished?: boolean
+  }) =>
+    request<{ message: string; page: import('@/types').LegalPage }>(`/admin/legal-pages/${slug}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
     }),
 
   getShipping: () => request<{ zones: ShippingZone[] }>('/admin/shipping'),

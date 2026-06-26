@@ -179,6 +179,23 @@ export interface PublicSiteSettings {
   }
 }
 
+declare global {
+  interface Window {
+    __SITE_SETTINGS__?: PublicSiteSettings
+  }
+}
+
+export interface LegalPage {
+  id: string
+  slug: string
+  title: string
+  content: string
+  metaTitle?: string | null
+  metaDescription?: string | null
+  isPublished: boolean
+  updatedAt?: string
+}
+
 export interface AdminStats {
   totalRevenue: number
   totalOrders: number

@@ -1,11 +1,13 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Package, FolderTree, Tag, ShoppingBag, Users,
-  Ticket, Star, ClipboardList, Truck, Settings, LogOut, Leaf, Menu, X, Mail,
-  SlidersHorizontal, MessageSquare, Shield, ExternalLink, UserCircle,
+  Ticket, Star, ClipboardList, Truck, Settings, LogOut, Menu, X, Mail,
+  SlidersHorizontal, MessageSquare, Shield, ExternalLink, UserCircle, FileText,
 } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
+import { useSiteSettings } from '@/context/SiteSettingsContext'
+import SiteLogo from '@/components/layout/SiteLogo'
 import { mediaUrl } from '@/lib/media'
 
 const navItems = [
@@ -22,6 +24,7 @@ const navItems = [
   { to: '/admin/profile', label: 'Profile', icon: UserCircle },
   { to: '/admin/settings', label: 'Settings', icon: Settings },
   { to: '/admin/email-templates', label: 'Email Templates', icon: Mail },
+  { to: '/admin/legal-pages', label: 'Legal Pages', icon: FileText },
   { to: '/admin/attributes', label: 'Attributes', icon: SlidersHorizontal },
   { to: '/admin/contact', label: 'Messages', icon: MessageSquare },
   { to: '/admin/audit-logs', label: 'Audit Logs', icon: Shield },
@@ -29,6 +32,7 @@ const navItems = [
 
 export default function AdminLayout() {
   const { user, logout } = useAuth()
+  const { siteName, headerLogo, footerLogo, ready: settingsReady } = useSiteSettings()
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -40,15 +44,12 @@ export default function AdminLayout() {
   const NavContent = () => (
     <>
       <div className="p-6 border-b border-forest-800">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-forest-600 rounded-xl flex items-center justify-center">
-            <Leaf className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <span className="font-sans font-700 text-cream-100 text-sm block leading-none">Meadowlark</span>
-            <span className="text-forest-400 text-xs font-body">Admin Panel</span>
-          </div>
-        </div>
+        <SiteLogo
+          siteName={siteName}
+          logo={headerLogo || footerLogo}
+          variant="admin"
+          settingsReady={settingsReady}
+        />
       </div>
       <nav className="flex-1 p-4 space-y-0.5 overflow-y-auto">
         {navItems.map(item => (
@@ -140,10 +141,13 @@ export default function AdminLayout() {
           <button onClick={() => setMobileOpen(true)} className="text-forest-300">
             <Menu className="w-5 h-5" />
           </button>
-          <div className="flex items-center gap-2">
-            <Leaf className="w-5 h-5 text-forest-400" />
-            <span className="font-sans font-700 text-cream-100 text-sm">Admin</span>
-          </div>
+          <SiteLogo
+            siteName={siteName}
+            logo={headerLogo || footerLogo}
+            variant="admin"
+            settingsReady={settingsReady}
+            className="scale-90 origin-left"
+          />
           <div className="flex items-center gap-3">
             <a href="/" target="_blank" rel="noopener noreferrer" className="text-forest-300 hover:text-cream-200" aria-label="Visit website">
               <ExternalLink className="w-5 h-5" />

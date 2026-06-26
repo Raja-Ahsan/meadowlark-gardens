@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\Admin\CategoryController as AdminCategoryController
 use App\Http\Controllers\Api\Admin\ContactMessageController;
 use App\Http\Controllers\Api\Admin\CouponController as AdminCouponController;
 use App\Http\Controllers\Api\Admin\CustomerController as AdminCustomerController;
+use App\Http\Controllers\Api\Admin\LegalPageController as AdminLegalPageController;
 use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Api\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Api\Admin\ReviewController as AdminReviewController;
@@ -21,6 +22,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ContactController;
 use App\Http\Controllers\Api\CouponController;
 use App\Http\Controllers\Api\CustomerReviewController;
+use App\Http\Controllers\Api\LegalPageController;
 use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PasswordResetController;
@@ -50,6 +52,9 @@ Route::get('/site-settings', [SiteSettingController::class, 'index']);
 
 Route::get('/payments/config', [PaymentController::class, 'config']);
 Route::post('/shipping/quote', [ShippingController::class, 'quote']);
+
+Route::get('/legal-pages', [LegalPageController::class, 'index']);
+Route::get('/legal-pages/{legalPage:slug}', [LegalPageController::class, 'show']);
 
 Route::post('/contact', [ContactController::class, 'store']);
 Route::post('/wholesale/applications', [WholesaleApplicationController::class, 'store']);
@@ -141,5 +146,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/shipping/methods/{method}', [AdminShippingController::class, 'updateMethod']);
         Route::delete('/shipping/methods/{method}', [AdminShippingController::class, 'destroyMethod']);
         Route::post('/ups/test', [UpsController::class, 'test']);
+
+        Route::get('/legal-pages', [AdminLegalPageController::class, 'index']);
+        Route::put('/legal-pages/{legalPage:slug}', [AdminLegalPageController::class, 'update']);
     });
 });

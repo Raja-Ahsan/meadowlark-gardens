@@ -21,8 +21,19 @@ export default function Navbar() {
   const [cartOpen, setCartOpen] = useState(false)
   const { pathname } = useLocation()
   const { isAuthenticated, isAdmin, isWholesale, user, logout } = useAuth()
-  const { siteName, headerLogo } = useSiteSettings()
+  const { siteName, headerLogo, ready: settingsReady } = useSiteSettings()
   const { count: cartCount } = useRetailCart()
+
+  useEffect(() => {
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual'
+    }
+  }, [])
+
+  useEffect(() => {
+    window.scrollTo(0, 0)
+    setScrolled(false)
+  }, [pathname])
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
@@ -34,10 +45,13 @@ export default function Navbar() {
     setMenuOpen(false)
   }, [pathname])
 
+  const isHome = pathname === '/'
+  const heroPadding = isHome && !scrolled
+
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        className={`${heroPadding ? 'py-[20px]' : ''} fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           scrolled
             ? 'bg-cream-50/95 backdrop-blur-md shadow-sm border-b border-forest-100'
             : 'bg-transparent'
@@ -46,7 +60,14 @@ export default function Navbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 md:h-20">
             {/* Logo */}
-            <SiteLogo siteName={siteName} logo={headerLogo} variant="header" />
+            <SiteLogo
+              siteName={siteName}
+              logo={headerLogo}
+              variant="header"
+              scrolled={scrolled}
+              isHome={isHome}
+              settingsReady={settingsReady}
+            />
 
             {/* Desktop Nav */}
             <nav className="hidden md:flex items-center gap-1">

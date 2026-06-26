@@ -39,7 +39,9 @@ import AdminAuditLogsPage from '@/pages/admin/AdminAuditLogsPage'
 import AdminProfilePage from '@/pages/admin/AdminProfilePage'
 import { RetailCartProvider } from '@/context/RetailCartContext'
 import { SiteSettingsProvider } from '@/context/SiteSettingsContext'
+import LegalPageView from '@/pages/LegalPageView'
 import CheckoutPage from '@/pages/CheckoutPage'
+import AdminLegalPagesPage from '@/pages/admin/AdminLegalPagesPage'
 
 export default function App() {
   return (
@@ -59,6 +61,9 @@ export default function App() {
               <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/contact" element={<ContactPage />} />
+              <Route path="/privacy-policy" element={<LegalPageView />} />
+              <Route path="/terms-of-service" element={<LegalPageView />} />
+              <Route path="/cookies" element={<LegalPageView />} />
               <Route path="/login" element={<CustomerLoginPage />} />
               <Route path="/register" element={<CustomerRegisterPage />} />
               <Route path="/wholesale/apply" element={<WholesaleApplyPage />} />
@@ -118,6 +123,7 @@ export default function App() {
               <Route path="profile" element={<AdminProfilePage />} />
               <Route path="settings" element={<AdminSettingsPage />} />
               <Route path="email-templates" element={<AdminEmailTemplatesPage />} />
+              <Route path="legal-pages" element={<AdminLegalPagesPage />} />
               <Route path="attributes" element={<AdminAttributesPage />} />
               <Route path="contact" element={<AdminContactPage />} />
               <Route path="audit-logs" element={<AdminAuditLogsPage />} />
