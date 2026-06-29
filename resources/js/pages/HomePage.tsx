@@ -17,9 +17,9 @@ export default function HomePage() {
   }, [])
 
   const features = [
-    { icon: Leaf, title: 'Tennessee Native', desc: 'Every plant is carefully selected to thrive in our local climate and support native ecosystems.' },
-    { icon: Truck, title: 'Local Delivery', desc: 'Same-week delivery across Middle Tennessee. Your plants arrive fresh, never stressed.' },
-    { icon: Award, title: 'Expert Grown', desc: 'Over 25 years growing premium plants in Franklin, TN with sustainable practices.' },
+   /* { icon: Leaf, title: 'Tennessee Native', desc: 'Every plant is carefully selected to thrive in our local climate and support native ecosystems.' }, */
+    { icon: Truck, title: 'Fast Delivery', desc: 'Fast delivery across states. Your plants arrive fresh, never stressed.' },
+    { icon: Award, title: 'Expert Grown', desc: 'Over 10 years growing premium plants with sustainable process.' },
     { icon: Sprout, title: 'Guaranteed Growth', desc: 'All plants come with a 90-day growth guarantee. We stand behind every seedling.' },
   ]
 
@@ -72,7 +72,7 @@ export default function HomePage() {
               transition={{ delay: 0.7, duration: 0.5 }}
               className="text-sage-300 text-lg font-body leading-relaxed mb-8 max-w-lg"
             >
-              Discover hand-grown native plants, flowering trees, and seasonal perennials — curated for Tennessee gardens, homes, and landscapes.
+              Discover plants, flowering trees, and seasonal perennials curated for Tennessee gardens, homes, and landscapes.
             </motion.p>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -105,10 +105,14 @@ export default function HomePage() {
               className="mt-10 flex items-center gap-4"
             >
               <div className="flex -space-x-2">
-                {['photo-1544005313-94ddf0286df2', 'photo-1507003211169-0a1dd7228f2d', 'photo-1494790108755-2616b612b977'].map((id, i) => (
+                {[
+                  'photo-1544005313-94ddf0286df2',
+                  'photo-1507003211169-0a1dd7228f2d',
+                  'photo-1494790108377-be9c29b29330',
+                ].map(id => (
                   <img
-                    key={i}
-                    src={`https://images.unsplash.com/${id}?auto=format&fit=crop&w=40&q=80`}
+                    key={id}
+                    src={`https://images.unsplash.com/${id}?auto=format&fit=crop&w=80&h=80&q=80&crop=faces`}
                     alt=""
                     className="w-9 h-9 rounded-full border-2 border-forest-900 object-cover"
                     loading="eager"
@@ -121,7 +125,7 @@ export default function HomePage() {
                     <Star key={i} className="w-3.5 h-3.5 fill-current" />
                   ))}
                 </div>
-                <p className="text-sage-400 text-xs font-body mt-0.5">Trusted by 2,400+ garden lovers</p>
+                <p className="text-sage-400 text-xs font-body mt-0.5"><a href="./shop/reviews">Trusted by 3,239+ garden lovers</a></p>
               </div>
             </motion.div>
           </div>
@@ -179,9 +183,9 @@ export default function HomePage() {
           <SectionHeader
             eyebrow="Why Choose Us"
             title="Grown with Purpose, Sold with Pride"
-            subtitle="Everything we grow is selected for long-term success in Tennessee's unique climate and ecology."
+            subtitle="Everything we grow is selected for long-term success in unique climate and ecology."
           />
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((feature, i) => (
               <motion.div
                 key={feature.title}
@@ -315,7 +319,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
             {[
-              { value: '25+', label: 'Years Growing' },
+              { value: '10+', label: 'Years Growing' },
               { value: '120+', label: 'Plant Varieties' },
               { value: '2,400+', label: 'Happy Customers' },
               { value: '85+', label: 'Wholesale Partners' },

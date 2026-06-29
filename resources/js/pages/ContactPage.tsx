@@ -29,7 +29,7 @@ export default function ContactPage() {
   const hoursLines = [businessHoursWeekday, businessHoursSunday].filter(Boolean)
 
   const contactItems = [
-    addressLines.length > 0 && { icon: MapPin, label: 'Visit Us', lines: addressLines },
+    addressLines.length > 0 && { icon: MapPin, label: 'Located at', lines: addressLines },
     phoneLines.length > 0 && { icon: Phone, label: 'Call Us', lines: phoneLines },
     emailLines.length > 0 && { icon: Mail, label: 'Email Us', lines: emailLines },
     hoursLines.length > 0 && { icon: Clock, label: 'Hours', lines: hoursLines },

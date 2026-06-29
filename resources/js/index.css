@@ -64,6 +64,15 @@ body {
   100% { transform: translate(0%, 0%) scale(1); }
 }
 
+@keyframes ticker-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.ticker-track {
+  animation: ticker-scroll 45s linear infinite;
+}
+
 .float-animation {
   animation: float 6s ease-in-out infinite;
 }
@@ -77,6 +86,15 @@ body {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .ticker-track {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .ticker-track > :nth-child(2) {
+    display: none;
   }
 }
 
