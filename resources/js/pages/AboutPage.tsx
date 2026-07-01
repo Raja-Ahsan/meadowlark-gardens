@@ -1,13 +1,12 @@
 import { motion } from 'motion/react'
-import { Leaf, Award, Sprout, Heart } from 'lucide-react'
+import { Leaf, Award, Heart } from 'lucide-react'
 import SectionHeader from '@/components/ui/SectionHeader'
 
 const milestones = [
-  { year: '1998', title: 'Founded', desc: 'Ruth planted the first seeds in her Franklin backyard.' },
-  { year: '2005', title: 'First Storefront', desc: 'Opened our first permanent nursery location on Meadowlark Lane.' },
-  { year: '2012', title: 'Wholesale Launch', desc: 'Launched our wholesale program serving 15 partner businesses.' },
-  { year: '2020', title: 'Online Expansion', desc: 'Grew our digital presence to serve customers statewide.' },
-  { year: '2025', title: 'Today', desc: '85+ wholesale partners and 2,400+ retail customers strong.' },
+  { year: '2002', title: 'Founded', desc: 'Tracy saved her first plants from certain demise by rescuing them from the throw away pile at a big box store. And it began!' },
+  { year: '2004', title: 'First Garden Center', desc: 'Opened our (Tracy & John) first permanent nursery location in Nashville, TN.' },
+  { year: '2020', title: 'Online Sales', desc: 'Launched our first online purchasing on ETSY as well as selling wholesale online.' },
+  { year: '2026', title: 'Today', desc: 'Tracy passed away in February. John, determined to fulfill her dream. Serving over 25K retail customers and 100+ wholesale partners, John made a decision to create our own platform from which both retail and wholesale customers can purchase plants.' },
 ]
 
 export default function AboutPage() {
@@ -63,16 +62,15 @@ export default function AboutPage() {
                 Plants That Belong Here
               </h2>
               <p className="text-forest-700 font-body leading-relaxed mb-4">
-                We believe in the power of native plants to restore ecosystems, feed pollinators, and create landscapes that feel naturally connected to this land we all call home.
+                We believe in the power of plants to grow and restore ecosystems, feed pollinators, and create beautiful landscapes that feel naturally connected to this land we call home.
               </p>
               <p className="text-sage-600 font-body leading-relaxed mb-6">
-                Every plant we grow is chosen because it thrives in Tennessee's climate, requires less water and care, and gives back to the local ecology — from the bees that need our coneflowers to the birds that nest in our native shrubs.
+                Every plant we grow is grown right here in Tennessee, out in the open air with no greenhouses. Why? Because we feel that strengthens the plant to thrive in your backyard. Our saying is &ldquo;if it grows and is healthy in our backyard, it will do the same in yours.&rdquo;
               </p>
               <div className="grid grid-cols-2 gap-4">
                 {[
                   { icon: Leaf, label: 'Sustainable Practices' },
                   { icon: Heart, label: 'Pollinator Friendly' },
-                  { icon: Sprout, label: 'Organically Grown' },
                   { icon: Award, label: 'TN Certified Nursery' },
                 ].map(item => (
                   <div key={item.label} className="flex items-center gap-3 p-3 bg-forest-50 rounded-xl">
