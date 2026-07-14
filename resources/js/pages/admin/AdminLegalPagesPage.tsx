@@ -10,6 +10,8 @@ const labelClass = 'block text-xs font-sans font-600 text-forest-700 mb-1'
 
 const SLUGS = [
   { slug: 'privacy-policy', label: 'Privacy Policy' },
+  { slug: 'shipping-policy', label: 'Shipping Policy' },
+  { slug: 'refund-policy', label: 'Refund Policy' },
   { slug: 'terms-of-service', label: 'Terms of Service' },
   { slug: 'cookies', label: 'Cookies' },
 ] as const
@@ -70,7 +72,7 @@ export default function AdminLegalPagesPage() {
     <div className="space-y-6">
       <div>
         <h1 className="font-sans font-700 text-2xl text-forest-900">Legal Pages</h1>
-        <p className="text-sage-600 text-sm mt-1">Manage Privacy Policy, Terms of Service, and Cookie Policy content.</p>
+        <p className="text-sage-600 text-sm mt-1">Manage Privacy, Shipping, Refund, Terms, and Cookie Policy content.</p>
       </div>
 
       <div className="flex flex-wrap gap-2 border-b border-forest-100 pb-0">

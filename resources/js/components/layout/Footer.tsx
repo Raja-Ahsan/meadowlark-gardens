@@ -35,6 +35,8 @@ export default function Footer() {
               {[
                 { label: 'Shop Plants', to: '/shop' },
                 { label: 'About Us', to: '/about' },
+                { label: 'How We Grow', to: '/how-we-grow' },
+                { label: 'Plant Information', to: '/plant-information' },
                 { label: 'Contact Us', to: '/contact' },
                 { label: 'Wholesale Apply', to: '/wholesale/apply' },
                 { label: 'Wholesale Login', to: '/wholesale/login' },
@@ -102,17 +104,19 @@ export default function Footer() {
         </div>
 
         <div className="mt-12 pt-8 border-t border-forest-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-sage-500 text-xs font-body">© {new Date().getFullYear()} {siteName}. All rights reserved.</p>
+          <p className="text-cream-200 text-xs font-body">© {new Date().getFullYear()} {siteName}. All rights reserved.</p>
           <div className="flex flex-wrap gap-4 justify-center sm:justify-end">
             {[
               { label: 'Privacy Policy', to: '/privacy-policy' },
+              { label: 'Shipping Policy', to: '/shipping-policy' },
+              { label: 'Refund Policy', to: '/refund-policy' },
               { label: 'Terms of Service', to: '/terms-of-service' },
               { label: 'Cookies', to: '/cookies' },
             ].map(item => (
               <Link
                 key={item.to}
                 to={item.to}
-                className="text-sage-500 hover:text-sage-300 text-xs font-body transition-colors focus-ring rounded"
+                className="text-cream-100 hover:text-white text-xs font-body transition-colors focus-ring rounded"
               >
                 {item.label}
               </Link>
