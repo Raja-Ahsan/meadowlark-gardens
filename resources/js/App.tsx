@@ -7,6 +7,8 @@ import HomePage from '@/pages/HomePage'
 import ShopPage from '@/pages/ShopPage'
 import ShopReviewsPage from '@/pages/ShopReviewsPage'
 import AboutPage from '@/pages/AboutPage'
+import PlantInformationPage from '@/pages/PlantInformationPage'
+import HowWeGrowPage from '@/pages/HowWeGrowPage'
 import ContactPage from '@/pages/ContactPage'
 import WholesaleApplyPage from '@/pages/WholesaleApplyPage'
 import WholesaleLoginPage from '@/pages/WholesaleLoginPage'
@@ -62,6 +64,10 @@ export default function App() {
               <Route path="/about" element={<AboutPage />} />
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/privacy-policy" element={<LegalPageView />} />
+              <Route path="/shipping-policy" element={<LegalPageView />} />
+              <Route path="/refund-policy" element={<LegalPageView />} />
+              <Route path="/plant-information" element={<PlantInformationPage />} />
+              <Route path="/how-we-grow" element={<HowWeGrowPage />} />
               <Route path="/terms-of-service" element={<LegalPageView />} />
               <Route path="/cookies" element={<LegalPageView />} />
               <Route path="/login" element={<CustomerLoginPage />} />

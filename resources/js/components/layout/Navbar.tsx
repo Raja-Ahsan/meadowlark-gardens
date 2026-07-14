@@ -11,6 +11,8 @@ import SiteLogo from './SiteLogo'
 const navLinks = [
   { label: 'Shop', to: '/shop' },
   { label: 'About Us', to: '/about' },
+  { label: 'How We Grow', to: '/how-we-grow' },
+  { label: 'Plant Information', to: '/plant-information' },
   { label: 'Contact', to: '/contact' },
   { label: 'Wholesale', to: '/wholesale/apply' },
 ]
