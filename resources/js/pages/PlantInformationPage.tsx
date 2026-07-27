@@ -1,7 +1,11 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { Leaf, Sun, Droplets, Sprout, CloudSun, Mountain, Waves, ArrowRight } from 'lucide-react'
 import SectionHeader from '@/components/ui/SectionHeader'
+import { api } from '@/lib/api'
+import { mediaUrl } from '@/lib/media'
+import type { PlantType } from '@/types'
 
 const tips = [
   {
@@ -57,6 +61,14 @@ const conditions = [
 ]
 
 export default function PlantInformationPage() {
+  const [plantTypes, setPlantTypes] = useState<PlantType[]>([])
+
+  useEffect(() => {
+    api.getPlantTypes()
+      .then(res => setPlantTypes(res.plantTypes))
+      .catch(() => setPlantTypes([]))
+  }, [])
+
   return (
     <div className="min-h-screen bg-cream-50 pt-20">
       {/* Header */}
@@ -166,6 +178,63 @@ export default function PlantInformationPage() {
           </div>
         </div>
       </section>
+
+      {/* Plant type tiles — admin-managed */}
+      {plantTypes.length > 0 && (
+        <section className="py-20 bg-cream-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <SectionHeader
+              eyebrow="Plant Types"
+              title="Explore by Variety"
+              subtitle="Learn more about the plants we grow — from Japanese Maples to Hydrangeas, Roses, and more."
+            />
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {plantTypes.map((type, i) => (
+                <motion.div
+                  key={type.id}
+                  initial={{ opacity: 0, y: 24 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: '-30px' }}
+                  transition={{ delay: i * 0.08, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <Link
+                    to={`/plant-information/${type.slug}`}
+                    className="group block h-full overflow-hidden rounded-2xl border border-forest-100 bg-white hover:border-forest-200 hover:shadow-lg transition-all duration-300 focus-ring"
+                  >
+                    <div className="aspect-[16/10] overflow-hidden bg-forest-100">
+                      {type.image ? (
+                        <img
+                          src={mediaUrl(type.image)}
+                          alt={type.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Leaf className="w-10 h-10 text-forest-400" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-5">
+                      <h3 className="font-display font-700 text-forest-900 text-xl mb-2 group-hover:text-forest-700 transition-colors">
+                        {type.title}
+                      </h3>
+                      {type.excerpt && (
+                        <p className="text-sage-600 text-sm font-body leading-relaxed mb-4 line-clamp-3">
+                          {type.excerpt}
+                        </p>
+                      )}
+                      <span className="inline-flex items-center gap-1.5 text-forest-700 text-sm font-sans font-700">
+                        Read more <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                      </span>
+                    </div>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Care Guide — numbered process grid */}
       <section className="py-20 bg-white">

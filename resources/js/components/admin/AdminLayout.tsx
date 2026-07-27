@@ -2,7 +2,7 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Package, FolderTree, Tag, ShoppingBag, Users,
   Ticket, Star, ClipboardList, Truck, Settings, LogOut, Menu, X, Mail,
-  SlidersHorizontal, MessageSquare, Shield, ExternalLink, UserCircle, FileText,
+  SlidersHorizontal, MessageSquare, Shield, ExternalLink, UserCircle, FileText, Leaf,
 } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
@@ -25,6 +25,7 @@ const navItems = [
   { to: '/admin/settings', label: 'Settings', icon: Settings },
   { to: '/admin/email-templates', label: 'Email Templates', icon: Mail },
   { to: '/admin/legal-pages', label: 'Legal Pages', icon: FileText },
+  { to: '/admin/plant-types', label: 'Plant Types', icon: Leaf },
   { to: '/admin/attributes', label: 'Attributes', icon: SlidersHorizontal },
   { to: '/admin/contact', label: 'Messages', icon: MessageSquare },
   { to: '/admin/audit-logs', label: 'Audit Logs', icon: Shield },

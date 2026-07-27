@@ -196,6 +196,20 @@ export interface LegalPage {
   updatedAt?: string
 }
 
+export interface PlantType {
+  id: string
+  title: string
+  slug: string
+  excerpt?: string | null
+  content: string
+  image?: string | null
+  sortOrder: number
+  isPublished: boolean
+  metaTitle?: string | null
+  metaDescription?: string | null
+  updatedAt?: string
+}
+
 export interface AdminStats {
   totalRevenue: number
   totalOrders: number

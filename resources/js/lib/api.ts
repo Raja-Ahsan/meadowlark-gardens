@@ -218,6 +218,12 @@ export const api = {
   getLegalPage: (slug: string) =>
     request<{ page: import('@/types').LegalPage }>(`/legal-pages/${slug}`),
 
+  getPlantTypes: () =>
+    request<{ plantTypes: import('@/types').PlantType[] }>('/plant-types'),
+
+  getPlantType: (slug: string) =>
+    request<{ plantType: import('@/types').PlantType }>(`/plant-types/${slug}`),
+
   submitContact: (payload: ContactPayload) =>
     request<{ message: string }>('/contact', { method: 'POST', body: JSON.stringify(payload) }),
 
@@ -403,6 +409,22 @@ export const api = {
       method: 'PUT',
       body: JSON.stringify(payload),
     }),
+
+  getAdminPlantTypes: (params?: ListParams) =>
+    request<PaginatedResponse<import('@/types').PlantType>>(`/admin/plant-types${buildQuery(params)}`),
+
+  createPlantType: (payload: Partial<import('@/types').PlantType>) =>
+    request<{ message: string; plantType: import('@/types').PlantType }>('/admin/plant-types', {
+      method: 'POST', body: JSON.stringify(payload),
+    }),
+
+  updatePlantType: (id: string, payload: Partial<import('@/types').PlantType>) =>
+    request<{ message: string; plantType: import('@/types').PlantType }>(`/admin/plant-types/${id}`, {
+      method: 'PUT', body: JSON.stringify(payload),
+    }),
+
+  deletePlantType: (id: string) =>
+    request<{ message: string }>(`/admin/plant-types/${id}`, { method: 'DELETE' }),
 
   getShipping: () => request<{ zones: ShippingZone[] }>('/admin/shipping'),
 
