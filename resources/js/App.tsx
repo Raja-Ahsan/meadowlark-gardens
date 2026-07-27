@@ -8,6 +8,7 @@ import ShopPage from '@/pages/ShopPage'
 import ShopReviewsPage from '@/pages/ShopReviewsPage'
 import AboutPage from '@/pages/AboutPage'
 import PlantInformationPage from '@/pages/PlantInformationPage'
+import PlantTypeDetailPage from '@/pages/PlantTypeDetailPage'
 import HowWeGrowPage from '@/pages/HowWeGrowPage'
 import ContactPage from '@/pages/ContactPage'
 import WholesaleApplyPage from '@/pages/WholesaleApplyPage'
@@ -44,6 +45,7 @@ import { SiteSettingsProvider } from '@/context/SiteSettingsContext'
 import LegalPageView from '@/pages/LegalPageView'
 import CheckoutPage from '@/pages/CheckoutPage'
 import AdminLegalPagesPage from '@/pages/admin/AdminLegalPagesPage'
+import AdminPlantTypesPage from '@/pages/admin/AdminPlantTypesPage'
 
 export default function App() {
   return (
@@ -67,6 +69,7 @@ export default function App() {
               <Route path="/shipping-policy" element={<LegalPageView />} />
               <Route path="/refund-policy" element={<LegalPageView />} />
               <Route path="/plant-information" element={<PlantInformationPage />} />
+              <Route path="/plant-information/:slug" element={<PlantTypeDetailPage />} />
               <Route path="/how-we-grow" element={<HowWeGrowPage />} />
               <Route path="/terms-of-service" element={<LegalPageView />} />
               <Route path="/cookies" element={<LegalPageView />} />
@@ -130,6 +133,7 @@ export default function App() {
               <Route path="settings" element={<AdminSettingsPage />} />
               <Route path="email-templates" element={<AdminEmailTemplatesPage />} />
               <Route path="legal-pages" element={<AdminLegalPagesPage />} />
+              <Route path="plant-types" element={<AdminPlantTypesPage />} />
               <Route path="attributes" element={<AdminAttributesPage />} />
               <Route path="contact" element={<AdminContactPage />} />
               <Route path="audit-logs" element={<AdminAuditLogsPage />} />

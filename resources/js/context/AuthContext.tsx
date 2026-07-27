@@ -18,6 +18,10 @@ const AuthContext = createContext<AuthContextType | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(() => {
+    if (!getToken()) {
+      localStorage.removeItem('mg_user')
+      return null
+    }
     const stored = localStorage.getItem('mg_user')
     return stored ? JSON.parse(stored) : null
   })
@@ -25,6 +29,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!getToken()) {
+      setUser(null)
+      localStorage.removeItem('mg_user')
       setLoading(false)
       return
     }
@@ -99,7 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         register,
         logout,
         refreshUser,
-        isAuthenticated: !!user,
+        isAuthenticated: !!user && !!getToken(),
         isAdmin: user?.role === 'admin',
         isWholesale: user?.role === 'wholesale',
         isCustomer: user?.role === 'customer',

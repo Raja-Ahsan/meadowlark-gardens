@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Coupon;
 use App\Models\EmailTemplate;
 use App\Models\Order;
+use App\Models\PlantType;
 use App\Models\Product;
 use App\Models\Review;
 use App\Models\ShippingMethod;
@@ -295,6 +296,23 @@ class ApiFormatter
             'metaDescription' => $page->meta_description,
             'isPublished' => (bool) $page->is_published,
             'updatedAt' => $page->updated_at?->toIso8601String(),
+        ];
+    }
+
+    public static function plantType(PlantType $type): array
+    {
+        return [
+            'id' => (string) $type->id,
+            'title' => $type->title,
+            'slug' => $type->slug,
+            'excerpt' => $type->excerpt,
+            'content' => $type->content ?? '',
+            'image' => $type->image,
+            'sortOrder' => (int) $type->sort_order,
+            'isPublished' => (bool) $type->is_published,
+            'metaTitle' => $type->meta_title,
+            'metaDescription' => $type->meta_description,
+            'updatedAt' => $type->updated_at?->toIso8601String(),
         ];
     }
 }

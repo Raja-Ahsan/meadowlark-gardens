@@ -22,7 +22,15 @@ const homePaths: Record<Role, string> = {
 }
 
 export default function ProtectedRoute({ children, requiredRole }: Props) {
-  const { user, isAuthenticated } = useAuth()
+  const { user, isAuthenticated, loading } = useAuth()
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-cream-50">
+        <div className="w-8 h-8 border-2 border-forest-300 border-t-forest-700 rounded-full animate-spin" />
+      </div>
+    )
+  }
 
   if (!isAuthenticated) {
     return <Navigate to={loginPaths[requiredRole]} replace />
