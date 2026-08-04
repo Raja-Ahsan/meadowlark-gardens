@@ -46,6 +46,7 @@ import LegalPageView from '@/pages/LegalPageView'
 import CheckoutPage from '@/pages/CheckoutPage'
 import AdminLegalPagesPage from '@/pages/admin/AdminLegalPagesPage'
 import AdminPlantTypesPage from '@/pages/admin/AdminPlantTypesPage'
+import AdminPlantTypeCategoriesPage from '@/pages/admin/AdminPlantTypeCategoriesPage'
 
 export default function App() {
   return (
@@ -133,6 +134,7 @@ export default function App() {
               <Route path="settings" element={<AdminSettingsPage />} />
               <Route path="email-templates" element={<AdminEmailTemplatesPage />} />
               <Route path="legal-pages" element={<AdminLegalPagesPage />} />
+              <Route path="plant-type-categories" element={<AdminPlantTypeCategoriesPage />} />
               <Route path="plant-types" element={<AdminPlantTypesPage />} />
               <Route path="attributes" element={<AdminAttributesPage />} />
               <Route path="contact" element={<AdminContactPage />} />

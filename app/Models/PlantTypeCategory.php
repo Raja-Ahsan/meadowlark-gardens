@@ -3,21 +3,17 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class PlantType extends Model
+class PlantTypeCategory extends Model
 {
     protected $fillable = [
-        'plant_type_category_id',
         'title',
         'slug',
         'excerpt',
-        'content',
         'image',
         'sort_order',
         'is_published',
-        'meta_title',
-        'meta_description',
     ];
 
     protected function casts(): array
@@ -28,8 +24,13 @@ class PlantType extends Model
         ];
     }
 
-    public function category(): BelongsTo
+    public function plantTypes(): HasMany
     {
-        return $this->belongsTo(PlantTypeCategory::class, 'plant_type_category_id');
+        return $this->hasMany(PlantType::class)->orderBy('sort_order')->orderBy('title');
+    }
+
+    public function publishedPlantTypes(): HasMany
+    {
+        return $this->plantTypes()->where('is_published', true);
     }
 }

@@ -53,6 +53,11 @@ export default function PlantTypeDetailPage() {
             <h1 className="font-display font-700 text-2xl text-forest-900">{error}</h1>
           ) : (
             <>
+              {page?.categoryTitle && (
+                <p className="text-xs font-sans font-700 text-forest-600 tracking-widest uppercase mb-2">
+                  {page.categoryTitle}
+                </p>
+              )}
               <h1
                 className="font-display font-700 text-forest-900"
                 style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)' }}

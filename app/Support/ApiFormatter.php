@@ -8,6 +8,7 @@ use App\Models\Coupon;
 use App\Models\EmailTemplate;
 use App\Models\Order;
 use App\Models\PlantType;
+use App\Models\PlantTypeCategory;
 use App\Models\Product;
 use App\Models\Review;
 use App\Models\ShippingMethod;
@@ -299,10 +300,40 @@ class ApiFormatter
         ];
     }
 
+    public static function plantTypeCategory(PlantTypeCategory $category, bool $withTypes = false): array
+    {
+        $data = [
+            'id' => (string) $category->id,
+            'title' => $category->title,
+            'slug' => $category->slug,
+            'excerpt' => $category->excerpt,
+            'image' => $category->image,
+            'sortOrder' => (int) $category->sort_order,
+            'isPublished' => (bool) $category->is_published,
+            'typeCount' => $category->relationLoaded('publishedPlantTypes')
+                ? $category->publishedPlantTypes->count()
+                : ($category->relationLoaded('plantTypes') ? $category->plantTypes->count() : null),
+            'updatedAt' => $category->updated_at?->toIso8601String(),
+        ];
+
+        if ($withTypes) {
+            $types = $category->relationLoaded('publishedPlantTypes')
+                ? $category->publishedPlantTypes
+                : ($category->relationLoaded('plantTypes') ? $category->plantTypes : collect());
+
+            $data['types'] = $types->map(fn ($t) => self::plantType($t))->values();
+        }
+
+        return $data;
+    }
+
     public static function plantType(PlantType $type): array
     {
         return [
             'id' => (string) $type->id,
+            'categoryId' => $type->plant_type_category_id ? (string) $type->plant_type_category_id : null,
+            'categoryTitle' => $type->relationLoaded('category') ? $type->category?->title : null,
+            'categorySlug' => $type->relationLoaded('category') ? $type->category?->slug : null,
             'title' => $type->title,
             'slug' => $type->slug,
             'excerpt' => $type->excerpt,

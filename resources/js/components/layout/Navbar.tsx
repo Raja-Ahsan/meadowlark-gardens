@@ -47,12 +47,28 @@ export default function Navbar() {
   }, [pathname])
 
   const isHome = pathname === '/'
-  const heroPadding = isHome && !scrolled
+  const onDarkHero = isHome && !scrolled
+
+  const linkIdle = onDarkHero
+    ? 'text-cream-50 hover:bg-white/15 hover:text-white'
+    : 'text-forest-700 hover:bg-forest-50 hover:text-forest-800'
+  const linkActive = onDarkHero
+    ? 'bg-white/20 text-white'
+    : 'bg-forest-100 text-forest-700'
+  const iconBtn = onDarkHero
+    ? 'text-cream-50 hover:bg-white/15'
+    : 'text-forest-700 hover:bg-forest-50'
+  const softLink = onDarkHero
+    ? 'text-cream-100/90 hover:text-white hover:bg-white/15'
+    : 'text-sage-600 hover:text-forest-700 hover:bg-forest-50'
+  const mobileIconBtn = onDarkHero
+    ? 'text-cream-50 hover:bg-white/15'
+    : 'text-forest-700 hover:bg-forest-100'
 
   return (
     <>
       <header
-        className={`${heroPadding ? 'py-[20px]' : ''} fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        className={`${onDarkHero ? 'py-[20px]' : ''} fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           scrolled
             ? 'bg-cream-50/95 backdrop-blur-md shadow-sm border-b border-forest-100'
             : 'bg-transparent'
@@ -77,9 +93,7 @@ export default function Navbar() {
                   key={link.to}
                   to={link.to}
                   className={`px-4 py-2 rounded-lg text-sm font-sans font-500 transition-all duration-200 focus-ring ${
-                    pathname === link.to
-                      ? 'bg-forest-100 text-forest-700'
-                      : 'text-forest-700 hover:bg-forest-50 hover:text-forest-800'
+                    pathname === link.to ? linkActive : linkIdle
                   }`}
                 >
                   {link.label}
@@ -92,7 +106,7 @@ export default function Navbar() {
               <button
                 type="button"
                 onClick={() => setCartOpen(true)}
-                className="relative p-2.5 rounded-xl text-forest-700 hover:bg-forest-50 transition-colors focus-ring"
+                className={`relative p-2.5 rounded-xl transition-colors focus-ring ${iconBtn}`}
                 aria-label="Open cart"
               >
                 <ShoppingCart className="w-5 h-5" />
@@ -106,14 +120,18 @@ export default function Navbar() {
                 <>
                   <Link
                     to={isAdmin ? '/admin' : isWholesale ? '/wholesale/portal' : '/account'}
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-sans font-600 text-forest-700 hover:bg-forest-50 rounded-lg transition-colors focus-ring"
+                    className={`flex items-center gap-2 px-4 py-2 text-sm font-sans font-600 rounded-lg transition-colors focus-ring ${linkIdle}`}
                   >
                     <LayoutDashboard className="w-4 h-4" />
                     {isAdmin ? 'Admin' : isWholesale ? 'Portal' : 'My Account'}
                   </Link>
                   <button
                     onClick={logout}
-                    className="px-4 py-2 text-sm font-sans font-600 text-terra-600 hover:bg-terra-50 rounded-lg transition-colors focus-ring"
+                    className={`px-4 py-2 text-sm font-sans font-600 rounded-lg transition-colors focus-ring ${
+                      onDarkHero
+                        ? 'text-terra-300 hover:bg-white/15 hover:text-terra-200'
+                        : 'text-terra-600 hover:bg-terra-50'
+                    }`}
                   >
                     Sign Out
                   </button>
@@ -122,20 +140,20 @@ export default function Navbar() {
                 <>
                   <Link
                     to="/login"
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-sans font-600 text-forest-700 hover:bg-forest-50 rounded-lg transition-colors focus-ring"
+                    className={`flex items-center gap-2 px-4 py-2 text-sm font-sans font-600 rounded-lg transition-colors focus-ring ${linkIdle}`}
                   >
                     <LogIn className="w-4 h-4" />
                     Sign In
                   </Link>
                   <Link
                     to="/wholesale/login"
-                    className="px-4 py-2 text-sm font-sans font-600 text-sage-600 hover:text-forest-700 hover:bg-forest-50 rounded-lg transition-colors focus-ring"
+                    className={`px-4 py-2 text-sm font-sans font-600 rounded-lg transition-colors focus-ring ${softLink}`}
                   >
                     Wholesale
                   </Link>
                   <Link
                     to="/shop"
-                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-sans font-700 bg-forest-600 hover:bg-forest-700 text-white rounded-xl transition-all duration-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 focus-ring"
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-sans font-700 bg-forest-500 hover:bg-forest-400 text-white rounded-xl transition-all duration-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 focus-ring"
                   >
                     <ShoppingBag className="w-4 h-4" />
                     Shop Plants
@@ -149,7 +167,7 @@ export default function Navbar() {
               <button
                 type="button"
                 onClick={() => setCartOpen(true)}
-                className="relative p-2 rounded-lg text-forest-700 hover:bg-forest-100 transition-colors focus-ring"
+                className={`relative p-2 rounded-lg transition-colors focus-ring ${mobileIconBtn}`}
                 aria-label="Open cart"
               >
                 <ShoppingCart className="w-5 h-5" />
@@ -161,7 +179,7 @@ export default function Navbar() {
               </button>
               <button
                 onClick={() => setMenuOpen(o => !o)}
-                className="p-2 rounded-lg text-forest-700 hover:bg-forest-100 transition-colors focus-ring"
+                className={`p-2 rounded-lg transition-colors focus-ring ${mobileIconBtn}`}
                 aria-label={menuOpen ? 'Close menu' : 'Open menu'}
               >
                 {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}

@@ -17,6 +17,7 @@ const labelClass = 'block text-xs font-sans font-600 text-forest-700 mb-1'
 const emptyForm = {
   title: '',
   slug: '',
+  categoryId: '',
   excerpt: '',
   content: '',
   image: '',
@@ -39,12 +40,14 @@ export default function AdminPlantTypesPage() {
   const [saving, setSaving] = useState(false)
 
   const [data, setData] = useState<PlantType[]>([])
+  const [categories, setCategories] = useState<import('@/types').PlantTypeCategory[]>([])
   const [meta, setMeta] = useState<PaginatedMeta>({
     currentPage: 1, lastPage: 1, perPage: 15, total: 0, from: null, to: null,
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('')
   const [page, setPage] = useState(1)
   const [sortBy, setSortBy] = useState('sort_order')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
@@ -57,6 +60,7 @@ export default function AdminPlantTypesPage() {
         page,
         per_page: 15,
         search: search || undefined,
+        category_id: categoryFilter || undefined,
         sort_by: sortKeyMap[sortBy] || sortBy,
         sort_dir: sortDir,
       })
@@ -68,16 +72,20 @@ export default function AdminPlantTypesPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, search, sortBy, sortDir])
+  }, [page, search, categoryFilter, sortBy, sortDir])
 
   useEffect(() => {
     load()
   }, [load])
 
   useEffect(() => {
+    api.getAllPlantTypeCategories().then(r => setCategories(r.categories)).catch(() => {})
+  }, [])
+
+  useEffect(() => {
     const timer = setTimeout(() => setPage(1), 300)
     return () => clearTimeout(timer)
-  }, [search])
+  }, [search, categoryFilter])
 
   const handleSort = (key: string) => {
     const mapped = sortKeyMap[key] || key
@@ -99,6 +107,7 @@ export default function AdminPlantTypesPage() {
     setForm({
       title: item.title,
       slug: item.slug,
+      categoryId: item.categoryId || '',
       excerpt: item.excerpt || '',
       content: item.content || '',
       image: item.image || '',
@@ -117,8 +126,12 @@ export default function AdminPlantTypesPage() {
     }
     setSaving(true)
     try {
-      if (editing) await api.updatePlantType(editing.id, form)
-      else await api.createPlantType(form)
+      const payload = {
+        ...form,
+        categoryId: form.categoryId ? Number(form.categoryId) : null,
+      }
+      if (editing) await api.updatePlantType(editing.id, payload as Partial<PlantType>)
+      else await api.createPlantType(payload as Partial<PlantType>)
       setModalOpen(false)
       await load()
     } catch (e) {
@@ -145,6 +158,11 @@ export default function AdminPlantTypesPage() {
       label: 'Title',
       sortable: true,
       render: item => <span className="font-600">{item.title}</span>,
+    },
+    {
+      key: 'categoryTitle',
+      label: 'Category',
+      render: item => item.categoryTitle || <span className="text-sage-400">—</span>,
     },
     { key: 'slug', label: 'Slug' },
     {
@@ -205,7 +223,7 @@ export default function AdminPlantTypesPage() {
         <div>
           <h1 className="font-sans font-700 text-2xl text-forest-900">Plant Types</h1>
           <p className="text-sage-600 text-sm mt-1">
-            Manage tiles and detail pages shown on Plant Information (e.g. Japanese Maples, Hydrangeas, Roses).
+            Types shown under each category tab (e.g. Climbing Roses under Roses).
           </p>
         </div>
         <button
@@ -233,15 +251,30 @@ export default function AdminPlantTypesPage() {
         </div>
       )}
 
-      <FilterBar
-        search={search}
-        onSearchChange={setSearch}
-        placeholder="Search plant types..."
-        onClear={() => {
-          setSearch('')
-          setPage(1)
-        }}
-      />
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex-1">
+          <FilterBar
+            search={search}
+            onSearchChange={setSearch}
+            placeholder="Search plant types..."
+            onClear={() => {
+              setSearch('')
+              setCategoryFilter('')
+              setPage(1)
+            }}
+          />
+        </div>
+        <select
+          className={`${inputClass} sm:w-56`}
+          value={categoryFilter}
+          onChange={e => setCategoryFilter(e.target.value)}
+        >
+          <option value="">All categories</option>
+          {categories.map(c => (
+            <option key={c.id} value={c.id}>{c.title}</option>
+          ))}
+        </select>
+      </div>
 
       <DataTable
         columns={columns}
@@ -281,6 +314,20 @@ export default function AdminPlantTypesPage() {
                 placeholder="auto-from-title"
               />
             </div>
+          </div>
+
+          <div>
+            <label className={labelClass}>Category *</label>
+            <select
+              className={inputClass}
+              value={form.categoryId}
+              onChange={e => setForm(f => ({ ...f, categoryId: e.target.value }))}
+            >
+              <option value="">Select category</option>
+              {categories.map(c => (
+                <option key={c.id} value={c.id}>{c.title}</option>
+              ))}
+            </select>
           </div>
 
           <div>

@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { motion } from 'motion/react'
+import { motion, AnimatePresence } from 'motion/react'
 import { Leaf, Sun, Droplets, Sprout, CloudSun, Mountain, Waves, ArrowRight } from 'lucide-react'
 import SectionHeader from '@/components/ui/SectionHeader'
 import { api } from '@/lib/api'
 import { mediaUrl } from '@/lib/media'
-import type { PlantType } from '@/types'
+import type { PlantType, PlantTypeCategory } from '@/types'
 
 const tips = [
   {
@@ -61,13 +61,23 @@ const conditions = [
 ]
 
 export default function PlantInformationPage() {
-  const [plantTypes, setPlantTypes] = useState<PlantType[]>([])
+  const [categories, setCategories] = useState<PlantTypeCategory[]>([])
+  const [activeCategorySlug, setActiveCategorySlug] = useState<string>('')
 
   useEffect(() => {
-    api.getPlantTypes()
-      .then(res => setPlantTypes(res.plantTypes))
-      .catch(() => setPlantTypes([]))
+    api.getPlantTypeCategories()
+      .then(({ categories: cats }) => {
+        setCategories(cats)
+        if (cats.length > 0) {
+          const roses = cats.find(c => c.slug === 'roses')
+          setActiveCategorySlug((roses ?? cats[0]).slug)
+        }
+      })
+      .catch(() => setCategories([]))
   }, [])
+
+  const activeCategory = categories.find(c => c.slug === activeCategorySlug) ?? categories[0]
+  const activeTypes: PlantType[] = activeCategory?.types ?? []
 
   return (
     <div className="min-h-screen bg-cream-50 pt-20">
@@ -179,8 +189,8 @@ export default function PlantInformationPage() {
         </div>
       </section>
 
-      {/* Plant type tiles — admin-managed */}
-      {plantTypes.length > 0 && (
+      {/* Plant type categories + types */}
+      {categories.length > 0 && (
         <section className="py-20 bg-cream-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <SectionHeader
@@ -188,50 +198,94 @@ export default function PlantInformationPage() {
               title="Explore by Variety"
               subtitle="Learn more about the plants we grow — from Japanese Maples to Hydrangeas, Roses, and more."
             />
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {plantTypes.map((type, i) => (
-                <motion.div
-                  key={type.id}
-                  initial={{ opacity: 0, y: 24 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: '-30px' }}
-                  transition={{ delay: i * 0.08, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+
+            <div className="flex gap-2 flex-wrap justify-center mb-10">
+              {categories.map(cat => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setActiveCategorySlug(cat.slug)}
+                  className={`px-4 py-2 rounded-full text-sm font-sans font-600 transition-all duration-200 focus-ring ${
+                    activeCategory?.slug === cat.slug
+                      ? 'bg-forest-600 text-white shadow-sm'
+                      : 'bg-white text-forest-700 border border-forest-200 hover:border-forest-400 hover:bg-forest-50'
+                  }`}
                 >
-                  <Link
-                    to={`/plant-information/${type.slug}`}
-                    className="group block h-full overflow-hidden rounded-2xl border border-forest-100 bg-white hover:border-forest-200 hover:shadow-lg transition-all duration-300 focus-ring"
-                  >
-                    <div className="aspect-[16/10] overflow-hidden bg-forest-100">
-                      {type.image ? (
-                        <img
-                          src={mediaUrl(type.image)}
-                          alt={type.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Leaf className="w-10 h-10 text-forest-400" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-5">
-                      <h3 className="font-display font-700 text-forest-900 text-xl mb-2 group-hover:text-forest-700 transition-colors">
-                        {type.title}
-                      </h3>
-                      {type.excerpt && (
-                        <p className="text-sage-600 text-sm font-body leading-relaxed mb-4 line-clamp-3">
-                          {type.excerpt}
-                        </p>
-                      )}
-                      <span className="inline-flex items-center gap-1.5 text-forest-700 text-sm font-sans font-700">
-                        Read more <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-                      </span>
-                    </div>
-                  </Link>
-                </motion.div>
+                  {cat.title}
+                  {typeof cat.typeCount === 'number' && (
+                    <span className={`ml-1.5 text-xs ${activeCategory?.slug === cat.slug ? 'text-forest-200' : 'text-sage-400'}`}>
+                      {cat.typeCount}
+                    </span>
+                  )}
+                </button>
               ))}
             </div>
+
+            {activeCategory?.excerpt && (
+              <p className="text-center text-sage-600 font-body max-w-2xl mx-auto mb-8">
+                {activeCategory.excerpt}
+              </p>
+            )}
+
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeCategory?.slug || 'empty'}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.3 }}
+              >
+                {activeTypes.length === 0 ? (
+                  <div className="text-center py-16 text-sage-500 font-body">
+                    No types published in this category yet.
+                  </div>
+                ) : (
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {activeTypes.map((type, i) => (
+                      <motion.div
+                        key={type.id}
+                        initial={{ opacity: 0, y: 24 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.06, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                      >
+                        <Link
+                          to={`/plant-information/${type.slug}`}
+                          className="group block h-full overflow-hidden rounded-2xl border border-forest-100 bg-white hover:border-forest-200 hover:shadow-lg transition-all duration-300 focus-ring"
+                        >
+                          <div className="aspect-[16/10] overflow-hidden bg-forest-100">
+                            {type.image ? (
+                              <img
+                                src={mediaUrl(type.image)}
+                                alt={type.title}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                loading="lazy"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <Leaf className="w-10 h-10 text-forest-400" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="p-5">
+                            <h3 className="font-display font-700 text-forest-900 text-xl mb-2 group-hover:text-forest-700 transition-colors">
+                              {type.title}
+                            </h3>
+                            {type.excerpt && (
+                              <p className="text-sage-600 text-sm font-body leading-relaxed mb-4 line-clamp-3">
+                                {type.excerpt}
+                              </p>
+                            )}
+                            <span className="inline-flex items-center gap-1.5 text-forest-700 text-sm font-sans font-700">
+                              Read more <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                            </span>
+                          </div>
+                        </Link>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+              </motion.div>
+            </AnimatePresence>
           </div>
         </section>
       )}
@@ -244,7 +298,7 @@ export default function PlantInformationPage() {
             title="From Planting to Thriving"
             subtitle="Four simple steps to help your plants settle in and grow strong."
           />
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-x-12">
             {tips.map((tip, i) => (
               <motion.div
                 key={tip.step}
@@ -254,15 +308,21 @@ export default function PlantInformationPage() {
                 transition={{ delay: i * 0.1, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                 className="relative"
               >
-                {i < tips.length - 1 && (
-                  <div className="hidden lg:block absolute top-8 left-[calc(100%-0.5rem)] w-[calc(100%-2rem)] h-px bg-forest-100 pointer-events-none" />
-                )}
-                <span
-                  className="font-display font-700 text-forest-200 leading-none block mb-4"
-                  style={{ fontSize: 'clamp(2.5rem, 4vw, 3.5rem)' }}
-                >
-                  {tip.step}
-                </span>
+                <div className="relative mb-5 flex items-center">
+                  <span
+                    className="relative z-10 bg-white pr-3 font-display font-700 leading-none text-forest-200"
+                    style={{ fontSize: 'clamp(2.5rem, 4vw, 3.25rem)' }}
+                  >
+                    {tip.step}
+                  </span>
+                  {i < tips.length - 1 && (
+                    <div
+                      aria-hidden
+                      className="pointer-events-none absolute left-[3.75rem] top-1/2 hidden h-px -translate-y-1/2 bg-forest-200/80 lg:block"
+                      style={{ width: 'calc(100% - 3.75rem + 3rem)' }}
+                    />
+                  )}
+                </div>
                 <h3 className="font-display font-700 text-forest-900 text-xl mb-3">{tip.title}</h3>
                 <p className="text-sage-600 text-sm font-body leading-relaxed">{tip.desc}</p>
               </motion.div>
