@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import { Leaf, Sun, Droplets, Sprout, CloudSun, Mountain, Waves, ArrowRight } from 'lucide-react'
 import SectionHeader from '@/components/ui/SectionHeader'
+import { HydrangeaBloomingGuide, HydrangeaColorAndTips } from '@/components/plant/HydrangeaGuide'
 import { api } from '@/lib/api'
 import { mediaUrl } from '@/lib/media'
 import type { PlantType, PlantTypeCategory } from '@/types'
@@ -235,6 +236,8 @@ export default function PlantInformationPage() {
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.3 }}
               >
+                {activeCategory?.slug === 'hydrangeas' && <HydrangeaBloomingGuide />}
+
                 {activeTypes.length === 0 ? (
                   <div className="text-center py-16 text-sage-500 font-body">
                     No types published in this category yet.
@@ -284,6 +287,8 @@ export default function PlantInformationPage() {
                     ))}
                   </div>
                 )}
+
+                {activeCategory?.slug === 'hydrangeas' && <HydrangeaColorAndTips />}
               </motion.div>
             </AnimatePresence>
           </div>
