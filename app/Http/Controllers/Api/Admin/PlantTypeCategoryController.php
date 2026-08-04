@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Concerns\HandlesPaginatedListing;
 use App\Http\Controllers\Controller;
-use App\Models\PlantType;
+use App\Models\PlantTypeCategory;
 use App\Support\ApiFormatter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -12,7 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
-class PlantTypeController extends Controller
+class PlantTypeCategoryController extends Controller
 {
     use HandlesPaginatedListing;
 
@@ -20,38 +20,52 @@ class PlantTypeController extends Controller
     {
         return response()->json(
             $this->paginatedResponse(
-                PlantType::query()->with('category'),
+                PlantTypeCategory::query()->withCount('plantTypes'),
                 $request,
-                fn ($t) => ApiFormatter::plantType($t)
+                fn ($c) => array_merge(ApiFormatter::plantTypeCategory($c), [
+                    'typeCount' => (int) $c->plant_types_count,
+                ])
             )
         );
     }
 
-    public function store(Request $request): JsonResponse
+    public function all(): JsonResponse
     {
-        $plantType = PlantType::create($this->validated($request));
+        $categories = PlantTypeCategory::query()
+            ->orderBy('sort_order')
+            ->orderBy('title')
+            ->get();
 
         return response()->json([
-            'message' => 'Plant type created.',
-            'plantType' => ApiFormatter::plantType($plantType->load('category')),
-        ], 201);
-    }
-
-    public function update(Request $request, PlantType $plantType): JsonResponse
-    {
-        $plantType->update($this->validated($request, $plantType));
-
-        return response()->json([
-            'message' => 'Plant type updated.',
-            'plantType' => ApiFormatter::plantType($plantType->fresh()->load('category')),
+            'categories' => $categories->map(fn ($c) => ApiFormatter::plantTypeCategory($c))->values(),
         ]);
     }
 
-    public function destroy(PlantType $plantType): JsonResponse
+    public function store(Request $request): JsonResponse
     {
-        $plantType->delete();
+        $category = PlantTypeCategory::create($this->validated($request));
 
-        return response()->json(['message' => 'Plant type deleted.']);
+        return response()->json([
+            'message' => 'Plant type category created.',
+            'category' => ApiFormatter::plantTypeCategory($category),
+        ], 201);
+    }
+
+    public function update(Request $request, PlantTypeCategory $plantTypeCategory): JsonResponse
+    {
+        $plantTypeCategory->update($this->validated($request, $plantTypeCategory));
+
+        return response()->json([
+            'message' => 'Plant type category updated.',
+            'category' => ApiFormatter::plantTypeCategory($plantTypeCategory->fresh()),
+        ]);
+    }
+
+    public function destroy(PlantTypeCategory $plantTypeCategory): JsonResponse
+    {
+        $plantTypeCategory->delete();
+
+        return response()->json(['message' => 'Plant type category deleted.']);
     }
 
     protected function applySearch(Builder $query, string $search): void
@@ -68,10 +82,6 @@ class PlantTypeController extends Controller
         if ($request->has('is_published')) {
             $query->where('is_published', filter_var($request->is_published, FILTER_VALIDATE_BOOLEAN));
         }
-
-        if ($request->filled('category_id')) {
-            $query->where('plant_type_category_id', $request->category_id);
-        }
     }
 
     protected function allowedSorts(): array
@@ -79,7 +89,7 @@ class PlantTypeController extends Controller
         return ['title', 'sort_order', 'created_at', 'id'];
     }
 
-    private function validated(Request $request, ?PlantType $plantType = null): array
+    private function validated(Request $request, ?PlantTypeCategory $category = null): array
     {
         $data = $request->validate([
             'title' => ['required', 'string', 'max:255'],
@@ -87,16 +97,12 @@ class PlantTypeController extends Controller
                 'nullable',
                 'string',
                 'max:255',
-                Rule::unique('plant_types', 'slug')->ignore($plantType?->id),
+                Rule::unique('plant_type_categories', 'slug')->ignore($category?->id),
             ],
-            'categoryId' => ['nullable', 'exists:plant_type_categories,id'],
             'excerpt' => ['nullable', 'string', 'max:1000'],
-            'content' => ['nullable', 'string'],
             'image' => ['nullable', 'string', 'max:500'],
             'sortOrder' => ['nullable', 'integer', 'min:0'],
             'isPublished' => ['nullable', 'boolean'],
-            'metaTitle' => ['nullable', 'string', 'max:255'],
-            'metaDescription' => ['nullable', 'string', 'max:500'],
         ]);
 
         $slug = ! empty($data['slug'])
@@ -104,18 +110,12 @@ class PlantTypeController extends Controller
             : Str::slug($data['title']);
 
         return [
-            'plant_type_category_id' => isset($data['categoryId']) && $data['categoryId'] !== '' && $data['categoryId'] !== null
-                ? (int) $data['categoryId']
-                : null,
             'title' => $data['title'],
             'slug' => $slug,
             'excerpt' => $data['excerpt'] ?? null,
-            'content' => $data['content'] ?? null,
             'image' => $data['image'] ?? null,
             'sort_order' => $data['sortOrder'] ?? 0,
             'is_published' => $data['isPublished'] ?? true,
-            'meta_title' => $data['metaTitle'] ?? null,
-            'meta_description' => $data['metaDescription'] ?? null,
         ];
     }
 }

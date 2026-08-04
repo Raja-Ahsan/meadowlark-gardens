@@ -12,6 +12,7 @@ class PlantTypeController extends Controller
     public function index(): JsonResponse
     {
         $types = PlantType::where('is_published', true)
+            ->with('category')
             ->orderBy('sort_order')
             ->orderBy('title')
             ->get();
@@ -26,6 +27,8 @@ class PlantTypeController extends Controller
         if (! $plantType->is_published) {
             return response()->json(['message' => 'Plant type not found.'], 404);
         }
+
+        $plantType->load('category');
 
         return response()->json([
             'plantType' => ApiFormatter::plantType($plantType),

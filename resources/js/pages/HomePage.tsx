@@ -32,16 +32,16 @@ export default function HomePage() {
   return (
     <div className="overflow-hidden">
       {/* Hero */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-forest-950">
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-forest-800">
         {/* Mesh Background */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="mesh-drift absolute -top-40 -right-40 w-[700px] h-[700px] rounded-full opacity-20"
-            style={{ background: 'radial-gradient(circle, #448647 0%, transparent 70%)' }} />
-          <div className="mesh-drift absolute -bottom-20 -left-40 w-[600px] h-[600px] rounded-full opacity-15"
-            style={{ background: 'radial-gradient(circle, #608d64 0%, transparent 70%)', animationDelay: '-8s' }} />
-          <div className="absolute inset-0 opacity-30"
+          <div className="mesh-drift absolute -top-40 -right-40 w-[700px] h-[700px] rounded-full opacity-35"
+            style={{ background: 'radial-gradient(circle, #67a469 0%, transparent 70%)' }} />
+          <div className="mesh-drift absolute -bottom-20 -left-40 w-[600px] h-[600px] rounded-full opacity-30"
+            style={{ background: 'radial-gradient(circle, #83aa86 0%, transparent 70%)', animationDelay: '-8s' }} />
+          <div className="absolute inset-0 opacity-45"
             style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=1920&q=60")', backgroundSize: 'cover', backgroundPosition: 'center' }} />
-          <div className="absolute inset-0 bg-gradient-to-b from-forest-950/80 via-forest-950/70 to-forest-950/90" />
+          <div className="absolute inset-0 bg-gradient-to-b from-forest-800/55 via-forest-700/45 to-forest-800/65" />
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 grid lg:grid-cols-2 gap-16 items-center">
@@ -50,7 +50,7 @@ export default function HomePage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.5 }}
-              className="inline-flex items-center gap-2 text-xs font-sans font-700 text-forest-300 tracking-widest uppercase mb-6 px-3 py-1.5 bg-forest-900/60 rounded-full border border-forest-700"
+              className="inline-flex items-center gap-2 text-xs font-sans font-700 text-forest-200 tracking-widest uppercase mb-6 px-3 py-1.5 bg-forest-800/50 rounded-full border border-forest-600/60"
             >
               <Leaf className="w-3 h-3" />
               Rooted in Tennessee Since 1998
@@ -114,7 +114,7 @@ export default function HomePage() {
                     key={id}
                     src={`https://images.unsplash.com/${id}?auto=format&fit=crop&w=80&h=80&q=80&crop=faces`}
                     alt=""
-                    className="w-9 h-9 rounded-full border-2 border-forest-900 object-cover"
+                    className="w-9 h-9 rounded-full border-2 border-forest-700 object-cover"
                     loading="eager"
                   />
                 ))}

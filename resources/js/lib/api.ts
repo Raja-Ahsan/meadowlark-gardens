@@ -218,6 +218,9 @@ export const api = {
   getLegalPage: (slug: string) =>
     request<{ page: import('@/types').LegalPage }>(`/legal-pages/${slug}`),
 
+  getPlantTypeCategories: () =>
+    request<{ categories: import('@/types').PlantTypeCategory[] }>('/plant-type-categories'),
+
   getPlantTypes: () =>
     request<{ plantTypes: import('@/types').PlantType[] }>('/plant-types'),
 
@@ -409,6 +412,25 @@ export const api = {
       method: 'PUT',
       body: JSON.stringify(payload),
     }),
+
+  getAdminPlantTypeCategories: (params?: ListParams) =>
+    request<PaginatedResponse<import('@/types').PlantTypeCategory>>(`/admin/plant-type-categories${buildQuery(params)}`),
+
+  getAllPlantTypeCategories: () =>
+    request<{ categories: import('@/types').PlantTypeCategory[] }>('/admin/plant-type-categories/all'),
+
+  createPlantTypeCategory: (payload: Partial<import('@/types').PlantTypeCategory>) =>
+    request<{ message: string; category: import('@/types').PlantTypeCategory }>('/admin/plant-type-categories', {
+      method: 'POST', body: JSON.stringify(payload),
+    }),
+
+  updatePlantTypeCategory: (id: string, payload: Partial<import('@/types').PlantTypeCategory>) =>
+    request<{ message: string; category: import('@/types').PlantTypeCategory }>(`/admin/plant-type-categories/${id}`, {
+      method: 'PUT', body: JSON.stringify(payload),
+    }),
+
+  deletePlantTypeCategory: (id: string) =>
+    request<{ message: string }>(`/admin/plant-type-categories/${id}`, { method: 'DELETE' }),
 
   getAdminPlantTypes: (params?: ListParams) =>
     request<PaginatedResponse<import('@/types').PlantType>>(`/admin/plant-types${buildQuery(params)}`),

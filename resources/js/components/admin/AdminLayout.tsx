@@ -25,6 +25,7 @@ const navItems = [
   { to: '/admin/settings', label: 'Settings', icon: Settings },
   { to: '/admin/email-templates', label: 'Email Templates', icon: Mail },
   { to: '/admin/legal-pages', label: 'Legal Pages', icon: FileText },
+  { to: '/admin/plant-type-categories', label: 'Plant Categories', icon: FolderTree },
   { to: '/admin/plant-types', label: 'Plant Types', icon: Leaf },
   { to: '/admin/attributes', label: 'Attributes', icon: SlidersHorizontal },
   { to: '/admin/contact', label: 'Messages', icon: MessageSquare },

@@ -196,8 +196,24 @@ export interface LegalPage {
   updatedAt?: string
 }
 
+export interface PlantTypeCategory {
+  id: string
+  title: string
+  slug: string
+  excerpt?: string | null
+  image?: string | null
+  sortOrder: number
+  isPublished: boolean
+  typeCount?: number | null
+  types?: PlantType[]
+  updatedAt?: string
+}
+
 export interface PlantType {
   id: string
+  categoryId?: string | null
+  categoryTitle?: string | null
+  categorySlug?: string | null
   title: string
   slug: string
   excerpt?: string | null

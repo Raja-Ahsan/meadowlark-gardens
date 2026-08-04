@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             EcommerceSeeder::class,
             LegalPageSeeder::class,
+            PlantTypeCategorySeeder::class,
             PlantTypeSeeder::class,
             EtsyImportSeeder::class,
         ]);

@@ -96,12 +96,12 @@ export default function SiteLogo({
       </div>
       <div className="leading-tight">
         <span className={`font-display font-bold block leading-none ${
-          isFooter ? 'text-cream-100 text-base' : 'text-forest-800 text-base'
+          isFooter || (isHome && !scrolled) ? 'text-cream-100 text-base' : 'text-forest-800 text-base'
         }`}>
           {primary}
         </span>
         <span className={`text-[10px] font-sans font-500 tracking-widest uppercase block ${
-          isFooter ? 'text-sage-400' : 'text-sage-600'
+          isFooter || (isHome && !scrolled) ? 'text-sage-300' : 'text-sage-600'
         }`}>
           {secondary}
         </span>
