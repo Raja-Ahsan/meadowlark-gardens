@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { CheckCircle, XCircle } from 'lucide-react'
+import { CheckCircle, XCircle, FileText, ExternalLink } from 'lucide-react'
 import { api } from '@/lib/api'
+import Modal from '@/components/admin/Modal'
 import type { WholesaleApplication } from '@/types'
 
 const statusColors: Record<string, string> = {
@@ -13,6 +14,11 @@ export default function AdminWholesalersPage() {
   const [applications, setApplications] = useState<WholesaleApplication[]>([])
   const [filter, setFilter] = useState('all')
   const [loading, setLoading] = useState(true)
+  const [previewApp, setPreviewApp] = useState<WholesaleApplication | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [previewType, setPreviewType] = useState('')
+  const [previewLoading, setPreviewLoading] = useState(false)
+  const [previewError, setPreviewError] = useState('')
 
   const load = () => {
     setLoading(true)
@@ -21,10 +27,45 @@ export default function AdminWholesalersPage() {
 
   useEffect(() => { load() }, [])
 
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl)
+    }
+  }, [previewUrl])
+
   const updateStatus = async (id: string, status: 'approved' | 'rejected') => {
     await api.updateApplicationStatus(id, status)
     load()
   }
+
+  const openLicense = async (app: WholesaleApplication) => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl)
+    setPreviewApp(app)
+    setPreviewUrl(null)
+    setPreviewType('')
+    setPreviewError('')
+    setPreviewLoading(true)
+    try {
+      const { url, contentType } = await api.getApplicationLicenseBlob(app.id)
+      setPreviewUrl(url)
+      setPreviewType(contentType)
+    } catch (error) {
+      setPreviewError(error instanceof Error ? error.message : 'Failed to load document')
+    } finally {
+      setPreviewLoading(false)
+    }
+  }
+
+  const closePreview = () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl)
+    setPreviewApp(null)
+    setPreviewUrl(null)
+    setPreviewType('')
+    setPreviewError('')
+  }
+
+  const isImage = previewType.startsWith('image/')
+  const isPdf = previewType.includes('pdf')
 
   const filtered = filter === 'all' ? applications : applications.filter(a => a.status === filter)
 
@@ -61,7 +102,19 @@ export default function AdminWholesalersPage() {
                   <p className="text-sm text-sage-500 mt-1">{app.address}</p>
                   <div className="flex flex-wrap gap-4 mt-3 text-xs text-sage-600">
                     <span>Type: <strong>{app.businessType}</strong></span>
-                    <span>Est. Monthly: <strong>{app.estimatedMonthlyOrder}</strong></span>
+                    {app.licenseDocument ? (
+                      <span>
+                        License:{' '}
+                        <button
+                          type="button"
+                          onClick={() => openLicense(app)}
+                          className="inline-flex items-center gap-1 font-600 text-forest-700 underline hover:text-forest-900"
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                          View document
+                        </button>
+                      </span>
+                    ) : null}
                     <span>Submitted: {new Date(app.submittedAt).toLocaleDateString()}</span>
                   </div>
                   {app.message && <p className="mt-3 text-sm text-forest-700 bg-cream-50 rounded-xl p-3">{app.message}</p>}
@@ -81,6 +134,49 @@ export default function AdminWholesalersPage() {
           ))}
         </div>
       )}
+
+      <Modal
+        open={!!previewApp}
+        onClose={closePreview}
+        title={previewApp ? `License — ${previewApp.businessName}` : 'License document'}
+        size="xl"
+      >
+        {previewLoading ? (
+          <div className="flex justify-center py-16">
+            <div className="w-8 h-8 border-2 border-forest-300 border-t-forest-700 rounded-full animate-spin" />
+          </div>
+        ) : previewError ? (
+          <p className="text-center text-terra-600 py-10">{previewError}</p>
+        ) : previewUrl ? (
+          <div className="space-y-4">
+            {isImage ? (
+              <img src={previewUrl} alt="License document" className="max-h-[70vh] mx-auto rounded-xl object-contain" />
+            ) : isPdf ? (
+              <iframe
+                src={previewUrl}
+                title="License PDF"
+                className="w-full h-[70vh] rounded-xl border border-forest-100 bg-cream-50"
+              />
+            ) : (
+              <div className="text-center py-10 space-y-3">
+                <FileText className="w-10 h-10 text-forest-500 mx-auto" />
+                <p className="text-sage-600 text-sm">This file type can’t be previewed in the browser.</p>
+              </div>
+            )}
+            <div className="flex justify-center">
+              <a
+                href={previewUrl}
+                download
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-forest-700 text-white text-sm font-600 hover:bg-forest-800"
+              >
+                <ExternalLink className="w-4 h-4" /> Download / Open file
+              </a>
+            </div>
+          </div>
+        ) : null}
+      </Modal>
     </div>
   )
 }

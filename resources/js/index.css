@@ -134,6 +134,36 @@ input:focus, select:focus, textarea:focus {
   font-style: normal;
 }
 
+.rich-text-editor .ql-editor table,
+.legal-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+.rich-text-editor .ql-editor th,
+.rich-text-editor .ql-editor td,
+.legal-content th,
+.legal-content td {
+  border: 1px solid #c3ddc4;
+  padding: 0.5rem 0.75rem;
+  vertical-align: top;
+}
+
+.rich-text-editor .ql-editor th,
+.legal-content th {
+  background: #f3f7f3;
+  font-weight: 600;
+}
+
+/* Hide editor selection chrome on public pages (legacy saved HTML). */
+.legal-content .ql-cell-focused::after,
+.legal-content .ql-cell-selected::after,
+.legal-content .ql-cell-selected-after {
+  display: none !important;
+  content: none !important;
+}
+
 /* Legal page content (public) */
 .legal-content {
   font-family: 'Inter', sans-serif;

@@ -13,6 +13,7 @@ class WholesaleApplication extends Model
         'phone',
         'address',
         'business_type',
+        'license_document',
         'estimated_monthly_order',
         'message',
         'status',

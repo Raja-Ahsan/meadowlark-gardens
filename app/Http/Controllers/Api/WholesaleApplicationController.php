@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\WholesaleApplication;
 use App\Support\ApiFormatter;
+use App\Support\MediaUrl;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class WholesaleApplicationController extends Controller
 {
@@ -19,9 +21,13 @@ class WholesaleApplicationController extends Controller
             'phone' => ['required', 'string', 'max:50'],
             'address' => ['required', 'string'],
             'businessType' => ['required', 'string', 'max:255'],
-            'estimatedMonthlyOrder' => ['required', 'string', 'max:255'],
+            'licenseDocument' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,webp,doc,docx', 'max:10240'],
             'message' => ['nullable', 'string'],
         ]);
+
+        $file = $request->file('licenseDocument');
+        $name = Str::uuid().'.'.$file->getClientOriginalExtension();
+        $path = $file->storeAs('wholesale-licenses', $name, 'public');
 
         $application = WholesaleApplication::create([
             'business_name' => $data['businessName'],
@@ -30,7 +36,8 @@ class WholesaleApplicationController extends Controller
             'phone' => $data['phone'],
             'address' => $data['address'],
             'business_type' => $data['businessType'],
-            'estimated_monthly_order' => $data['estimatedMonthlyOrder'],
+            'license_document' => MediaUrl::fromStoragePath($path),
+            'estimated_monthly_order' => '',
             'message' => $data['message'] ?? null,
             'status' => 'pending',
             'submitted_at' => now(),

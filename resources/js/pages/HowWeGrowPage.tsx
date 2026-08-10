@@ -30,17 +30,17 @@ const reasons = [
   {
     step: '01',
     title: 'Raised in Tennessee',
-    desc: 'Every plant starts and grows here — not shipped in from distant climates that do not match your yard.',
+    desc: 'All plants are grown right here — not shipped in from distant climates that do not match your yard.',
   },
   {
     step: '02',
-    title: 'Built for Your Backyard',
-    desc: 'Open-air growing means plants are already used to the same kind of conditions they will face at home.',
+    title: 'Built for Your Yard',
+    desc: 'Open-air growing means plants are already used to the same kind of conditions they will at home to: the real world conditions and growing zones.',
   },
   {
     step: '03',
     title: 'Proven Before Shipping',
-    desc: 'If it grows and is healthy in our backyard, it will do the same in yours. That is our standard.',
+    desc: 'If it grows and is healthy in our yard, it will do the same in yours. That is our standard.',
   },
 ]
 
@@ -235,7 +235,7 @@ export default function HowWeGrowPage() {
               Bring Home Plants Grown to Belong
             </h2>
             <p className="text-sage-300 text-lg font-body leading-relaxed mb-8 max-w-xl mx-auto">
-              Browse our catalog, or read our plant information guide for tips on planting and aftercare.
+              Browse our catalog, and read our plant information guide for tips on planting and aftercare.
             </p>
             <div className="flex flex-wrap gap-4 justify-center">
               <Link

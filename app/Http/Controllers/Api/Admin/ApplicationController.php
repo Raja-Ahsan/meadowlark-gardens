@@ -10,6 +10,7 @@ use App\Support\ApiFormatter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class ApplicationController extends Controller
@@ -54,6 +55,27 @@ class ApplicationController extends Controller
         return response()->json([
             'message' => 'Application '.$data['status'].'.',
             'application' => ApiFormatter::application($application->fresh()),
+        ]);
+    }
+
+    public function license(WholesaleApplication $application): \Symfony\Component\HttpFoundation\BinaryFileResponse|\Illuminate\Http\JsonResponse
+    {
+        if (! $application->license_document) {
+            return response()->json(['message' => 'No license document found.'], 404);
+        }
+
+        $relative = ltrim(preg_replace('#^/storage/#', '', $application->license_document) ?? '', '/');
+
+        if (! Storage::disk('public')->exists($relative)) {
+            return response()->json(['message' => 'License file missing on server.'], 404);
+        }
+
+        $absolute = Storage::disk('public')->path($relative);
+        $mime = mime_content_type($absolute) ?: 'application/octet-stream';
+
+        return response()->file($absolute, [
+            'Content-Type' => $mime,
+            'Content-Disposition' => 'inline; filename="'.basename($relative).'"',
         ]);
     }
 }

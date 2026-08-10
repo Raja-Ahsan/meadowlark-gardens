@@ -1,11 +1,19 @@
 {
   "resources/js/main.tsx": {
+<<<<<<< HEAD
     "file": "assets/main-Bj-RnuPb.js",
+=======
+    "file": "assets/main-DmF3LrbT.js",
+>>>>>>> 433ec78f55c93e589675e9ff547c8bc73feab3bc
     "name": "main",
     "src": "resources/js/main.tsx",
     "isEntry": true,
     "css": [
+<<<<<<< HEAD
       "assets/main-C13dLY_W.css"
+=======
+      "assets/main-CEzFHAuO.css"
+>>>>>>> 433ec78f55c93e589675e9ff547c8bc73feab3bc
     ]
   }
 }

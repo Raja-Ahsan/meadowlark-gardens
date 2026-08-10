@@ -133,6 +133,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/reviews/{review}', [AdminReviewController::class, 'destroy']);
 
         Route::get('/applications', [AdminApplicationController::class, 'index']);
+        Route::get('/applications/{application}/license', [AdminApplicationController::class, 'license']);
         Route::patch('/applications/{application}/status', [AdminApplicationController::class, 'updateStatus']);
 
         Route::get('/contact-messages', [ContactMessageController::class, 'index']);

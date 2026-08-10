@@ -69,7 +69,7 @@ interface WholesaleApplicationPayload {
   phone: string
   address: string
   businessType: string
-  estimatedMonthlyOrder: string
+  licenseDocument: File
   message?: string
 }
 
@@ -230,10 +230,32 @@ export const api = {
   submitContact: (payload: ContactPayload) =>
     request<{ message: string }>('/contact', { method: 'POST', body: JSON.stringify(payload) }),
 
-  submitWholesaleApplication: (payload: WholesaleApplicationPayload) =>
-    request<{ message: string }>('/wholesale/applications', {
-      method: 'POST', body: JSON.stringify(payload),
-    }),
+  submitWholesaleApplication: async (payload: WholesaleApplicationPayload) => {
+    const formData = new FormData()
+    formData.append('businessName', payload.businessName)
+    formData.append('contactName', payload.contactName)
+    formData.append('email', payload.email)
+    formData.append('phone', payload.phone)
+    formData.append('address', payload.address)
+    formData.append('businessType', payload.businessType)
+    formData.append('licenseDocument', payload.licenseDocument)
+    if (payload.message) formData.append('message', payload.message)
+
+    const headers: Record<string, string> = { Accept: 'application/json' }
+    const token = getToken()
+    if (token) headers.Authorization = `Bearer ${token}`
+
+    const response = await fetch(`${API_BASE}/wholesale/applications`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) {
+      throw new Error(data.message || 'Request failed')
+    }
+    return data as { message: string }
+  },
 
   placeRetailOrder: (payload: RetailOrderPayload) =>
     request<{ message: string; order: Order }>('/orders/retail', {
@@ -364,6 +386,22 @@ export const api = {
 
   getAdminApplications: () =>
     request<{ applications: WholesaleApplication[] }>('/admin/applications'),
+
+  getApplicationLicenseBlob: async (id: string): Promise<{ url: string; contentType: string }> => {
+    const headers: Record<string, string> = { Accept: '*/*' }
+    const token = getToken()
+    if (token) headers.Authorization = `Bearer ${token}`
+
+    const response = await fetch(`${API_BASE}/admin/applications/${id}/license`, { headers })
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}))
+      throw new Error(data.message || 'Failed to load license document')
+    }
+
+    const contentType = response.headers.get('Content-Type') || 'application/octet-stream'
+    const blob = await response.blob()
+    return { url: URL.createObjectURL(blob), contentType }
+  },
 
   updateApplicationStatus: (id: string, status: 'approved' | 'rejected') =>
     request<{ message: string; application: WholesaleApplication }>(

@@ -6,16 +6,16 @@ type Props = {
 export default function Ticker({ text, className = '' }: Props) {
   const segment = (
     <span className="flex shrink-0 items-center">
-      <span className="ticker-content px-8 text-sm font-sans font-600 text-amber-900 tracking-wide uppercase whitespace-nowrap">
+      <span className="ticker-content px-8 text-sm font-sans font-600 text-[#d3492b] tracking-wide uppercase whitespace-nowrap">
         {text}
       </span>
-      <span className="px-8 text-amber-400" aria-hidden="true">•</span>
+      <span className="px-8 text-[#d3492b]" aria-hidden="true">•</span>
     </span>
   )
 
   return (
     <div
-      className={`overflow-hidden bg-amber-50 border-b border-amber-200 ${className}`}
+      className={`overflow-hidden bg-[#f8e61b] border-b border-[#d3492b] ${className}`}
       role="marquee"
       aria-live="polite"
     >

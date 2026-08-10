@@ -32,7 +32,7 @@ export default function AboutPage() {
             className="font-display font-700 text-cream-50 text-balance mb-6"
             style={{ fontSize: 'clamp(2rem, 4vw, 3.5rem)' }}
           >
-            Growing Tennessee's Garden Heritage
+            Growing Tennessee's to America's Garden Heritage
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 16 }}
@@ -59,13 +59,13 @@ export default function AboutPage() {
                 Our Mission
               </span>
               <h2 className="font-display font-700 text-forest-900 mb-6" style={{ fontSize: 'clamp(1.6rem, 3vw, 2.4rem)' }}>
-                Plants That Belong Here
+                Plants That Belong To You
               </h2>
               <p className="text-forest-700 font-body leading-relaxed mb-4">
                 We believe in the power of plants to grow and restore ecosystems, feed pollinators, and create beautiful landscapes that feel naturally connected to this land we call home.
               </p>
               <p className="text-sage-600 font-body leading-relaxed mb-6">
-                Every plant we grow is grown right here in Tennessee, out in the open air with no greenhouses. Why? Because we feel that strengthens the plant to thrive in your backyard. Our saying is &ldquo;if it grows and is healthy in our backyard, it will do the same in yours.&rdquo;
+              Every plant we have is growing right here in Tennessee, out in the open air with no greenhouses. Why? Because we feel that strengthens the plant to thrive in your backyard. Our saying is &ldquo;if it grows and is healthy in our backyard, it will do the same in yours.&rdquo;
               </p>
               <div className="grid grid-cols-2 gap-4">
                 {[
@@ -88,7 +88,7 @@ export default function AboutPage() {
               className="relative"
             >
               <img
-                src="https://images.unsplash.com/photo-1530836369250-ef72a3f5cda8?auto=format&fit=crop&w=700&q=80"
+                src="/images/about-image.webp"
                 alt="Our nursery greenhouse"
                 className="w-full h-[480px] object-cover rounded-3xl shadow-2xl"
                 loading="lazy"
