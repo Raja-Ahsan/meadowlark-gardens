@@ -72,7 +72,7 @@ export default function ShopPage() {
               <input
                 type="text"
                 placeholder="Search plants..."
-                value={search}
+                value={search} 
                 onChange={e => setSearch(e.target.value)}
                 className="w-full pl-10 pr-10 py-2.5 bg-cream-50 border border-forest-200 rounded-xl text-sm font-body text-forest-800 placeholder:text-sage-400 focus:outline-none focus:border-forest-400 transition-colors"
               />
