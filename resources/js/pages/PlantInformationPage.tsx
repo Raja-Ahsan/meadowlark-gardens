@@ -176,7 +176,7 @@ export default function PlantInformationPage() {
               className="relative"
             >
               <img
-                src="https://images.unsplash.com/photo-1523348837708-15d4a09cfac2?auto=format&fit=crop&w=700&q=80"
+                src="/images/plant-info.webp"
                 alt="Healthy outdoor plants growing in a garden"
                 className="w-full h-[480px] object-cover rounded-3xl shadow-2xl"
                 loading="lazy"

@@ -1,33 +1,44 @@
 import { useState } from 'react'
 import { motion } from 'motion/react'
 import { Link } from 'react-router-dom'
-import { Tag, Truck, BarChart3, Send, CheckCircle, ArrowRight, ClipboardList } from 'lucide-react'
+import { Tag, Truck, BarChart3, Send, CheckCircle, ArrowRight, ClipboardList, FileUp } from 'lucide-react'
 import { api } from '@/lib/api'
 
 const benefits = [
-  { icon: Tag, title: 'Up to 40% Off', desc: 'Significantly reduced pricing across our entire catalog for approved partners.' },
+  { icon: Tag, title: 'Reduced pricing and Shipping Included', desc: 'Significantly reduced pricing across our entire catalog for approved partners.' },
   { icon: Truck, title: 'Priority Fulfillment', desc: 'Wholesale orders are fulfilled within 3 business days with dedicated logistics.' },
   { icon: BarChart3, title: 'Order Tracking', desc: 'Full portal access to manage orders, view invoices, and track deliveries.' },
 ]
 
+type FormFields = {
+  businessName: string
+  contactName: string
+  email: string
+  phone: string
+  address: string
+  businessType: string
+  message: string
+}
+
 export default function WholesaleApplyPage() {
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<FormFields>({
     businessName: '', contactName: '', email: '', phone: '',
-    address: '', businessType: '', estimatedMonthlyOrder: '', message: '',
+    address: '', businessType: '', message: '',
   })
-  const [errors, setErrors] = useState<Partial<typeof form>>({})
+  const [licenseFile, setLicenseFile] = useState<File | null>(null)
+  const [errors, setErrors] = useState<Partial<Record<keyof FormFields | 'licenseDocument', string>>>({})
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
 
   const validate = () => {
-    const e: Partial<typeof form> = {}
+    const e: Partial<Record<keyof FormFields | 'licenseDocument', string>> = {}
     if (!form.businessName.trim()) e.businessName = 'Business name is required'
     if (!form.contactName.trim()) e.contactName = 'Contact name is required'
     if (!form.email.includes('@')) e.email = 'Valid email required'
     if (!form.phone.trim()) e.phone = 'Phone number is required'
     if (!form.address.trim()) e.address = 'Address is required'
     if (!form.businessType) e.businessType = 'Please select a business type'
-    if (!form.estimatedMonthlyOrder) e.estimatedMonthlyOrder = 'Please select an estimated order'
+    if (!licenseFile) e.licenseDocument = 'Please attach your nursery or business license'
     return e
   }
 
@@ -35,10 +46,13 @@ export default function WholesaleApplyPage() {
     e.preventDefault()
     const errs = validate()
     setErrors(errs)
-    if (Object.keys(errs).length > 0) return
+    if (Object.keys(errs).length > 0 || !licenseFile) return
     setLoading(true)
     try {
-      await api.submitWholesaleApplication(form)
+      await api.submitWholesaleApplication({
+        ...form,
+        licenseDocument: licenseFile,
+      })
       setSubmitted(true)
     } catch (error) {
       setErrors({ businessName: error instanceof Error ? error.message : 'Submission failed' })
@@ -47,7 +61,7 @@ export default function WholesaleApplyPage() {
     }
   }
 
-  const field = (label: string, key: keyof typeof form, type = 'text', placeholder = '') => (
+  const field = (label: string, key: keyof FormFields, type = 'text', placeholder = '') => (
     <div>
       <label className="block text-sm font-sans font-600 text-forest-700 mb-1.5">
         {label} <span className="text-terra-500">*</span>
@@ -180,45 +194,53 @@ export default function WholesaleApplyPage() {
                   {field('Phone Number', 'phone', 'tel', '(615) 555-0000')}
                 </div>
                 {field('Business Address', 'address', 'text', '123 Garden St, Nashville, TN 37201')}
-                <div className="grid sm:grid-cols-2 gap-5">
-                  <div>
-                    <label className="block text-sm font-sans font-600 text-forest-700 mb-1.5">
-                      Business Type <span className="text-terra-500">*</span>
-                    </label>
-                    <select
-                      value={form.businessType}
-                      onChange={e => setForm(f => ({ ...f, businessType: e.target.value }))}
-                      className={`w-full px-4 py-3 border rounded-xl text-sm font-body text-forest-900 transition-colors bg-cream-50 ${errors.businessType ? 'border-terra-400' : 'border-forest-200'}`}
-                    >
-                      <option value="">Select type...</option>
-                      <option>Retail Nursery</option>
-                      <option>Landscaping Company</option>
-                      <option>Garden Center</option>
-                      <option>Florist</option>
-                      <option>Home Improvement Store</option>
-                      <option>Other</option>
-                    </select>
-                    {errors.businessType && <p className="text-terra-500 text-xs mt-1">{errors.businessType}</p>}
-                  </div>
-                  <div>
-                    <label className="block text-sm font-sans font-600 text-forest-700 mb-1.5">
-                      Est. Monthly Order <span className="text-terra-500">*</span>
-                    </label>
-                    <select
-                      value={form.estimatedMonthlyOrder}
-                      onChange={e => setForm(f => ({ ...f, estimatedMonthlyOrder: e.target.value }))}
-                      className={`w-full px-4 py-3 border rounded-xl text-sm font-body text-forest-900 transition-colors bg-cream-50 ${errors.estimatedMonthlyOrder ? 'border-terra-400' : 'border-forest-200'}`}
-                    >
-                      <option value="">Select range...</option>
-                      <option>Under $500</option>
-                      <option>$500 - $1,000</option>
-                      <option>$1,000 - $2,000</option>
-                      <option>$2,000 - $5,000</option>
-                      <option>$5,000 - $10,000</option>
-                      <option>$10,000+</option>
-                    </select>
-                    {errors.estimatedMonthlyOrder && <p className="text-terra-500 text-xs mt-1">{errors.estimatedMonthlyOrder}</p>}
-                  </div>
+                <div>
+                  <label className="block text-sm font-sans font-600 text-forest-700 mb-1.5">
+                    Business Type <span className="text-terra-500">*</span>
+                  </label>
+                  <select
+                    value={form.businessType}
+                    onChange={e => setForm(f => ({ ...f, businessType: e.target.value }))}
+                    className={`w-full px-4 py-3 border rounded-xl text-sm font-body text-forest-900 transition-colors bg-cream-50 ${errors.businessType ? 'border-terra-400' : 'border-forest-200'}`}
+                  >
+                    <option value="">Select type...</option>
+                    <option>Retail Nursery</option>
+                    <option>Landscaping Company</option>
+                    <option>Garden Center</option>
+                    <option>Florist</option>
+                    <option>Home Improvement Store</option>
+                    <option>Other</option>
+                  </select>
+                  {errors.businessType && <p className="text-terra-500 text-xs mt-1">{errors.businessType}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-sans font-600 text-forest-700 mb-1.5">
+                    Nursery License or Business License <span className="text-terra-500">*</span>
+                  </label>
+                  <label
+                    className={`flex flex-col sm:flex-row sm:items-center gap-3 w-full px-4 py-3 border rounded-xl text-sm font-body transition-colors cursor-pointer ${
+                      errors.licenseDocument ? 'border-terra-400 bg-terra-50' : 'border-forest-200 bg-cream-50 hover:border-forest-300'
+                    }`}
+                  >
+                    <span className="inline-flex items-center gap-2 shrink-0 text-forest-700 font-600">
+                      <FileUp className="w-4 h-4" />
+                      Choose file
+                    </span>
+                    <span className="text-sage-600 truncate">
+                      {licenseFile ? licenseFile.name : 'PDF, Word, or image (max 10MB)'}
+                    </span>
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp,application/pdf,image/*"
+                      className="sr-only"
+                      onChange={e => {
+                        const file = e.target.files?.[0] ?? null
+                        setLicenseFile(file)
+                        if (file) setErrors(prev => ({ ...prev, licenseDocument: undefined }))
+                      }}
+                    />
+                  </label>
+                  {errors.licenseDocument && <p className="text-terra-500 text-xs mt-1">{errors.licenseDocument}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-sans font-600 text-forest-700 mb-1.5">Additional Notes (optional)</label>

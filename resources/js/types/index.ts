@@ -59,7 +59,8 @@ export interface WholesaleApplication {
   phone: string
   address: string
   businessType: string
-  estimatedMonthlyOrder: string
+  licenseDocument?: string | null
+  estimatedMonthlyOrder?: string | null
   message?: string
   status: 'pending' | 'approved' | 'rejected'
   submittedAt: string

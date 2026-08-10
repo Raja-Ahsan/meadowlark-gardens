@@ -19,8 +19,8 @@ export default function HomePage() {
   const features = [
    /* { icon: Leaf, title: 'Tennessee Native', desc: 'Every plant is carefully selected to thrive in our local climate and support native ecosystems.' }, */
     { icon: Truck, title: 'Fast Delivery', desc: 'Fast delivery across states. Your plants arrive fresh, never stressed.' },
-    { icon: Award, title: 'Expert Grown', desc: 'Over 10 years growing premium plants with sustainable process.' },
-    { icon: Sprout, title: 'Guaranteed Growth', desc: 'All plants come with a 90-day growth guarantee. We stand behind every seedling.' },
+    { icon: Award, title: 'Expert Grown', desc: 'Over 20 years growing premium plants with sustainable process.' },
+    { icon: Sprout, title: 'Reliable Growth', desc: 'Grown outdoors in our nursery, no greenhouses here, to give your plants the best chance of successful growth at your home!' },
   ]
 
   const testimonials = [
@@ -72,7 +72,7 @@ export default function HomePage() {
               transition={{ delay: 0.7, duration: 0.5 }}
               className="text-sage-300 text-lg font-body leading-relaxed mb-8 max-w-lg"
             >
-              Discover plants, flowering trees, and seasonal perennials curated for Tennessee gardens, homes, and landscapes.
+              Discover plants, flowering trees, and seasonal perennials curated for America's gardeners, homeowners, and landscapers.
             </motion.p>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -140,7 +140,7 @@ export default function HomePage() {
             <div className="relative float-animation">
               <div className="absolute inset-0 bg-gradient-to-br from-forest-500/20 to-forest-900/20 rounded-3xl z-10 mix-blend-overlay" />
               <img
-                src="https://images.unsplash.com/photo-1463936575829-25148e1db1b8?auto=format&fit=crop&w=700&q=80"
+                src="/images/home-banner-image.webp"
                 alt="Beautiful garden arrangement"
                 className="w-full rounded-3xl object-cover shadow-2xl"
                 style={{ height: '520px' }}

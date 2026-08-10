@@ -199,6 +199,7 @@ class ApiFormatter
             'phone' => $app->phone,
             'address' => $app->address,
             'businessType' => $app->business_type,
+            'licenseDocument' => MediaUrl::normalize($app->license_document),
             'estimatedMonthlyOrder' => $app->estimated_monthly_order,
             'message' => $app->message,
             'status' => $app->status,
