@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import ReactQuill, { Quill } from 'react-quill-new'
 import QuillTableBetter from 'quill-table-better'
+import { cleanRichTextHtml } from '@/lib/text'
 import 'react-quill-new/dist/quill.snow.css'
 import 'quill-table-better/dist/quill-table-better.css'
 
@@ -19,22 +20,6 @@ type TableBetterModule = {
   hideTools?: () => void
   clearHistorySelected?: () => void
   deleteTableTemporary?: (source?: string) => void
-}
-
-/** Strip editor-only markup before persisting HTML. */
-function cleanEditorHtml(html: string): string {
-  if (!html) return ''
-
-  const doc = new DOMParser().parseFromString(html, 'text/html')
-
-  doc.querySelectorAll('temporary').forEach(el => el.remove())
-
-  doc.querySelectorAll('.ql-cell-focused, .ql-cell-selected').forEach(el => {
-    el.classList.remove('ql-cell-focused', 'ql-cell-selected')
-    if (!el.classList.length) el.removeAttribute('class')
-  })
-
-  return doc.body.innerHTML
 }
 
 /** Load HTML via updateContents — setContents breaks quill-table-better tables. */
@@ -68,7 +53,7 @@ export default function RichTextEditor({ value, onChange, placeholder, minHeight
     const editor = quillRef.current?.getEditor()
     if (!editor) return
 
-    const html = cleanEditorHtml(value || '')
+    const html = cleanRichTextHtml(value || '')
     isHydrating.current = true
     initEditorHtml(editor, html)
     lastEmitted.current = html
@@ -108,7 +93,7 @@ export default function RichTextEditor({ value, onChange, placeholder, minHeight
     tableModule?.hideTools?.()
     tableModule?.clearHistorySelected?.()
 
-    const cleaned = cleanEditorHtml(html)
+    const cleaned = cleanRichTextHtml(html)
     lastEmitted.current = cleaned
     onChange(cleaned)
   }

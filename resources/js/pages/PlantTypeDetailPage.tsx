@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { api } from '@/lib/api'
 import { mediaUrl } from '@/lib/media'
+import { cleanRichTextHtml } from '@/lib/text'
 import type { PlantType } from '@/types'
 
 export default function PlantTypeDetailPage() {
@@ -86,7 +87,7 @@ export default function PlantTypeDetailPage() {
         {!loading && !error && page && (
           <article
             className="legal-content bg-white rounded-2xl border border-forest-100 p-6 md:p-10 shadow-sm"
-            dangerouslySetInnerHTML={{ __html: page.content }}
+            dangerouslySetInnerHTML={{ __html: cleanRichTextHtml(page.content) }}
           />
         )}
 
