@@ -1,19 +1,11 @@
 {
   "resources/js/main.tsx": {
-<<<<<<< HEAD
-    "file": "assets/main-Bov7jPnI.js",
-=======
-    "file": "assets/main-qKNzUGwc.js",
->>>>>>> a649a49e46cb7cab3ef11250873ae5d5096c3c85
+    "file": "assets/main-CKASb4i4.js",
     "name": "main",
     "src": "resources/js/main.tsx",
     "isEntry": true,
     "css": [
-<<<<<<< HEAD
-      "assets/main-D4ruZJfn.css"
-=======
-      "assets/main-DZ5e0lSi.css"
->>>>>>> a649a49e46cb7cab3ef11250873ae5d5096c3c85
+      "assets/main-Fo7vp6ON.css"
     ]
   }
 }
