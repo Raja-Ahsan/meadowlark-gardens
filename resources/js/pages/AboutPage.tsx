@@ -32,7 +32,7 @@ export default function AboutPage() {
             className="font-display font-700 text-cream-50 text-balance mb-6"
             style={{ fontSize: 'clamp(2rem, 4vw, 3.5rem)' }}
           >
-            Growing Tennessee's to America's Garden Heritage
+            Growing America's Garden Heritage
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 16 }}
