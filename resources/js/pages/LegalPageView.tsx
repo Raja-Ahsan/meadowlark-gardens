@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { api } from '@/lib/api'
+import { cleanRichTextHtml } from '@/lib/text'
 import type { LegalPage } from '@/types'
 
 export default function LegalPageView() {
@@ -62,7 +63,7 @@ export default function LegalPageView() {
         {!loading && !error && page && (
           <article
             className="legal-content bg-white rounded-2xl border border-forest-100 p-6 md:p-10 shadow-sm"
-            dangerouslySetInnerHTML={{ __html: page.content }}
+            dangerouslySetInnerHTML={{ __html: cleanRichTextHtml(page.content) }}
           />
         )}
       </div>

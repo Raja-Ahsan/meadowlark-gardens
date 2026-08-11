@@ -148,12 +148,24 @@ input:focus, select:focus, textarea:focus {
   border: 1px solid #c3ddc4;
   padding: 0.5rem 0.75rem;
   vertical-align: top;
+  background: transparent;
 }
 
-.rich-text-editor .ql-editor th,
-.legal-content th {
-  background: #f3f7f3;
+/* Table heading row: green text, no filled background (Quill uses td, not th). */
+.rich-text-editor .ql-editor table tr:first-child td,
+.rich-text-editor .ql-editor table th,
+.legal-content table tr:first-child td,
+.legal-content table th {
+  background: transparent;
   font-weight: 600;
+  color: #244526;
+}
+
+.rich-text-editor .ql-editor table tr:first-child td *,
+.rich-text-editor .ql-editor table th *,
+.legal-content table tr:first-child td *,
+.legal-content table th * {
+  color: #244526 !important;
 }
 
 /* Hide editor selection chrome on public pages (legacy saved HTML). */
