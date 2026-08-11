@@ -1,6 +1,10 @@
 {
   "resources/js/main.tsx": {
+<<<<<<< HEAD
     "file": "assets/main-CKASb4i4.js",
+=======
+    "file": "assets/main-BrWZ3-mR.js",
+>>>>>>> b6e4cbee65eda9bf958e64d0e5d6e768fe26b336
     "name": "main",
     "src": "resources/js/main.tsx",
     "isEntry": true,
