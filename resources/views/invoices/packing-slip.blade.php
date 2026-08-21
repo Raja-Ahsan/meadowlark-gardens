@@ -7,7 +7,7 @@
         body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; color: #244526; }
         h1 { color: #244526; margin-bottom: 4px; }
         .subtitle { color: #5a6b5c; margin-bottom: 24px; font-size: 14px; }
-        .meta { display: flex; gap: 40px; margin-bottom: 28px; }
+        .meta { display: flex; gap: 40px; margin-bottom: 28px; flex-wrap: wrap; }
         .meta h3 { margin: 0 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: #5a6b5c; }
         .meta p { margin: 2px 0; font-size: 14px; }
         table { width: 100%; border-collapse: collapse; margin: 16px 0; }
@@ -30,19 +30,19 @@
     <div class="meta">
         <div>
             <h3>Ship to</h3>
-            @php $ship = $order->shipping_address ?? []; @endphp
+            @php
+                $ship = is_array($order->shipping_address) ? $order->shipping_address : [];
+                $name = trim(($ship['firstName'] ?? '') . ' ' . ($ship['lastName'] ?? ''));
+                if ($name === '') {
+                    $name = $order->customer_name;
+                }
+            @endphp
             @if(!empty($ship))
-                @php
-                    $name = trim(($ship['firstName'] ?? '').' '.($ship['lastName'] ?? ''));
-                    if ($name === '') $name = $order->customer_name;
-                @endphp
                 @if($name)<p><strong>{{ $name }}</strong></p>@endif
                 @if(!empty($ship['company']))<p>{{ $ship['company'] }}</p>@endif
                 @if(!empty($ship['addressLine1']))<p>{{ $ship['addressLine1'] }}</p>@endif
                 @if(!empty($ship['addressLine2']))<p>{{ $ship['addressLine2'] }}</p>@endif
-                <p>
-                    {{ collect([$ship['city'] ?? null, $ship['state'] ?? null, $ship['postalCode'] ?? null])->filter()->implode(', ') }}
-                </p>
+                <p>{{ collect([$ship['city'] ?? null, $ship['state'] ?? null, $ship['postalCode'] ?? null])->filter()->implode(', ') }}</p>
                 @if(!empty($ship['country']))<p>{{ $ship['country'] }}</p>@endif
                 @if(!empty($ship['phone']))<p>Phone: {{ $ship['phone'] }}</p>@endif
             @else
@@ -53,7 +53,7 @@
         <div>
             <h3>Order info</h3>
             <p><strong>Order:</strong> {{ $order->order_number }}</p>
-            <p><strong>Date:</strong> {{ $order->created_at->format('F j, Y') }}</p>
+            <p><strong>Date:</strong> {{ optional($order->created_at)->format('F j, Y') }}</p>
             <p><strong>Type:</strong> {{ ucfirst($order->type) }}</p>
             <p><strong>Status:</strong> {{ ucfirst($order->status) }}</p>
             @if($order->tracking_number)
@@ -74,16 +74,22 @@
         <tbody>
             @foreach($order->items as $item)
                 @php
+                    $product = $item->product;
                     $variation = $item->variation;
-                    $sku = $variation?->sku ?: ($item->product->sku ?? '—');
-                    $attrs = $variation?->attribute_values ?? [];
-                    $attrLabel = collect($attrs)->map(fn ($v, $k) => "{$k}: {$v}")->implode(' · ');
+                    $sku = ($variation && $variation->sku) ? $variation->sku : (($product && $product->sku) ? $product->sku : '—');
+                    $attrs = ($variation && is_array($variation->attribute_values)) ? $variation->attribute_values : [];
+                    $attrParts = [];
+                    foreach ($attrs as $key => $val) {
+                        $attrParts[] = $key . ': ' . $val;
+                    }
+                    $attrLabel = implode(' · ', $attrParts);
+                    $productName = $product ? $product->name : 'Product';
                 @endphp
                 <tr>
                     <td class="check"><span class="box"></span></td>
                     <td>
-                        {{ $item->product->name }}
-                        @if($attrLabel)
+                        {{ $productName }}
+                        @if($attrLabel !== '')
                             <br><span style="font-size:12px;color:#5a6b5c;">{{ $attrLabel }}</span>
                         @endif
                     </td>
