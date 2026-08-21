@@ -629,6 +629,9 @@ export const api = {
   checkWishlist: (productId: string) => request<{ inWishlist: boolean }>(`/wishlist/check/${productId}`),
 
   getInvoiceUrl: (orderId: string) => `${API_BASE}/orders/${orderId}/invoice`,
+  getPackingSlipUrl: (orderId: string) => `${API_BASE}/orders/${orderId}/packing-slip`,
+  getOrderPrintLinks: (orderId: string) =>
+    request<{ invoiceUrl: string; packingSlipUrl: string }>(`/orders/${orderId}/print-links`),
 
   getPaymentConfig: () => request<{
     stripeEnabled: boolean; stripeKey?: string; paypalEnabled: boolean;

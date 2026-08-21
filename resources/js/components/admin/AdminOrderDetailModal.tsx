@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ExternalLink, Package } from 'lucide-react'
 import Modal from '@/components/admin/Modal'
-import { api, getToken } from '@/lib/api'
+import { api } from '@/lib/api'
 import { mediaUrl } from '@/lib/media'
 import type { Order, ProductVariation } from '@/types'
 
@@ -103,39 +103,32 @@ export default function AdminOrderDetailModal({ orderId, open, onClose, onUpdate
   const openPrintable = async (path: 'invoice' | 'packing-slip') => {
     if (!order) return
 
-    // Open synchronously on click — after await, browsers often leave about:blank
-    // on live HTTPS and block document.write.
+    // Open immediately on click so live HTTPS browsers don't leave about:blank.
     const w = window.open('about:blank', '_blank')
     if (!w) {
       setMessage('Popup blocked. Allow popups for this site, then try again.')
       return
     }
-    w.document.write('<p style="font-family:sans-serif;padding:2rem;color:#244526">Loading…</p>')
-    w.document.close()
 
     try {
-      const token = getToken()
-      const res = await fetch(`/api/orders/${order.id}/${path}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      })
-      const html = await res.text()
-
-      if (!res.ok) {
-        w.document.open()
-        w.document.write(
-          `<p style="font-family:sans-serif;padding:2rem;color:#b42318">Could not load ${path.replace('-', ' ')} (HTTP ${res.status}). Check that the packing-slip API and Blade view are deployed on this server.</p>`,
-        )
-        w.document.close()
-        return
+      const links = await api.getOrderPrintLinks(order.id)
+      const url = path === 'invoice' ? links.invoiceUrl : links.packingSlipUrl
+      if (!url) {
+        throw new Error('Print link missing from server response')
       }
-
-      w.document.open()
-      w.document.write(html)
-      w.document.close()
-    } catch {
-      w.document.open()
-      w.document.write('<p style="font-family:sans-serif;padding:2rem;color:#b42318">Network error loading document.</p>')
-      w.document.close()
+      // Navigate the already-opened tab to a signed URL (no Bearer header needed).
+      w.location.href = url
+    } catch (e) {
+      try {
+        w.close()
+      } catch {
+        // ignore
+      }
+      setMessage(
+        e instanceof Error
+          ? `Could not open ${path === 'invoice' ? 'invoice' : 'packing slip'}: ${e.message}`
+          : 'Could not open print document. Redeploy PHP routes/views and clear route cache.',
+      )
     }
   }
 
