@@ -102,14 +102,39 @@ export default function AdminOrderDetailModal({ orderId, open, onClose, onUpdate
 
   const openPrintable = async (path: 'invoice' | 'packing-slip') => {
     if (!order) return
-    const token = getToken()
-    const res = await fetch(`/api/orders/${order.id}/${path}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    })
-    const html = await res.text()
-    const w = window.open('', '_blank')
-    if (w) {
+
+    // Open synchronously on click — after await, browsers often leave about:blank
+    // on live HTTPS and block document.write.
+    const w = window.open('about:blank', '_blank')
+    if (!w) {
+      setMessage('Popup blocked. Allow popups for this site, then try again.')
+      return
+    }
+    w.document.write('<p style="font-family:sans-serif;padding:2rem;color:#244526">Loading…</p>')
+    w.document.close()
+
+    try {
+      const token = getToken()
+      const res = await fetch(`/api/orders/${order.id}/${path}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
+      const html = await res.text()
+
+      if (!res.ok) {
+        w.document.open()
+        w.document.write(
+          `<p style="font-family:sans-serif;padding:2rem;color:#b42318">Could not load ${path.replace('-', ' ')} (HTTP ${res.status}). Check that the packing-slip API and Blade view are deployed on this server.</p>`,
+        )
+        w.document.close()
+        return
+      }
+
+      w.document.open()
       w.document.write(html)
+      w.document.close()
+    } catch {
+      w.document.open()
+      w.document.write('<p style="font-family:sans-serif;padding:2rem;color:#b42318">Network error loading document.</p>')
       w.document.close()
     }
   }
