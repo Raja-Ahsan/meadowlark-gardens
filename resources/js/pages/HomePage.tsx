@@ -1,20 +1,34 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { ArrowRight, Leaf, Truck, Award, Sprout, Star, ChevronRight, Users, ShoppingBag } from 'lucide-react'
 import SectionHeader from '@/components/ui/SectionHeader'
 import ProductCard from '@/components/ui/ProductCard'
+import { useRetailCart } from '@/context/RetailCartContext'
 import { api } from '@/lib/api'
 import { Product } from '@/types'
 
 export default function HomePage() {
+  const navigate = useNavigate()
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([])
+  const [toast, setToast] = useState<string | null>(null)
+  const { addItem } = useRetailCart()
 
   useEffect(() => {
     api.getProducts().then(({ products }) => {
       setFeaturedProducts(products.filter(p => p.inStock).slice(0, 4))
     }).catch(() => setFeaturedProducts([]))
   }, [])
+
+  const handleAddToCart = (product: Product) => {
+    if (product.type === 'variable') {
+      navigate(`/product/${product.slug || product.id}`)
+      return
+    }
+    addItem(product)
+    setToast(`${product.name} added to cart!`)
+    setTimeout(() => setToast(null), 3000)
+  }
 
   const features = [
    /* { icon: Leaf, title: 'Tennessee Native', desc: 'Every plant is carefully selected to thrive in our local climate and support native ecosystems.' }, */
@@ -31,6 +45,11 @@ export default function HomePage() {
 
   return (
     <div className="overflow-hidden">
+      {toast && (
+        <div className="fixed top-24 right-4 z-50 px-4 py-3 rounded-xl bg-forest-800 text-white text-sm font-sans font-600 shadow-lg">
+          {toast}
+        </div>
+      )}
       {/* Hero */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-forest-800">
         {/* Mesh Background */}
@@ -232,7 +251,7 @@ export default function HomePage() {
                 viewport={{ once: true, margin: '-30px' }}
                 transition={{ delay: i * 0.08, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
               >
-                <ProductCard product={product} />
+                <ProductCard product={product} onAddToCart={handleAddToCart} />
               </motion.div>
             ))}
           </div>

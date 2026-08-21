@@ -82,7 +82,13 @@ export default function ProductCard({ product, isWholesale = false, onAddToCart,
           </div>
           {product.inStock && (
             <button
-              onClick={() => onAddToCart ? onAddToCart(product, product.minWholesaleQty) : onViewDetails?.(product)}
+              onClick={() => {
+                if (onAddToCart) {
+                  onAddToCart(product, isWholesale ? (product.minWholesaleQty || 1) : 1)
+                  return
+                }
+                onViewDetails?.(product)
+              }}
               className="flex items-center gap-2 px-4 py-2 bg-forest-600 hover:bg-forest-700 text-white rounded-xl text-sm font-sans font-600 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 focus-ring"
             >
               <ShoppingCart className="w-4 h-4" />

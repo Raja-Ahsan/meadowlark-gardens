@@ -100,10 +100,10 @@ export default function AdminOrderDetailModal({ orderId, open, onClose, onUpdate
     }
   }
 
-  const printInvoice = async () => {
+  const openPrintable = async (path: 'invoice' | 'packing-slip') => {
     if (!order) return
     const token = getToken()
-    const res = await fetch(`/api/orders/${order.id}/invoice`, {
+    const res = await fetch(`/api/orders/${order.id}/${path}`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
     const html = await res.text()
@@ -343,10 +343,17 @@ export default function AdminOrderDetailModal({ orderId, open, onClose, onUpdate
             </div>
           </div>
 
-          <div className="flex justify-end">
+          <div className="flex flex-wrap justify-end gap-2">
             <button
               type="button"
-              onClick={printInvoice}
+              onClick={() => openPrintable('packing-slip')}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-forest-200 text-sm font-600 text-forest-700 hover:bg-forest-50"
+            >
+              Print packing slip <ExternalLink className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => openPrintable('invoice')}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-forest-200 text-sm font-600 text-forest-700 hover:bg-forest-50"
             >
               Print invoice <ExternalLink className="w-4 h-4" />

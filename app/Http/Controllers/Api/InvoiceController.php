@@ -12,13 +12,9 @@ class InvoiceController extends Controller
 {
     public function show(Request $request, Order $order): Response
     {
-        $user = $request->user();
+        $this->authorizeOrderAccess($request, $order);
 
-        if ($user->role !== 'admin' && $order->user_id !== $user->id) {
-            abort(403);
-        }
-
-        $order->load(['items.product', 'user']);
+        $order->load(['items.product', 'items.variation', 'user']);
         $formatted = ApiFormatter::order($order);
 
         $html = view('invoices.order', ['order' => $order, 'formatted' => $formatted])->render();
@@ -27,5 +23,28 @@ class InvoiceController extends Controller
             'Content-Type' => 'text/html',
             'Content-Disposition' => 'inline; filename="invoice-'.$order->order_number.'.html"',
         ]);
+    }
+
+    public function packingSlip(Request $request, Order $order): Response
+    {
+        $this->authorizeOrderAccess($request, $order);
+
+        $order->load(['items.product', 'items.variation', 'user']);
+
+        $html = view('invoices.packing-slip', ['order' => $order])->render();
+
+        return response($html, 200, [
+            'Content-Type' => 'text/html',
+            'Content-Disposition' => 'inline; filename="packing-slip-'.$order->order_number.'.html"',
+        ]);
+    }
+
+    private function authorizeOrderAccess(Request $request, Order $order): void
+    {
+        $user = $request->user();
+
+        if ($user->role !== 'admin' && $order->user_id !== $user->id) {
+            abort(403);
+        }
     }
 }
