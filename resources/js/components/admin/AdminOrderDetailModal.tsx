@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
-import { ExternalLink, Package } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Package, Printer, X } from 'lucide-react'
 import Modal from '@/components/admin/Modal'
-import { api } from '@/lib/api'
+import { api, getToken } from '@/lib/api'
 import { mediaUrl } from '@/lib/media'
 import type { Order, ProductVariation } from '@/types'
 
@@ -57,11 +57,15 @@ export default function AdminOrderDetailModal({ orderId, open, onClose, onUpdate
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
   const [statusForm, setStatusForm] = useState({ status: '', note: '', trackingNumber: '' })
+  const [printPreview, setPrintPreview] = useState<{ title: string; html: string } | null>(null)
+  const [printLoading, setPrintLoading] = useState(false)
+  const printFrameRef = useRef<HTMLIFrameElement>(null)
 
   useEffect(() => {
     if (!open || !orderId) return
     setLoading(true)
     setMessage('')
+    setPrintPreview(null)
     api.getAdminOrder(orderId)
       .then(res => {
         setOrder(res.order)
@@ -75,6 +79,10 @@ export default function AdminOrderDetailModal({ orderId, open, onClose, onUpdate
       .catch(() => setMessage('Failed to load order details.'))
       .finally(() => setLoading(false))
   }, [open, orderId])
+
+  useEffect(() => {
+    if (!open) setPrintPreview(null)
+  }, [open])
 
   const saveStatus = async () => {
     if (!order) return
@@ -103,33 +111,41 @@ export default function AdminOrderDetailModal({ orderId, open, onClose, onUpdate
   const openPrintable = async (path: 'invoice' | 'packing-slip') => {
     if (!order) return
 
-    // Open immediately on click so live HTTPS browsers don't leave about:blank.
-    const w = window.open('about:blank', '_blank')
-    if (!w) {
-      setMessage('Popup blocked. Allow popups for this site, then try again.')
-      return
-    }
+    const title = path === 'invoice' ? `Invoice ${order.orderNumber}` : `Packing slip ${order.orderNumber}`
+    setPrintLoading(true)
+    setPrintPreview({ title, html: '' })
+    setMessage('')
 
     try {
-      const links = await api.getOrderPrintLinks(order.id)
-      const url = path === 'invoice' ? links.invoiceUrl : links.packingSlipUrl
-      if (!url) {
-        throw new Error('Print link missing from server response')
+      const token = getToken()
+      const res = await fetch(`/api/orders/${order.id}/${path}`, {
+        headers: {
+          Accept: 'text/html',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      })
+      const html = await res.text()
+
+      if (!res.ok) {
+        setPrintPreview(null)
+        setMessage(`Could not load ${path === 'invoice' ? 'invoice' : 'packing slip'} (HTTP ${res.status}).`)
+        return
       }
-      // Navigate the already-opened tab to a signed URL (no Bearer header needed).
-      w.location.href = url
+
+      setPrintPreview({ title, html })
     } catch (e) {
-      try {
-        w.close()
-      } catch {
-        // ignore
-      }
-      setMessage(
-        e instanceof Error
-          ? `Could not open ${path === 'invoice' ? 'invoice' : 'packing slip'}: ${e.message}`
-          : 'Could not open print document. Redeploy PHP routes/views and clear route cache.',
-      )
+      setPrintPreview(null)
+      setMessage(e instanceof Error ? e.message : 'Network error loading print document.')
+    } finally {
+      setPrintLoading(false)
     }
+  }
+
+  const handlePrintPreview = () => {
+    const frame = printFrameRef.current
+    if (!frame?.contentWindow) return
+    frame.contentWindow.focus()
+    frame.contentWindow.print()
   }
 
   const billingLines = formatAddress(order?.billingAddress ?? null)
@@ -365,17 +381,65 @@ export default function AdminOrderDetailModal({ orderId, open, onClose, onUpdate
             <button
               type="button"
               onClick={() => openPrintable('packing-slip')}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-forest-200 text-sm font-600 text-forest-700 hover:bg-forest-50"
+              disabled={printLoading}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-forest-200 text-sm font-600 text-forest-700 hover:bg-forest-50 disabled:opacity-60"
             >
-              Print packing slip <ExternalLink className="w-4 h-4" />
+              <Printer className="w-4 h-4" />
+              {printLoading ? 'Loading…' : 'Print packing slip'}
             </button>
             <button
               type="button"
               onClick={() => openPrintable('invoice')}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-forest-200 text-sm font-600 text-forest-700 hover:bg-forest-50"
+              disabled={printLoading}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-forest-200 text-sm font-600 text-forest-700 hover:bg-forest-50 disabled:opacity-60"
             >
-              Print invoice <ExternalLink className="w-4 h-4" />
+              <Printer className="w-4 h-4" />
+              {printLoading ? 'Loading…' : 'Print invoice'}
             </button>
+          </div>
+        </div>
+      )}
+
+      {printPreview && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-forest-900/70 backdrop-blur-sm" onClick={() => setPrintPreview(null)} />
+          <div className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl max-h-[92vh] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-forest-100 bg-cream-50">
+              <h3 className="font-sans font-700 text-forest-900 text-base truncate">{printPreview.title}</h3>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={handlePrintPreview}
+                  disabled={printLoading || !printPreview.html}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-forest-700 text-white text-sm font-600 hover:bg-forest-800 disabled:opacity-60"
+                >
+                  <Printer className="w-4 h-4" />
+                  Print
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPrintPreview(null)}
+                  className="p-2 rounded-lg hover:bg-forest-100 text-sage-500"
+                  aria-label="Close preview"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-hidden bg-white min-h-[60vh]">
+              {printLoading || !printPreview.html ? (
+                <div className="flex items-center justify-center h-full min-h-[60vh]">
+                  <div className="w-8 h-8 border-2 border-forest-300 border-t-forest-700 rounded-full animate-spin" />
+                </div>
+              ) : (
+                <iframe
+                  ref={printFrameRef}
+                  title={printPreview.title}
+                  srcDoc={printPreview.html}
+                  className="w-full h-[70vh] border-0 bg-white"
+                />
+              )}
+            </div>
           </div>
         </div>
       )}

@@ -630,8 +630,6 @@ export const api = {
 
   getInvoiceUrl: (orderId: string) => `${API_BASE}/orders/${orderId}/invoice`,
   getPackingSlipUrl: (orderId: string) => `${API_BASE}/orders/${orderId}/packing-slip`,
-  getOrderPrintLinks: (orderId: string) =>
-    request<{ invoiceUrl: string; packingSlipUrl: string }>(`/orders/${orderId}/print-links`),
 
   getPaymentConfig: () => request<{
     stripeEnabled: boolean; stripeKey?: string; paypalEnabled: boolean;

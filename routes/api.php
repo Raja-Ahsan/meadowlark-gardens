@@ -92,7 +92,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/orders/{order}/invoice', [InvoiceController::class, 'show']);
     Route::get('/orders/{order}/packing-slip', [InvoiceController::class, 'packingSlip']);
-    Route::get('/orders/{order}/print-links', [InvoiceController::class, 'printLinks']);
 
     Route::post('/payments/stripe/intent', [PaymentController::class, 'createStripeIntent']);
     Route::post('/payments/paypal/confirm', [PaymentController::class, 'confirmPaypal']);
