@@ -43,6 +43,18 @@ function variationLabel(v?: ProductVariation | null): string | null {
   return Object.entries(v.attributeValues).map(([k, val]) => `${k}: ${val}`).join(' · ')
 }
 
+/** Turn full HTML documents into preview markup (avoids live CSP blocking iframe srcDoc). */
+function htmlToPreviewMarkup(html: string): string {
+  const doc = new DOMParser().parseFromString(html, 'text/html')
+  doc.querySelectorAll('button').forEach(btn => btn.remove())
+  const styles = Array.from(doc.querySelectorAll('style'))
+    .map(el => el.outerHTML)
+    .join('')
+  const body = doc.body?.innerHTML?.trim()
+  if (body) return `${styles}<div class="print-doc">${body}</div>`
+  return html
+}
+
 interface Props {
   orderId: string | null
   open: boolean
@@ -59,7 +71,7 @@ export default function AdminOrderDetailModal({ orderId, open, onClose, onUpdate
   const [statusForm, setStatusForm] = useState({ status: '', note: '', trackingNumber: '' })
   const [printPreview, setPrintPreview] = useState<{ title: string; html: string } | null>(null)
   const [printLoading, setPrintLoading] = useState(false)
-  const printFrameRef = useRef<HTMLIFrameElement>(null)
+  const printContentRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!open || !orderId) return
@@ -132,6 +144,12 @@ export default function AdminOrderDetailModal({ orderId, open, onClose, onUpdate
         return
       }
 
+      if (!html.trim() || html.trim().startsWith('{')) {
+        setPrintPreview(null)
+        setMessage(`Could not load ${path === 'invoice' ? 'invoice' : 'packing slip'}: empty or invalid response from server.`)
+        return
+      }
+
       setPrintPreview({ title, html })
     } catch (e) {
       setPrintPreview(null)
@@ -142,10 +160,42 @@ export default function AdminOrderDetailModal({ orderId, open, onClose, onUpdate
   }
 
   const handlePrintPreview = () => {
-    const frame = printFrameRef.current
-    if (!frame?.contentWindow) return
-    frame.contentWindow.focus()
-    frame.contentWindow.print()
+    if (!printPreview?.html) return
+
+    const iframe = document.createElement('iframe')
+    iframe.setAttribute('aria-hidden', 'true')
+    iframe.style.position = 'fixed'
+    iframe.style.right = '0'
+    iframe.style.bottom = '0'
+    iframe.style.width = '0'
+    iframe.style.height = '0'
+    iframe.style.border = '0'
+    document.body.appendChild(iframe)
+
+    const frameDoc = iframe.contentDocument || iframe.contentWindow?.document
+    if (!frameDoc) {
+      document.body.removeChild(iframe)
+      setMessage('Could not open print dialog.')
+      return
+    }
+
+    frameDoc.open()
+    frameDoc.write(printPreview.html)
+    frameDoc.close()
+
+    const triggerPrint = () => {
+      try {
+        iframe.contentWindow?.focus()
+        iframe.contentWindow?.print()
+      } finally {
+        setTimeout(() => {
+          if (iframe.parentNode) iframe.parentNode.removeChild(iframe)
+        }, 1000)
+      }
+    }
+
+    // Allow styles/images to settle before printing.
+    setTimeout(triggerPrint, 250)
   }
 
   const billingLines = formatAddress(order?.billingAddress ?? null)
@@ -426,17 +476,16 @@ export default function AdminOrderDetailModal({ orderId, open, onClose, onUpdate
                 </button>
               </div>
             </div>
-            <div className="flex-1 overflow-hidden bg-white min-h-[60vh]">
+            <div className="flex-1 overflow-auto bg-white min-h-[60vh]">
               {printLoading || !printPreview.html ? (
                 <div className="flex items-center justify-center h-full min-h-[60vh]">
                   <div className="w-8 h-8 border-2 border-forest-300 border-t-forest-700 rounded-full animate-spin" />
                 </div>
               ) : (
-                <iframe
-                  ref={printFrameRef}
-                  title={printPreview.title}
-                  srcDoc={printPreview.html}
-                  className="w-full h-[70vh] border-0 bg-white"
+                <div
+                  ref={printContentRef}
+                  className="p-6 text-[#244526]"
+                  dangerouslySetInnerHTML={{ __html: htmlToPreviewMarkup(printPreview.html) }}
                 />
               )}
             </div>
