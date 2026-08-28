@@ -83,6 +83,8 @@ interface RetailOrderPayload {
   billingAddress?: Record<string, string>
   shippingAddress?: Record<string, string>
   shippingMethod: ShippingMethodPayload
+  authorizeOpaqueData?: { dataDescriptor: string; dataValue: string }
+  authorizeCard?: { cardNumber: string; expMonth: string; expYear: string; cardCode: string }
 }
 
 export interface ShippingMethodPayload {
@@ -115,6 +117,8 @@ interface WholesaleOrderPayload {
   billingAddress?: Record<string, string>
   shippingAddress?: Record<string, string>
   shippingMethod: ShippingMethodPayload
+  authorizeOpaqueData?: { dataDescriptor: string; dataValue: string }
+  authorizeCard?: { cardNumber: string; expMonth: string; expYear: string; cardCode: string }
 }
 
 export interface ShopCategory {
@@ -258,7 +262,14 @@ export const api = {
   },
 
   placeRetailOrder: (payload: RetailOrderPayload) =>
-    request<{ message: string; order: Order }>('/orders/retail', {
+    request<{
+      message: string
+      order: Order
+      accountCreated?: boolean
+      accountCredentialsSent?: boolean
+      token?: string
+      user?: AuthUser
+    }>('/orders/retail', {
       method: 'POST', body: JSON.stringify(payload),
     }),
 
@@ -632,9 +643,18 @@ export const api = {
   getPackingSlipUrl: (orderId: string) => `${API_BASE}/orders/${orderId}/packing-slip`,
 
   getPaymentConfig: () => request<{
-    stripeEnabled: boolean; stripeKey?: string; paypalEnabled: boolean;
-    paypalClientId?: string; bankTransferEnabled: boolean; codEnabled: boolean;
-    methods: string[];
+    stripeEnabled: boolean
+    stripeKey?: string
+    paypalEnabled: boolean
+    paypalClientId?: string
+    bankTransferEnabled: boolean
+    codEnabled: boolean
+    authorizeEnabled: boolean
+    authorizeApiLoginId?: string
+    authorizeClientKey?: string
+    authorizeSandbox?: boolean
+    authorizeDirectCard?: boolean
+    methods: string[]
   }>('/payments/config'),
 
   createStripeIntent: (amount: number, orderId?: string) =>

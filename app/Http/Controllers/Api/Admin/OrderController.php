@@ -62,11 +62,12 @@ class OrderController extends Controller
         ]);
 
         $order->refresh();
+        $order->load(['items.product', 'items.variation']);
         OrderEmailService::sendForStatus($order, $data['status'], $previousStatus);
 
         return response()->json([
             'message' => 'Order status updated.',
-            'order' => ApiFormatter::order($order->fresh(['items.product', 'user'])),
+            'order' => ApiFormatter::order($order->fresh(['items.product', 'items.variation', 'user', 'statusHistories'])),
         ]);
     }
 

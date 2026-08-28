@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext'
 import { api, type ShippingRate } from '@/lib/api'
 import WholesalePortalHeader from '@/components/wholesale/WholesalePortalHeader'
 import ShippingMethodSelector from '@/components/checkout/ShippingMethodSelector'
+import AuthorizeCardForm, { collectAuthorizePayment } from '@/components/checkout/AuthorizeCardForm'
 import {
   cartLineKey,
   formatVariationLabel,
@@ -44,6 +45,10 @@ export default function WholesaleCheckoutPage() {
 
   const [paymentMethods, setPaymentMethods] = useState<string[]>([])
   const [paymentsLoaded, setPaymentsLoaded] = useState(false)
+  const [authorizeEnabled, setAuthorizeEnabled] = useState(false)
+  const [authorizeApiLoginId, setAuthorizeApiLoginId] = useState('')
+  const [authorizeClientKey, setAuthorizeClientKey] = useState('')
+  const [authorizeSandbox, setAuthorizeSandbox] = useState(true)
 
   const [couponCode, setCouponCode] = useState('')
   const [discount, setDiscount] = useState(0)
@@ -91,6 +96,10 @@ export default function WholesaleCheckoutPage() {
       .then(config => {
         const methods = config.methods ?? []
         setPaymentMethods(methods)
+        setAuthorizeEnabled(!!config.authorizeEnabled)
+        setAuthorizeApiLoginId(config.authorizeApiLoginId || '')
+        setAuthorizeClientKey(config.authorizeClientKey || '')
+        setAuthorizeSandbox(config.authorizeSandbox !== false)
         if (methods.length > 0) {
           setForm(f => ({ ...f, paymentMethod: methods[0] }))
         }
@@ -145,6 +154,11 @@ export default function WholesaleCheckoutPage() {
             country: 'US',
           }
 
+      let authorizePayment: Awaited<ReturnType<typeof collectAuthorizePayment>> | Record<string, never> = {}
+      if (form.paymentMethod === 'Credit Card' && authorizeEnabled) {
+        authorizePayment = await collectAuthorizePayment()
+      }
+
       await api.placeWholesaleOrder({
         paymentMethod: form.paymentMethod,
         couponCode: couponApplied || undefined,
@@ -158,6 +172,7 @@ export default function WholesaleCheckoutPage() {
           cost: selectedShipping.cost,
         },
         items: cartItems,
+        ...authorizePayment,
       })
 
       clearCart()
@@ -274,6 +289,15 @@ export default function WholesaleCheckoutPage() {
                     </label>
                   ))}
                 </div>
+              )}
+              {form.paymentMethod === 'Credit Card' && authorizeEnabled && authorizeApiLoginId && authorizeClientKey && (
+                <AuthorizeCardForm
+                  apiLoginId={authorizeApiLoginId}
+                  clientKey={authorizeClientKey}
+                  sandbox={authorizeSandbox}
+                  billingZip={form.postalCode}
+                  billingName={`${form.firstName} ${form.lastName}`.trim()}
+                />
               )}
             </section>
           </div>

@@ -6,15 +6,19 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductVariation;
+use App\Models\User;
 use App\Support\ApiFormatter;
 use App\Services\AuditService;
+use App\Services\AuthorizeNetService;
 use App\Services\EmailService;
 use App\Services\PaymentMethodService;
 use App\Services\ShippingQuoteService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class OrderController extends Controller
 {
@@ -37,14 +41,45 @@ class OrderController extends Controller
             'items.*.productId' => ['required', 'exists:products,id'],
             'items.*.variationId' => ['nullable', 'exists:product_variations,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
+            'authorizeOpaqueData' => ['nullable', 'array'],
+            'authorizeOpaqueData.dataDescriptor' => ['required_with:authorizeOpaqueData', 'string'],
+            'authorizeOpaqueData.dataValue' => ['required_with:authorizeOpaqueData', 'string'],
+            'authorizeCard' => ['nullable', 'array'],
+            'authorizeCard.cardNumber' => ['required_with:authorizeCard', 'string'],
+            'authorizeCard.expMonth' => ['required_with:authorizeCard', 'string'],
+            'authorizeCard.expYear' => ['required_with:authorizeCard', 'string'],
+            'authorizeCard.cardCode' => ['required_with:authorizeCard', 'string'],
         ]);
 
-        $order = $this->createOrder($data, 'retail', null, $data['customerName'], $data['customerEmail']);
+        $account = $this->resolveGuestCustomerAccount(
+            $data['customerName'],
+            $data['customerEmail'],
+            is_array($data['billingAddress'] ?? null) ? ($data['billingAddress']['phone'] ?? null) : null
+        );
 
-        return response()->json([
+        $order = $this->createOrder(
+            $data,
+            'retail',
+            $account['user']?->id,
+            $data['customerName'],
+            $data['customerEmail'],
+            false,
+            $account['emailVars']
+        );
+
+        $payload = [
             'message' => 'Order placed successfully!',
             'order' => ApiFormatter::order($order),
-        ], 201);
+            'accountCreated' => (bool) $account['created'],
+            'accountCredentialsSent' => (bool) $account['credentialsSent'],
+        ];
+
+        if ($account['user'] && $account['token']) {
+            $payload['token'] = $account['token'];
+            $payload['user'] = ApiFormatter::user($account['user']);
+        }
+
+        return response()->json($payload, 201);
     }
 
     public function wholesaleIndex(Request $request): JsonResponse
@@ -62,7 +97,7 @@ class OrderController extends Controller
 
     public function customerIndex(Request $request): JsonResponse
     {
-        $orders = Order::with(['items.product'])
+        $orders = Order::with(['items.product', 'items.variation', 'statusHistories'])
             ->where('user_id', $request->user()->id)
             ->where('type', 'retail')
             ->latest()
@@ -96,6 +131,14 @@ class OrderController extends Controller
             'items.*.productId' => ['required', 'exists:products,id'],
             'items.*.variationId' => ['nullable', 'exists:product_variations,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
+            'authorizeOpaqueData' => ['nullable', 'array'],
+            'authorizeOpaqueData.dataDescriptor' => ['required_with:authorizeOpaqueData', 'string'],
+            'authorizeOpaqueData.dataValue' => ['required_with:authorizeOpaqueData', 'string'],
+            'authorizeCard' => ['nullable', 'array'],
+            'authorizeCard.cardNumber' => ['required_with:authorizeCard', 'string'],
+            'authorizeCard.expMonth' => ['required_with:authorizeCard', 'string'],
+            'authorizeCard.expYear' => ['required_with:authorizeCard', 'string'],
+            'authorizeCard.cardCode' => ['required_with:authorizeCard', 'string'],
         ]);
 
         $order = $this->createOrder($data, 'retail', $user->id, $user->name, $user->email);
@@ -125,6 +168,14 @@ class OrderController extends Controller
             'items.*.productId' => ['required', 'exists:products,id'],
             'items.*.variationId' => ['nullable', 'exists:product_variations,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
+            'authorizeOpaqueData' => ['nullable', 'array'],
+            'authorizeOpaqueData.dataDescriptor' => ['required_with:authorizeOpaqueData', 'string'],
+            'authorizeOpaqueData.dataValue' => ['required_with:authorizeOpaqueData', 'string'],
+            'authorizeCard' => ['nullable', 'array'],
+            'authorizeCard.cardNumber' => ['required_with:authorizeCard', 'string'],
+            'authorizeCard.expMonth' => ['required_with:authorizeCard', 'string'],
+            'authorizeCard.expYear' => ['required_with:authorizeCard', 'string'],
+            'authorizeCard.cardCode' => ['required_with:authorizeCard', 'string'],
         ]);
 
         $order = $this->createOrder(
@@ -148,9 +199,10 @@ class OrderController extends Controller
         ?int $userId,
         string $customerName,
         string $customerEmail,
-        bool $enforceWholesaleMin = false
+        bool $enforceWholesaleMin = false,
+        array $extraEmailVars = []
     ): Order {
-        return DB::transaction(function () use ($data, $type, $userId, $customerName, $customerEmail, $enforceWholesaleMin) {
+        return DB::transaction(function () use ($data, $type, $userId, $customerName, $customerEmail, $enforceWholesaleMin, $extraEmailVars) {
             $subtotal = 0;
             $lineItems = [];
 
@@ -269,21 +321,145 @@ class OrderController extends Controller
 
             $order->statusHistories()->create(['status' => 'pending', 'note' => 'Order placed']);
 
-            EmailService::send('order_confirmation', $customerEmail, [
+            if (($data['paymentMethod'] ?? '') === PaymentMethodService::LABEL_AUTHORIZE) {
+                $authorize = app(AuthorizeNetService::class);
+                $opaque = $data['authorizeOpaqueData'] ?? null;
+                $card = $data['authorizeCard'] ?? null;
+                $hasOpaque = is_array($opaque) && ! empty($opaque['dataDescriptor']) && ! empty($opaque['dataValue']);
+                $hasCard = is_array($card) && ! empty($card['cardNumber']) && ! empty($card['expMonth'])
+                    && ! empty($card['expYear']) && ! empty($card['cardCode']);
+
+                if ($hasOpaque) {
+                    $charge = $authorize->chargeOpaqueData(
+                        (float) $order->total,
+                        (string) $opaque['dataDescriptor'],
+                        (string) $opaque['dataValue'],
+                        (string) $order->order_number,
+                        $customerEmail
+                    );
+                } elseif ($hasCard) {
+                    if (! $authorize->allowsDirectCard()) {
+                        throw ValidationException::withMessages([
+                            'payment' => 'Card payments require HTTPS. Use a secure connection or sandbox mode.',
+                        ]);
+                    }
+                    $charge = $authorize->chargeCard(
+                        (float) $order->total,
+                        $card,
+                        (string) $order->order_number,
+                        $customerEmail
+                    );
+                } else {
+                    throw ValidationException::withMessages([
+                        'authorizeOpaqueData' => 'Card payment details are required for Credit Card checkout.',
+                    ]);
+                }
+
+                if (! ($charge['success'] ?? false)) {
+                    throw ValidationException::withMessages([
+                        'payment' => $charge['message'] ?? 'Card payment failed. Please try again.',
+                    ]);
+                }
+
+                $order->update([
+                    'status' => 'paid',
+                    'payment_id' => $charge['transId'] ?? null,
+                    'paid_at' => now(),
+                ]);
+                $order->statusHistories()->create([
+                    'status' => 'paid',
+                    'note' => 'Paid via Authorize.net',
+                ]);
+            }
+
+            EmailService::sendOrder('order_confirmation', $customerEmail, $order, [
                 'name' => $customerName,
-                'order_number' => $order->order_number,
-                'total' => number_format($order->total, 2),
+                'account_email' => $extraEmailVars['account_email'] ?? null,
+                'account_password' => $extraEmailVars['account_password'] ?? null,
+                'account_is_new' => (bool) ($extraEmailVars['account_is_new'] ?? false),
+                'credentials_sent' => (bool) ($extraEmailVars['credentials_sent'] ?? false),
             ]);
 
             $adminEmail = \App\Models\Setting::get('site_email', 'admin@meadowlarkgardens.com');
-            EmailService::send('new_order_admin', $adminEmail, [
-                'order_number' => $order->order_number,
-                'total' => number_format($order->total, 2),
+            EmailService::sendOrder('new_order_admin', $adminEmail, $order, [
+                'name' => 'Admin',
             ]);
 
             AuditService::log('order.created', $order, null, ['total' => $order->total], $userId);
 
-            return $order->load(['items.product', 'user']);
+            return $order->load(['items.product', 'items.variation', 'user', 'statusHistories']);
         });
+    }
+
+    /**
+     * Create or attach a customer account for guest retail checkout.
+     * Always issues a one-time password + Sanctum token so the shopper is signed in
+     * and receives login credentials in the confirmation email.
+     *
+     * @return array{user: ?User, token: ?string, created: bool, credentialsSent: bool, emailVars: array<string, string>}
+     */
+    private function resolveGuestCustomerAccount(string $name, string $email, ?string $phone = null): array
+    {
+        $email = strtolower(trim($email));
+        $existing = User::whereRaw('LOWER(email) = ?', [$email])->first();
+
+        if ($existing && $existing->role !== 'customer') {
+            // Do not attach admin/wholesale accounts to guest retail orders.
+            return [
+                'user' => null,
+                'token' => null,
+                'created' => false,
+                'credentialsSent' => false,
+                'emailVars' => [
+                    'account_credentials' => '',
+                    'account_email' => '',
+                    'account_password' => '',
+                    'account_is_new' => false,
+                    'credentials_sent' => false,
+                ],
+            ];
+        }
+
+        $password = Str::password(12);
+        $created = false;
+
+        if ($existing) {
+            $existing->update([
+                'name' => $existing->name ?: $name,
+                'phone' => $phone ?: $existing->phone,
+                'password' => $password,
+            ]);
+            $user = $existing->fresh();
+        } else {
+            $user = User::create([
+                'name' => $name,
+                'email' => $email,
+                'phone' => $phone,
+                'password' => $password,
+                'role' => 'customer',
+                'approved' => true,
+            ]);
+            $created = true;
+        }
+
+        Order::whereNull('user_id')
+            ->where('type', 'retail')
+            ->whereRaw('LOWER(customer_email) = ?', [$email])
+            ->update(['user_id' => $user->id]);
+
+        $token = $user->createToken('auth')->plainTextToken;
+
+        return [
+            'user' => $user,
+            'token' => $token,
+            'created' => $created,
+            'credentialsSent' => true,
+            'emailVars' => [
+                'account_email' => $email,
+                'account_password' => $password,
+                'account_is_new' => $created,
+                'credentials_sent' => true,
+            ],
+        ];
     }
 }

@@ -90,6 +90,8 @@ export interface Order {
   billingAddress?: Record<string, string> | null
   shippingAddress?: Record<string, string> | null
   orderNotes?: string | null
+  paidAt?: string | null
+  statusHistory?: { status: string; note?: string | null; createdAt?: string | null }[]
 }
 
 export interface Address {

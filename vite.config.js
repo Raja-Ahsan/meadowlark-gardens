@@ -16,4 +16,13 @@ export default defineConfig({
             '@': path.resolve(__dirname, 'resources/js'),
         },
     },
+    // Windows: Vite defaults to [::1], which breaks Laravel @vite / browsers on localhost
+    server: {
+        host: '127.0.0.1',
+        port: 5173,
+        strictPort: true,
+        hmr: {
+            host: '127.0.0.1',
+        },
+    },
 })

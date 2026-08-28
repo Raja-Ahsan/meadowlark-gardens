@@ -34,12 +34,8 @@ class OrderEmailService
             return false;
         }
 
-        return EmailService::send($slug, $email, [
-            'name' => $order->customer_name ?? 'Customer',
-            'order_number' => $order->order_number,
-            'total' => number_format((float) $order->total, 2),
-            'tracking_number' => $order->tracking_number ?: 'Not available yet',
-            'status' => ucfirst(str_replace('_', ' ', $newStatus)),
+        return EmailService::sendOrder($slug, $email, $order, [
+            'name' => $order->customer_name ?? 'there',
         ]);
     }
 }
