@@ -120,7 +120,11 @@ export default function Navbar() {
                 <>
                   <Link
                     to={isAdmin ? '/admin' : isWholesale ? '/wholesale/portal' : '/account'}
-                    className={`flex items-center gap-2 px-4 py-2 text-sm font-sans font-600 rounded-lg transition-colors focus-ring ${linkIdle}`}
+                    className={`flex items-center gap-2 px-4 py-2.5 text-sm font-sans font-600 rounded-xl transition-colors focus-ring ${
+                      onDarkHero
+                        ? 'bg-white/20 text-white hover:bg-white/30'
+                        : 'bg-forest-700 text-white hover:bg-forest-800'
+                    }`}
                   >
                     <LayoutDashboard className="w-4 h-4" />
                     {isAdmin ? 'Admin' : isWholesale ? 'Portal' : 'My Account'}

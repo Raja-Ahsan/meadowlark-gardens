@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'authorize_net' => [
+        'api_login_id' => env('AUTHORIZE_API_LOGIN_ID'),
+        'transaction_key' => env('AUTHORIZE_TRANSACTION_KEY'),
+        'client_key' => env('AUTHORIZE_CLIENT_KEY'),
+        'sandbox' => filter_var(env('AUTHORIZE_SANDBOX', true), FILTER_VALIDATE_BOOLEAN),
+    ],
+
 ];

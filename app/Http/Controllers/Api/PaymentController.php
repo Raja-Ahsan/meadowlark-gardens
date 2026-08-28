@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Setting;
 use App\Services\AuditService;
+use App\Services\AuthorizeNetService;
 use App\Services\PaymentMethodService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -13,7 +14,7 @@ use Illuminate\Support\Facades\Http;
 
 class PaymentController extends Controller
 {
-    public function config(): JsonResponse
+    public function config(AuthorizeNetService $authorize): JsonResponse
     {
         return response()->json([
             'stripeEnabled' => Setting::get('stripe_enabled') === 'true',
@@ -22,6 +23,12 @@ class PaymentController extends Controller
             'paypalClientId' => Setting::get('paypal_client_id'),
             'bankTransferEnabled' => Setting::get('bank_transfer_enabled') === 'true',
             'codEnabled' => Setting::get('cod_enabled') === 'true',
+            'authorizeEnabled' => PaymentMethodService::isAuthorizeEnabled() && $authorize->isConfigured(),
+            'authorizeApiLoginId' => config('services.authorize_net.api_login_id'),
+            'authorizeClientKey' => config('services.authorize_net.client_key'),
+            'authorizeSandbox' => $authorize->isSandbox(),
+            // Accept.js requires HTTPS; sandbox allows server-side card charge on local HTTP
+            'authorizeDirectCard' => $authorize->allowsDirectCard(),
             'methods' => PaymentMethodService::enabledLabels(),
         ]);
     }

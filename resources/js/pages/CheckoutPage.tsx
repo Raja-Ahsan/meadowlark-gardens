@@ -7,6 +7,7 @@ import { useAuth } from '@/context/AuthContext'
 import { api, type ShippingRate } from '@/lib/api'
 import { mediaUrl } from '@/lib/media'
 import ShippingMethodSelector from '@/components/checkout/ShippingMethodSelector'
+import AuthorizeCardForm, { collectAuthorizePayment } from '@/components/checkout/AuthorizeCardForm'
 
 const inputClass = 'w-full px-4 py-3 rounded-xl border border-forest-200 text-sm focus:outline-none focus:ring-2 focus:ring-forest-500/30'
 const labelClass = 'block text-xs font-sans font-600 text-forest-700 mb-1.5'
@@ -151,7 +152,12 @@ function OrderSummaryPanel({
 
 export default function CheckoutPage() {
   const { items, total, clearCart } = useRetailCart()
-  const { user, isCustomer } = useAuth()
+  const { user, isCustomer, loginWithToken } = useAuth()
+  const [success, setSuccess] = useState(false)
+  const [successOrderNumber, setSuccessOrderNumber] = useState('')
+  const [accountCreated, setAccountCreated] = useState(false)
+  const [credentialsSent, setCredentialsSent] = useState(false)
+  const [signedInAfterOrder, setSignedInAfterOrder] = useState(false)
 
   const [form, setForm] = useState({
     firstName: user?.name?.split(' ')[0] || '',
@@ -176,6 +182,10 @@ export default function CheckoutPage() {
 
   const [paymentMethods, setPaymentMethods] = useState<string[]>([])
   const [paymentsLoaded, setPaymentsLoaded] = useState(false)
+  const [authorizeEnabled, setAuthorizeEnabled] = useState(false)
+  const [authorizeApiLoginId, setAuthorizeApiLoginId] = useState('')
+  const [authorizeClientKey, setAuthorizeClientKey] = useState('')
+  const [authorizeSandbox, setAuthorizeSandbox] = useState(true)
 
   const [couponCode, setCouponCode] = useState('')
   const [discount, setDiscount] = useState(0)
@@ -184,7 +194,6 @@ export default function CheckoutPage() {
   const [selectedShipping, setSelectedShipping] = useState<ShippingRate | null>(null)
   const [taxRate, setTaxRate] = useState(9.25)
   const [submitting, setSubmitting] = useState(false)
-  const [success, setSuccess] = useState(false)
 
   const subtotal = total
   const shipping = selectedShipping?.cost ?? 0
@@ -223,6 +232,10 @@ export default function CheckoutPage() {
       .then(config => {
         const methods = config.methods ?? []
         setPaymentMethods(methods)
+        setAuthorizeEnabled(!!config.authorizeEnabled)
+        setAuthorizeApiLoginId(config.authorizeApiLoginId || '')
+        setAuthorizeClientKey(config.authorizeClientKey || '')
+        setAuthorizeSandbox(config.authorizeSandbox !== false)
         if (methods.length > 0) {
           setForm(f => ({ ...f, paymentMethod: methods[0] }))
         }
@@ -260,6 +273,11 @@ export default function CheckoutPage() {
         state: form.shipState, postalCode: form.shipPostalCode, country: 'US',
       }
 
+      let authorizePayment: Awaited<ReturnType<typeof collectAuthorizePayment>> | Record<string, never> = {}
+      if (form.paymentMethod === 'Credit Card' && authorizeEnabled) {
+        authorizePayment = await collectAuthorizePayment()
+      }
+
       const payload = {
         paymentMethod: form.paymentMethod,
         couponCode: couponApplied || undefined,
@@ -273,16 +291,30 @@ export default function CheckoutPage() {
           cost: selectedShipping.cost,
         },
         items: cartItems,
+        ...authorizePayment,
       }
 
       if (isCustomer) {
-        await api.placeCustomerOrder(payload)
+        const res = await api.placeCustomerOrder(payload)
+        setSuccessOrderNumber(res.order.orderNumber)
+        setAccountCreated(false)
+        setCredentialsSent(false)
+        setSignedInAfterOrder(true)
       } else {
-        await api.placeRetailOrder({
+        const res = await api.placeRetailOrder({
           customerName: `${form.firstName} ${form.lastName}`.trim(),
           customerEmail: form.email,
           ...payload,
         })
+        setSuccessOrderNumber(res.order.orderNumber)
+        setAccountCreated(!!res.accountCreated)
+        setCredentialsSent(!!res.accountCredentialsSent)
+        if (res.token && res.user) {
+          loginWithToken(res.token, res.user)
+          setSignedInAfterOrder(true)
+        } else {
+          setSignedInAfterOrder(false)
+        }
       }
 
       clearCart()
@@ -300,15 +332,47 @@ export default function CheckoutPage() {
         <div className="max-w-lg mx-auto text-center bg-white rounded-2xl border border-forest-100 p-8 md:p-10 shadow-sm">
           <CheckCircle className="w-16 h-16 text-forest-600 mx-auto mb-4" />
           <h2 className="font-display font-700 text-2xl text-forest-900 mb-2">Order placed!</h2>
-          <p className="text-sage-600 font-body mb-6">
-            Thank you for your order. You will receive a confirmation email shortly.
+          {successOrderNumber && (
+            <p className="text-forest-800 font-sans font-600 mb-2">Order {successOrderNumber}</p>
+          )}
+          <p className="text-sage-600 font-body mb-4">
+            Thank you for your order. A confirmation email with your full order details
+            {credentialsSent ? ' and My Account login credentials' : ''} is on the way.
           </p>
-          <Link
-            to="/shop"
-            className="inline-block px-6 py-3 bg-forest-700 text-white rounded-xl font-sans font-600 hover:bg-forest-800 transition-colors"
-          >
-            Continue shopping
-          </Link>
+          {/* {credentialsSent && (
+            <p className="text-sm text-forest-700 bg-forest-50 rounded-xl px-4 py-3 mb-4 text-left">
+              {accountCreated ? 'We created your customer account. ' : 'Your order is linked to your account. '}
+              Check your email for the sign-in email and one-time password, then open My Account and change your password under Profile.
+            </p>
+          )} */}
+          {/* {(signedInAfterOrder || isCustomer) && (
+            <p className="text-sm text-emerald-800 bg-emerald-50 rounded-xl px-4 py-3 mb-6">
+              You are signed in. Use My Account in the header (or the button below) to track this order.
+            </p>
+          )} */}
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            {(signedInAfterOrder || isCustomer) ? (
+              <Link
+                to="/account"
+                className="inline-block px-6 py-3 bg-forest-700 text-white rounded-xl font-sans font-600 hover:bg-forest-800 transition-colors"
+              >
+                Go to My Account
+              </Link>
+            ) : (
+              <Link
+                to="/login"
+                className="inline-block px-6 py-3 bg-forest-700 text-white rounded-xl font-sans font-600 hover:bg-forest-800 transition-colors"
+              >
+                Sign in to My Account
+              </Link>
+            )}
+            <Link
+              to="/shop"
+              className="inline-block px-6 py-3 border border-forest-200 text-forest-800 rounded-xl font-sans font-600 hover:bg-forest-50 transition-colors"
+            >
+              Continue shopping
+            </Link>
+          </div>
         </div>
       </PageShell>
     )
@@ -432,6 +496,15 @@ export default function CheckoutPage() {
                   </label>
                 ))}
               </div>
+            )}
+            {form.paymentMethod === 'Credit Card' && authorizeEnabled && authorizeApiLoginId && authorizeClientKey && (
+              <AuthorizeCardForm
+                apiLoginId={authorizeApiLoginId}
+                clientKey={authorizeClientKey}
+                sandbox={authorizeSandbox}
+                billingZip={form.postalCode}
+                billingName={`${form.firstName} ${form.lastName}`.trim()}
+              />
             )}
           </section>
 

@@ -138,11 +138,20 @@ export default function CustomerDashboardPage() {
                   <div key={order.id} className="bg-white rounded-2xl border border-forest-100 shadow-sm overflow-hidden">
                     <div className="p-5 flex flex-wrap justify-between gap-4 border-b border-forest-50">
                       <div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 flex-wrap">
                           <p className="font-700 text-forest-900">{order.orderNumber}</p>
                           <span className={`px-2.5 py-0.5 rounded-full text-xs font-600 capitalize ${statusColors[order.status] || 'bg-sage-100'}`}>{order.status}</span>
                         </div>
                         <p className="text-sage-500 text-sm mt-0.5">{new Date(order.createdAt).toLocaleDateString()}</p>
+                        {order.trackingNumber && (
+                          <p className="text-sm text-forest-700 mt-2">
+                            Tracking: <span className="font-600 font-mono">{order.trackingNumber}</span>
+                            {order.shippingCarrier ? ` · ${order.shippingCarrier}` : ''}
+                          </p>
+                        )}
+                        {order.shippingMethodName && (
+                          <p className="text-xs text-sage-500 mt-1">Ship via {order.shippingMethodName}</p>
+                        )}
                       </div>
                       <div className="flex items-center gap-3">
                         <p className="font-700 text-xl text-forest-900">${order.total.toFixed(2)}</p>
@@ -156,11 +165,41 @@ export default function CustomerDashboardPage() {
                     </div>
                     <div className="p-5 grid sm:grid-cols-2 gap-3">
                       {order.items.map(item => (
-                        <div key={item.product.id} className="flex items-center gap-3 bg-cream-50 rounded-xl p-3">
+                        <div key={`${item.product.id}-${item.variationId || 'base'}`} className="flex items-center gap-3 bg-cream-50 rounded-xl p-3">
                           <img src={item.product.image} alt="" className="w-12 h-12 rounded-lg object-cover" />
-                          <div><p className="font-600 text-sm">{item.product.name}</p><p className="text-xs text-sage-500">Qty: {item.quantity}</p></div>
+                          <div>
+                            <p className="font-600 text-sm">{item.product.name}</p>
+                            <p className="text-xs text-sage-500">Qty: {item.quantity} · ${(item.lineTotal ?? item.unitPrice * item.quantity).toFixed(2)}</p>
+                          </div>
                         </div>
                       ))}
+                    </div>
+                    <div className="px-5 pb-5 grid sm:grid-cols-2 gap-4 text-sm">
+                      <div className="bg-cream-50 rounded-xl p-3">
+                        <p className="text-xs font-600 text-forest-700 mb-1">Order totals</p>
+                        <p className="text-sage-600">Subtotal: ${(order.subtotal ?? order.total).toFixed(2)}</p>
+                        {(order.discount ?? 0) > 0 && <p className="text-sage-600">Discount: -${(order.discount ?? 0).toFixed(2)}</p>}
+                        <p className="text-sage-600">Tax: ${(order.tax ?? 0).toFixed(2)}</p>
+                        <p className="text-sage-600">Shipping: ${(order.shippingCost ?? 0).toFixed(2)}</p>
+                        <p className="font-600 text-forest-900 mt-1">Total: ${order.total.toFixed(2)}</p>
+                        <p className="text-xs text-sage-500 mt-1">Paid via {order.paymentMethod}</p>
+                      </div>
+                      <div className="bg-cream-50 rounded-xl p-3">
+                        <p className="text-xs font-600 text-forest-700 mb-1">Status timeline</p>
+                        {(order.statusHistory && order.statusHistory.length > 0) ? (
+                          <ul className="space-y-1.5">
+                            {order.statusHistory.map((h, idx) => (
+                              <li key={`${h.status}-${idx}`} className="text-sage-700">
+                                <span className="font-600 capitalize">{h.status}</span>
+                                {h.createdAt ? ` · ${new Date(h.createdAt).toLocaleString()}` : ''}
+                                {h.note ? <span className="block text-xs text-sage-500">{h.note}</span> : null}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-sage-500 capitalize">{order.status}</p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}

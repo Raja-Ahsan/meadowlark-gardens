@@ -6,6 +6,7 @@ interface AuthContextType {
   loading: boolean
   login: (email: string, password: string) => Promise<{ success: boolean; message: string }>
   register: (name: string, email: string, password: string, passwordConfirmation: string) => Promise<{ success: boolean; message: string }>
+  loginWithToken: (token: string, user: AuthUser) => void
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
   isAuthenticated: boolean
@@ -78,6 +79,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const loginWithToken = (token: string, authUser: AuthUser) => {
+    setToken(token)
+    setUser(authUser)
+    localStorage.setItem('mg_user', JSON.stringify(authUser))
+  }
+
   const logout = async () => {
     try {
       if (getToken()) await api.logout()
@@ -103,6 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         login,
         register,
+        loginWithToken,
         logout,
         refreshUser,
         isAuthenticated: !!user && !!getToken(),

@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\EmailTemplate;
 use App\Models\Setting;
 use App\Support\ApiFormatter;
+use App\Services\EmailService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\View;
 
 class SettingController extends Controller
 {
@@ -74,9 +76,27 @@ class SettingController extends Controller
             'to' => ['required', 'email'],
         ]);
 
+        if (! Setting::get('smtp_host')) {
+            return response()->json([
+                'message' => 'Configure and save SMTP settings (host, port, credentials) before sending a test.',
+            ], 422);
+        }
+
         try {
-            Mail::raw('This is a test email from Meadowlark Gardens admin panel.', function ($message) use ($data) {
-                $message->to($data['to'])->subject('Meadowlark Gardens - Test Email');
+            EmailService::configureMailer();
+            $brand = EmailService::brand();
+
+            $html = View::make('emails.simple', [
+                'brand' => $brand,
+                'subject' => $brand['site_name'].' - Test Email',
+                'headline' => 'SMTP test successful',
+                'name' => 'Admin',
+                'bodyHtml' => '<p>Your Meadowlark Gardens email settings are configured correctly.</p>',
+                'cta' => ['label' => 'Visit website', 'url' => $brand['site_url']],
+            ])->render();
+
+            Mail::html($html, function ($message) use ($data, $brand) {
+                $message->to($data['to'])->subject($brand['site_name'].' - Test Email');
             });
 
             return response()->json(['message' => 'Test email sent successfully.']);
