@@ -68,9 +68,9 @@ export default function RetailCartDrawer({ open, onClose }: Props) {
                         {variationLabel && (
                           <p className="text-xs text-forest-600 font-500 mt-0.5">{variationLabel}</p>
                         )}
-                        {sku && (
+                        {/* {sku && (
                           <p className="text-[10px] text-sage-400 font-mono mt-0.5">SKU: {sku}</p>
-                        )}
+                        )} */}
                         <p className="text-sage-500 text-xs mt-1">${price.toFixed(2)} × {item.quantity}</p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">

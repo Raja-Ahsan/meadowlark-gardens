@@ -229,9 +229,9 @@ export default function ProductDetailPage() {
               )}
             </div>
 
-            {product.sku && (
+            {/* {product.sku && (
               <p className="text-xs text-sage-500">SKU: {selectedVariation?.sku || product.sku}</p>
-            )}
+            )} */}
             {product.badge && (
               <span className="inline-block mt-3 px-3 py-1 bg-forest-100 text-forest-700 rounded-full text-xs font-600">
                 {product.badge}
