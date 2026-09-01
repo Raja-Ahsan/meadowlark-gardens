@@ -30,6 +30,7 @@ class PublicSiteSettings
                 'youtube' => Setting::get('social_youtube', ''),
                 'pinterest' => Setting::get('social_pinterest', ''),
             ],
+            'wholesaleMinCartQty' => max(1, (int) Setting::get('wholesale_min_cart_qty', 25)),
         ];
     }
 }

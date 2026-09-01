@@ -4,9 +4,12 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { ShoppingCart, Package, Plus, Minus, X, CreditCard, Tag } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useCart } from '@/context/CartContext'
+import { useSiteSettings } from '@/context/SiteSettingsContext'
 import { api, ShopCategory } from '@/lib/api'
 import { Order, Product } from '@/types'
 import WholesalePortalHeader, { WholesaleTab } from '@/components/wholesale/WholesalePortalHeader'
+import Ticker from '@/components/ui/Ticker'
+import { SHIPPING_DISCLAIMER } from '@/lib/shippingDisclaimer'
 import { mediaUrl } from '@/lib/media'
 import {
   cartLineKey,
@@ -24,7 +27,10 @@ const statusColors: Record<string, string> = {
 
 export default function WholesalePortalPage() {
   const { logout } = useAuth()
-  const { items, addItem, updateQuantity, removeItem, clearCart, total } = useCart()
+  const { items, addItem, updateQuantity, removeItem, clearCart, total, itemCount } = useCart()
+  const { wholesaleMinCartQty } = useSiteSettings()
+  const minCartQty = wholesaleMinCartQty || 25
+  const meetsMinCartQty = itemCount >= minCartQty
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const activeTab = (['shop', 'cart', 'orders'].includes(searchParams.get('tab') || '')
@@ -73,16 +79,18 @@ export default function WholesalePortalPage() {
     <div className="min-h-screen bg-cream-50">
       <WholesalePortalHeader activeTab={activeTab} onTabChange={setActiveTab} onLogout={handleLogout} />
 
+      {activeTab === 'shop' && <Ticker text={SHIPPING_DISCLAIMER} />}
+
       {/* Welcome Banner */}
       {activeTab === 'shop' && (
       <div className="bg-forest-50 border-b border-forest-200 py-4 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <p className="text-forest-700 font-sans font-600 text-sm">
-            Wholesale pricing applied automatically. Open a product to choose options for variable items.
+          Minimum order of 25 plants total (we don't care how you mix and match) and all prices include shipping!! No more having to buy a full tray of one product and no more factoring in your shipping.
           </p>
-          <span className="text-xs font-sans font-600 text-forest-600 bg-forest-100 px-2.5 py-1 rounded-full border border-forest-200">
+          {/* <span className="text-xs font-sans font-600 text-forest-600 bg-forest-100 px-2.5 py-1 rounded-full border border-forest-200">
             Min. qty set per product
-          </span>
+          </span> */}
         </div>
       </div>
       )}
@@ -282,13 +290,31 @@ export default function WholesalePortalPage() {
                         <span className="text-xl">${total.toFixed(2)}</span>
                       </div>
                       <p className="text-sage-500 text-xs mt-1">Payment method selected at checkout</p>
+                      <p className="text-sage-500 text-xs mt-1">
+                        {itemCount} of {minCartQty} minimum units
+                      </p>
                     </div>
-                    <Link
-                      to="/wholesale/portal/checkout"
-                      className="w-full flex items-center justify-center gap-2 py-3.5 bg-forest-600 hover:bg-forest-700 text-white font-sans font-700 rounded-xl transition-all hover:-translate-y-0.5 hover:shadow-md focus-ring"
-                    >
-                      <CreditCard className="w-4 h-4" /> Proceed to Checkout
-                    </Link>
+                    {meetsMinCartQty ? (
+                      <Link
+                        to="/wholesale/portal/checkout"
+                        className="w-full flex items-center justify-center gap-2 py-3.5 bg-forest-600 hover:bg-forest-700 text-white font-sans font-700 rounded-xl transition-all hover:-translate-y-0.5 hover:shadow-md focus-ring"
+                      >
+                        <CreditCard className="w-4 h-4" /> Proceed to Checkout
+                      </Link>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          disabled
+                          className="w-full flex items-center justify-center gap-2 py-3.5 bg-forest-300 text-white font-sans font-700 rounded-xl cursor-not-allowed"
+                        >
+                          <CreditCard className="w-4 h-4" /> Proceed to Checkout
+                        </button>
+                        <p className="mt-2 text-sm text-terra-700 bg-terra-50 border border-terra-200 rounded-xl px-3 py-2">
+                          Minimum wholesale order is {minCartQty} units. Add {minCartQty - itemCount} more to checkout.
+                        </p>
+                      </>
+                    )}
                     <button
                       onClick={clearCart}
                       className="w-full mt-2 py-2.5 text-terra-600 text-sm font-sans font-600 hover:bg-terra-50 rounded-xl transition-colors"

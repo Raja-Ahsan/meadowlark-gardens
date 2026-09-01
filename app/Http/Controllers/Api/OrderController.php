@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductVariation;
+use App\Models\Setting;
 use App\Models\User;
 use App\Support\ApiFormatter;
 use App\Services\AuditService;
@@ -13,6 +14,7 @@ use App\Services\AuthorizeNetService;
 use App\Services\EmailService;
 use App\Services\PaymentMethodService;
 use App\Services\ShippingQuoteService;
+use App\Services\TaxJarService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -203,6 +205,14 @@ class OrderController extends Controller
         array $extraEmailVars = []
     ): Order {
         return DB::transaction(function () use ($data, $type, $userId, $customerName, $customerEmail, $enforceWholesaleMin, $extraEmailVars) {
+            if ($type === 'wholesale') {
+                $totalQty = collect($data['items'])->sum('quantity');
+                $minCartQty = max(1, (int) Setting::get('wholesale_min_cart_qty', 25));
+                if ($totalQty < $minCartQty) {
+                    abort(422, "Wholesale orders require a minimum of {$minCartQty} units. Your cart has {$totalQty}.");
+                }
+            }
+
             $subtotal = 0;
             $lineItems = [];
 
@@ -272,9 +282,19 @@ class OrderController extends Controller
                 'shippingMethod' => $data['shippingMethod'],
             ]);
 
-            $taxRate = (float) (\App\Models\Setting::get('tax_rate', 9.25));
-            $taxable = max(0, $subtotal - $discount);
-            $tax = round($taxable * ($taxRate / 100), 2);
+            if ($type === 'wholesale') {
+                $tax = 0;
+            } else {
+                $taxQuote = app(TaxJarService::class)->quote([
+                    'shippingAddress' => $data['shippingAddress'] ?? [],
+                    'items' => $data['items'],
+                    'subtotal' => $subtotal,
+                    'discount' => $discount,
+                    'shipping' => $shipping['cost'],
+                    'type' => $type,
+                ]);
+                $tax = $taxQuote['tax'];
+            }
             $shippingCost = $shipping['cost'];
             $total = max(0, $subtotal - $discount + $tax + $shippingCost);
 

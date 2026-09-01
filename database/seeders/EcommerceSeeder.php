@@ -116,6 +116,7 @@ class EcommerceSeeder extends Seeder
             'ups_shipper_country' => 'US',
             'ups_fallback_flat_rate' => '9.99',
             'ups_free_shipping_threshold' => '75',
+            'wholesale_min_cart_qty' => '25',
         ];
 
         foreach ($settings as $key => $value) {

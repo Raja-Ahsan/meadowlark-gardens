@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, ReactNode } from 'react'
 import type { Product, ProductVariation } from '@/types'
-import { cartLineKey, getWholesaleLinePrice } from '@/lib/cart'
+import { cartLineKey, formatVariationLabel, getWholesaleLinePrice } from '@/lib/cart'
+import { showAddedToCartToast } from '@/lib/toast'
 
 export interface WholesaleCartItem {
   product: Product
@@ -10,7 +11,7 @@ export interface WholesaleCartItem {
 
 interface CartContextType {
   items: WholesaleCartItem[]
-  addItem: (product: Product, quantity: number, variation?: ProductVariation) => void
+  addItem: (product: Product, quantity: number, variation?: ProductVariation, silent?: boolean) => void
   updateQuantity: (productId: string, quantity: number, variationId?: string) => void
   removeItem: (productId: string, variationId?: string) => void
   clearCart: () => void
@@ -28,7 +29,7 @@ function findLineIndex(items: WholesaleCartItem[], productId: string, variationI
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<WholesaleCartItem[]>([])
 
-  const addItem = (product: Product, quantity: number, variation?: ProductVariation) => {
+  const addItem = (product: Product, quantity: number, variation?: ProductVariation, silent = false) => {
     setItems(prev => {
       const idx = findLineIndex(prev, product.id, variation?.id)
       if (idx >= 0) {
@@ -36,6 +37,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
       return [...prev, { product, quantity, variation }]
     })
+    if (!silent) {
+      showAddedToCartToast(product.name, quantity, formatVariationLabel(variation))
+    }
   }
 
   const removeItem = (productId: string, variationId?: string) => {

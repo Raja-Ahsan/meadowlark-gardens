@@ -173,13 +173,8 @@ export interface PublicSiteSettings {
   businessHoursWeekday: string
   businessHoursSunday: string
   footerDescription: string
-  social: {
-    facebook: string
-    instagram: string
-    twitter: string
-    youtube: string
-    pinterest: string
-  }
+  social: { facebook: string; instagram: string; twitter: string; youtube: string; pinterest: string }
+  wholesaleMinCartQty: number
 }
 
 declare global {
