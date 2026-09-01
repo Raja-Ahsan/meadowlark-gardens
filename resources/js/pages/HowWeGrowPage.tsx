@@ -22,15 +22,15 @@ const practices = [
   {
     icon: Sprout,
     title: 'Healthy Starts',
-    desc: 'We grow carefully selected varieties with time and space to develop strong root systems before they ever leave our land.',
+    desc: 'We grow carefully selected varieties and give them time and space to develop strong root systems before they ever leave our nursery headed to your home.',
   },
 ]
 
 const reasons = [
   {
     step: '01',
-    title: 'Raised in Tennessee',
-    desc: 'All plants are grown right here — not shipped in from distant climates that do not match your yard.',
+    title: 'Raised in Tennessee, Shipped from Tennessee',
+    desc: 'All plants are grown and shipped from right here in Tennessee - nothing drop shipped from somewhere else.',
   },
   {
     step: '02',

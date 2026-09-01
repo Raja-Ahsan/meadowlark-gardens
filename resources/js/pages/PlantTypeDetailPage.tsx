@@ -86,7 +86,7 @@ export default function PlantTypeDetailPage() {
 
         {!loading && !error && page && (
           <article
-            className="legal-content bg-white rounded-2xl border border-forest-100 p-6 md:p-10 shadow-sm"
+            className="legal-content bg-white rounded-2xl border border-forest-100 p-6 md:p-10 shadow-sm break-words"
             dangerouslySetInnerHTML={{ __html: cleanRichTextHtml(page.content) }}
           />
         )}
