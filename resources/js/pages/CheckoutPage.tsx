@@ -8,6 +8,7 @@ import { api, type ShippingRate } from '@/lib/api'
 import { mediaUrl } from '@/lib/media'
 import ShippingMethodSelector from '@/components/checkout/ShippingMethodSelector'
 import AuthorizeCardForm, { collectAuthorizePayment } from '@/components/checkout/AuthorizeCardForm'
+import { useTaxQuote } from '@/hooks/useTaxQuote'
 
 const inputClass = 'w-full px-4 py-3 rounded-xl border border-forest-200 text-sm focus:outline-none focus:ring-2 focus:ring-forest-500/30'
 const labelClass = 'block text-xs font-sans font-600 text-forest-700 mb-1.5'
@@ -48,6 +49,8 @@ function OrderSummaryPanel({
   discount,
   taxRate,
   tax,
+  taxLoading,
+  taxSource,
   shipping,
   grandTotal,
   couponCode,
@@ -62,6 +65,8 @@ function OrderSummaryPanel({
   discount: number
   taxRate: number
   tax: number
+  taxLoading: boolean
+  taxSource: string
   shipping: number
   grandTotal: number
   couponCode: string
@@ -128,7 +133,12 @@ function OrderSummaryPanel({
         {discount > 0 && (
           <div className="flex justify-between text-forest-600"><span>Discount</span><span>-${discount.toFixed(2)}</span></div>
         )}
-        <div className="flex justify-between"><span className="text-sage-600">Tax ({taxRate}%)</span><span>${tax.toFixed(2)}</span></div>
+        <div className="flex justify-between">
+          <span className="text-sage-600">
+            Sales tax{taxSource === 'taxjar' ? '' : taxRate > 0 ? ` (${taxRate}%)` : ''}
+          </span>
+          <span>{taxLoading ? '…' : `$${tax.toFixed(2)}`}</span>
+        </div>
         <div className="flex justify-between">
           <span className="text-sage-600">Shipping</span>
           <span>{shipping === 0 ? 'FREE' : `$${shipping.toFixed(2)}`}</span>
@@ -192,13 +202,10 @@ export default function CheckoutPage() {
   const [couponApplied, setCouponApplied] = useState('')
   const [freeShippingCoupon, setFreeShippingCoupon] = useState(false)
   const [selectedShipping, setSelectedShipping] = useState<ShippingRate | null>(null)
-  const [taxRate, setTaxRate] = useState(9.25)
   const [submitting, setSubmitting] = useState(false)
 
   const subtotal = total
   const shipping = selectedShipping?.cost ?? 0
-  const tax = Math.round((subtotal - discount) * (taxRate / 100) * 100) / 100
-  const grandTotal = Math.max(0, subtotal - discount + tax + shipping)
 
   const cartItems = items.map(i => ({
     productId: i.product.id,
@@ -226,6 +233,17 @@ export default function CheckoutPage() {
       country: 'US',
     }
   }
+
+  const { tax, taxRate, source: taxSource, loading: taxLoading } = useTaxQuote({
+    shippingAddress: getShippingAddress(),
+    items: cartItems,
+    subtotal,
+    discount,
+    shipping,
+    type: 'retail',
+  })
+
+  const grandTotal = Math.max(0, subtotal - discount + tax + shipping)
 
   useEffect(() => {
     api.getPaymentConfig()
@@ -404,6 +422,8 @@ export default function CheckoutPage() {
             discount={discount}
             taxRate={taxRate}
             tax={tax}
+            taxLoading={taxLoading}
+            taxSource={taxSource}
             shipping={shipping}
             grandTotal={grandTotal}
             couponCode={couponCode}
@@ -467,7 +487,6 @@ export default function CheckoutPage() {
               freeShipping={freeShippingCoupon}
               selected={selectedShipping}
               onSelect={setSelectedShipping}
-              onQuote={q => setTaxRate(q.taxRate)}
             />
           </section>
 

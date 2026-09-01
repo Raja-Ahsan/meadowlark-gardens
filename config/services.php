@@ -42,4 +42,9 @@ return [
         'sandbox' => filter_var(env('AUTHORIZE_SANDBOX', true), FILTER_VALIDATE_BOOLEAN),
     ],
 
+    'taxjar' => [
+        'api_key' => env('TAXJAR_API_KEY'),
+        'sandbox' => filter_var(env('TAXJAR_SANDBOX', false), FILTER_VALIDATE_BOOLEAN),
+    ],
+
 ];

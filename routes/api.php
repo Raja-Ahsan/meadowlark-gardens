@@ -33,6 +33,7 @@ use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ShippingController;
+use App\Http\Controllers\Api\TaxController;
 use App\Http\Controllers\Api\ShopController;
 use App\Http\Controllers\Api\SiteSettingController;
 use App\Http\Controllers\Api\UploadController;
@@ -56,6 +57,7 @@ Route::get('/site-settings', [SiteSettingController::class, 'index']);
 
 Route::get('/payments/config', [PaymentController::class, 'config']);
 Route::post('/shipping/quote', [ShippingController::class, 'quote']);
+Route::post('/tax/quote', [TaxController::class, 'quote']);
 
 Route::get('/legal-pages', [LegalPageController::class, 'index']);
 Route::get('/legal-pages/{legalPage:slug}', [LegalPageController::class, 'show']);

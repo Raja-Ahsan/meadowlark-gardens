@@ -2,13 +2,15 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import type { Product, ProductVariation } from '@/types'
 import {
   cartLineKey,
+  formatVariationLabel,
   getCartLinePrice,
   type RetailCartItem,
 } from '@/lib/cart'
+import { showAddedToCartToast } from '@/lib/toast'
 
 interface RetailCartContextType {
   items: RetailCartItem[]
-  addItem: (product: Product, qty?: number, variation?: ProductVariation) => void
+  addItem: (product: Product, qty?: number, variation?: ProductVariation, silent?: boolean) => void
   removeItem: (productId: string, variationId?: string) => void
   updateQuantity: (productId: string, quantity: number, variationId?: string) => void
   clearCart: () => void
@@ -39,7 +41,7 @@ export function RetailCartProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
   }, [items])
 
-  const addItem = (product: Product, qty = 1, variation?: ProductVariation) => {
+  const addItem = (product: Product, qty = 1, variation?: ProductVariation, silent = false) => {
     setItems(prev => {
       const idx = findLineIndex(prev, product.id, variation?.id)
       if (idx >= 0) {
@@ -47,6 +49,9 @@ export function RetailCartProvider({ children }: { children: ReactNode }) {
       }
       return [...prev, { product, quantity: qty, variation }]
     })
+    if (!silent) {
+      showAddedToCartToast(product.name, qty, formatVariationLabel(variation))
+    }
   }
 
   const removeItem = (productId: string, variationId?: string) => {

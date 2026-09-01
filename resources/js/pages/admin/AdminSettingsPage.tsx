@@ -134,6 +134,25 @@ export default function AdminSettingsPage() {
               </div>
             </div>
 
+            <div className="pt-4 border-t border-forest-100">
+              <h2 className="font-sans font-700 text-forest-900 text-sm mb-4">Wholesale</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className={labelClass}>Minimum cart quantity</label>
+                  <input
+                    type="number"
+                    min={1}
+                    className={inputClass}
+                    value={get('general', 'wholesale_min_cart_qty')}
+                    onChange={e => set('general', 'wholesale_min_cart_qty', e.target.value)}
+                  />
+                  <p className="text-xs text-sage-500 mt-1">
+                    Total units required in the wholesale cart before checkout (e.g. 25).
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <button onClick={() => save('general')} disabled={saving} className="px-6 py-2.5 bg-forest-700 text-white rounded-xl text-sm font-600">{saving ? 'Saving...' : 'Save General Settings'}</button>
           </div>
         )}

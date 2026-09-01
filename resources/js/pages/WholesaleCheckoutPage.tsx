@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { ShoppingBag, Tag, CheckCircle } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
 import { useAuth } from '@/context/AuthContext'
+import { useSiteSettings } from '@/context/SiteSettingsContext'
 import { api, type ShippingRate } from '@/lib/api'
 import WholesalePortalHeader from '@/components/wholesale/WholesalePortalHeader'
 import ShippingMethodSelector from '@/components/checkout/ShippingMethodSelector'
@@ -17,8 +18,11 @@ const inputClass = 'w-full px-4 py-3 rounded-xl border border-forest-200 text-sm
 const labelClass = 'block text-xs font-sans font-600 text-forest-700 mb-1.5'
 
 export default function WholesaleCheckoutPage() {
-  const { items, total, clearCart } = useCart()
+  const { items, total, clearCart, itemCount } = useCart()
   const { user, logout } = useAuth()
+  const { wholesaleMinCartQty } = useSiteSettings()
+  const minCartQty = wholesaleMinCartQty || 25
+  const meetsMinCartQty = itemCount >= minCartQty
   const navigate = useNavigate()
 
   const nameParts = (user?.name || '').trim().split(/\s+/)
@@ -55,14 +59,11 @@ export default function WholesaleCheckoutPage() {
   const [couponApplied, setCouponApplied] = useState('')
   const [freeShippingCoupon, setFreeShippingCoupon] = useState(false)
   const [selectedShipping, setSelectedShipping] = useState<ShippingRate | null>(null)
-  const [taxRate, setTaxRate] = useState(9.25)
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
 
   const subtotal = total
   const shipping = selectedShipping?.cost ?? 0
-  const tax = Math.round((subtotal - discount) * (taxRate / 100) * 100) / 100
-  const grandTotal = Math.max(0, subtotal - discount + tax + shipping)
 
   const cartItems = items.map(i => ({
     productId: i.product.id,
@@ -90,6 +91,8 @@ export default function WholesaleCheckoutPage() {
       country: 'US',
     }
   }
+
+  const grandTotal = Math.max(0, subtotal - discount + shipping)
 
   useEffect(() => {
     api.getPaymentConfig()
@@ -127,7 +130,7 @@ export default function WholesaleCheckoutPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (items.length === 0 || !form.paymentMethod || !selectedShipping) return
+    if (items.length === 0 || !meetsMinCartQty || !form.paymentMethod || !selectedShipping) return
 
     setSubmitting(true)
     try {
@@ -203,14 +206,26 @@ export default function WholesaleCheckoutPage() {
     )
   }
 
-  if (items.length === 0) {
+  if (items.length === 0 || !meetsMinCartQty) {
     return (
       <div className="min-h-screen bg-cream-50">
         <WholesalePortalHeader onLogout={handleLogout} />
         <div className="max-w-lg mx-auto py-20 text-center px-4">
           <ShoppingBag className="w-12 h-12 text-sage-400 mx-auto mb-4" />
-          <h1 className="font-sans font-700 text-xl text-forest-900 mb-2">Your cart is empty</h1>
-          <Link to="/wholesale/portal" className="text-forest-700 font-600 hover:underline">Browse products</Link>
+          <h1 className="font-sans font-700 text-xl text-forest-900 mb-2">
+            {items.length === 0 ? 'Your cart is empty' : 'Minimum order not met'}
+          </h1>
+          {items.length > 0 && (
+            <p className="text-terra-700 bg-terra-50 border border-terra-200 rounded-xl px-4 py-3 mb-4 text-sm">
+              Wholesale orders require at least {minCartQty} units. Your cart has {itemCount}.
+            </p>
+          )}
+          <Link
+            to={items.length === 0 ? '/wholesale/portal' : '/wholesale/portal?tab=cart'}
+            className="text-forest-700 font-600 hover:underline"
+          >
+            {items.length === 0 ? 'Browse products' : 'Back to cart'}
+          </Link>
         </div>
       </div>
     )
@@ -270,7 +285,6 @@ export default function WholesaleCheckoutPage() {
                 freeShipping={freeShippingCoupon}
                 selected={selectedShipping}
                 onSelect={setSelectedShipping}
-                onQuote={q => setTaxRate(q.taxRate)}
               />
             </section>
 
@@ -333,7 +347,6 @@ export default function WholesaleCheckoutPage() {
               <div className="space-y-2 text-sm border-t border-forest-100 pt-4">
                 <div className="flex justify-between"><span className="text-sage-600">Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
                 {discount > 0 && <div className="flex justify-between text-forest-600"><span>Discount</span><span>-${discount.toFixed(2)}</span></div>}
-                <div className="flex justify-between"><span className="text-sage-600">Tax ({taxRate}%)</span><span>${tax.toFixed(2)}</span></div>
                 <div className="flex justify-between"><span className="text-sage-600">Shipping</span><span>{shipping === 0 ? 'FREE' : `$${shipping.toFixed(2)}`}</span></div>
                 <div className="flex justify-between font-sans font-700 text-lg text-forest-900 pt-2 border-t border-forest-100">
                   <span>Total</span><span>${grandTotal.toFixed(2)}</span>

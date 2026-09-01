@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext'
 import { useNavigate, Link } from 'react-router-dom'
 import { api } from '@/lib/api'
 import { useRetailCart } from '@/context/RetailCartContext'
+import { showToastSuccess } from '@/lib/toast'
 import type { Order, Address, CustomerReview, Product } from '@/types'
 
 type Tab = 'orders' | 'addresses' | 'wishlist' | 'reviews' | 'profile'
@@ -55,7 +56,9 @@ export default function CustomerDashboardPage() {
   const handleLogout = async () => { await logout(); navigate('/login') }
 
   const reorder = (order: Order) => {
-    order.items.forEach(i => addItem(i.product, i.quantity))
+    order.items.forEach(i => addItem(i.product, i.quantity, undefined, true))
+    const totalQty = order.items.reduce((sum, i) => sum + i.quantity, 0)
+    showToastSuccess(`${totalQty} items added to cart`)
     navigate('/checkout')
   }
 

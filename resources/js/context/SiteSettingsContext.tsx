@@ -20,6 +20,7 @@ const defaults: PublicSiteSettings = {
   businessHoursSunday: 'Sunday: 10:00am – 3:00pm',
   footerDescription: 'Rooted in Tennessee, growing since 1998. We cultivate native plants that thrive in our unique climate and support local ecosystems.',
   social: { facebook: '', instagram: '', twitter: '', youtube: '', pinterest: '' },
+  wholesaleMinCartQty: 25,
 }
 
 type SiteSettingsContextValue = PublicSiteSettings & { ready: boolean }

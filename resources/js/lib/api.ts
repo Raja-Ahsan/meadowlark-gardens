@@ -109,6 +109,13 @@ export interface ShippingQuoteResponse {
   freeShippingThreshold: number
 }
 
+export interface TaxQuoteResponse {
+  tax: number
+  taxRate: number
+  source: string
+  taxjarEnabled: boolean
+}
+
 interface WholesaleOrderPayload {
   paymentMethod: string
   items: { productId: string; quantity: number; variationId?: string }[]
@@ -212,6 +219,19 @@ export const api = {
     freeShipping?: boolean
   }) =>
     request<ShippingQuoteResponse>('/shipping/quote', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  getTaxQuote: (payload: {
+    shippingAddress: Record<string, string>
+    items: { productId: string; quantity: number; variationId?: string }[]
+    subtotal?: number
+    discount?: number
+    shipping?: number
+    type?: 'retail' | 'wholesale'
+  }) =>
+    request<TaxQuoteResponse>('/tax/quote', {
       method: 'POST',
       body: JSON.stringify(payload),
     }),

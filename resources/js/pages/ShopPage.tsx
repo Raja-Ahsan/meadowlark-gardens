@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { Search, X, CheckCircle, SlidersHorizontal } from 'lucide-react'
-import ProductCard from '@/components/ui/ProductCard'
 import Ticker from '@/components/ui/Ticker'
+import { SHIPPING_DISCLAIMER } from '@/lib/shippingDisclaimer'
+import ProductCard from '@/components/ui/ProductCard'
 import { api, ShopCategory } from '@/lib/api'
 import { Product } from '@/types'
 import { useRetailCart } from '@/context/RetailCartContext'
@@ -16,9 +17,6 @@ const SORT_OPTIONS = [
 ] as const
 
 type SortValue = (typeof SORT_OPTIONS)[number]['value']
-
-const SHIPPING_DISCLAIMER =
-  'WE CANNOT SHIP TO THE FOLLOWING STATES DUE TO SHIPPING RESTRICTIONS: CALIFORNIA, OREGON, WASHINGTON, ARIZONA, ALASKA, HAWAII, IDAHO, PUERTO RICO, NEVADA, MONTANA, UTAH AND NEW MEXICO'
 
 export default function ShopPage() {
   const [products, setProducts] = useState<Product[]>([])

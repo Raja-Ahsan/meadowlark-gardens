@@ -229,3 +229,22 @@ input:focus, select:focus, textarea:focus {
   font-weight: 600;
   color: #244526;
 }
+
+.swal2-popup.swal2-toast {
+  border: 1px solid #c8d5c0;
+  box-shadow: 0 12px 32px rgba(36, 69, 38, 0.12);
+}
+
+.swal2-popup.swal2-toast .swal2-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #244526;
+}
+
+.swal2-popup.swal2-toast .swal2-html-container,
+.swal2-popup.swal2-toast .swal2-text {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8125rem;
+  color: #5a7a5c;
+}
