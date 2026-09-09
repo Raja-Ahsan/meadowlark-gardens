@@ -52,7 +52,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems(prev => {
       const item = prev.find(i => cartLineKey(i.product.id, i.variation?.id) === key)
       if (!item) return prev
-      const min = Math.max(1, item.product.minWholesaleQty ?? 1)
+      const min = Math.max(1, item.product.minWholesaleQty ?? 25)
       if (quantity < min) return prev
       return prev.map(i => (
         cartLineKey(i.product.id, i.variation?.id) === key ? { ...i, quantity } : i

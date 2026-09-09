@@ -45,8 +45,8 @@ export const mockOrders: Order[] = [
     userId: 'ws-001',
     businessName: 'Valley Garden Center',
     items: [
-      { product: { id: '1', name: 'Tennessee Redbud', category: 'Trees', price: 34.99, wholesalePrice: 22.00, image: '', description: '', inStock: true, minWholesaleQty: 5 }, quantity: 10 },
-      { product: { id: '2', name: 'Purple Coneflower', category: 'Perennials', price: 8.99, wholesalePrice: 4.50, image: '', description: '', inStock: true, minWholesaleQty: 5 }, quantity: 25 },
+      { product: { id: '1', name: 'Tennessee Redbud', category: 'Trees', price: 34.99, wholesalePrice: 22.00, image: '', description: '', inStock: true, minWholesaleQty: 25 }, quantity: 10 },
+      { product: { id: '2', name: 'Purple Coneflower', category: 'Perennials', price: 8.99, wholesalePrice: 4.50, image: '', description: '', inStock: true, minWholesaleQty: 25 }, quantity: 25 },
     ],
     total: 332.50,
     status: 'delivered',
@@ -58,7 +58,7 @@ export const mockOrders: Order[] = [
     userId: 'ws-001',
     businessName: 'Valley Garden Center',
     items: [
-      { product: { id: '8', name: 'Southern Magnolia', category: 'Trees', price: 59.99, wholesalePrice: 40.00, image: '', description: '', inStock: true, minWholesaleQty: 5 }, quantity: 6 },
+      { product: { id: '8', name: 'Southern Magnolia', category: 'Trees', price: 59.99, wholesalePrice: 40.00, image: '', description: '', inStock: true, minWholesaleQty: 25 }, quantity: 6 },
     ],
     total: 240.00,
     status: 'shipped',
@@ -70,8 +70,8 @@ export const mockOrders: Order[] = [
     userId: 'ws-001',
     businessName: 'Valley Garden Center',
     items: [
-      { product: { id: '4', name: 'Black-Eyed Susan', category: 'Perennials', price: 6.99, wholesalePrice: 3.50, image: '', description: '', inStock: true, minWholesaleQty: 5 }, quantity: 50 },
-      { product: { id: '7', name: 'Switchgrass', category: 'Grasses', price: 11.99, wholesalePrice: 6.50, image: '', description: '', inStock: true, minWholesaleQty: 5 }, quantity: 20 },
+      { product: { id: '4', name: 'Black-Eyed Susan', category: 'Perennials', price: 6.99, wholesalePrice: 3.50, image: '', description: '', inStock: true, minWholesaleQty: 25 }, quantity: 50 },
+      { product: { id: '7', name: 'Switchgrass', category: 'Grasses', price: 11.99, wholesalePrice: 6.50, image: '', description: '', inStock: true, minWholesaleQty: 25 }, quantity: 20 },
     ],
     total: 305.00,
     status: 'processing',

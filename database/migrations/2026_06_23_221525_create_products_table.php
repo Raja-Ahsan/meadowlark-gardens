@@ -18,7 +18,7 @@ return new class extends Migration
             $table->text('description');
             $table->string('badge')->nullable();
             $table->boolean('in_stock')->default(true);
-            $table->unsignedInteger('min_wholesale_qty')->default(5);
+            $table->unsignedInteger('min_wholesale_qty')->default(25);
             $table->timestamps();
         });
     }
