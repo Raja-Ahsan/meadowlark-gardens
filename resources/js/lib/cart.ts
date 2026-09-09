@@ -32,7 +32,7 @@ export function getWholesaleLinePrice(item: { product: Product; variation?: Prod
 }
 
 export function minWholesaleQty(product: Product): number {
-  return Math.max(1, product.minWholesaleQty ?? 1)
+  return Math.max(1, product.minWholesaleQty ?? 25)
 }
 
 export function formatVariationLabel(variation?: ProductVariation): string | null {

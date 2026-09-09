@@ -84,7 +84,7 @@ export default function ProductCard({ product, isWholesale = false, onAddToCart,
             <button
               onClick={() => {
                 if (onAddToCart) {
-                  onAddToCart(product, isWholesale ? (product.minWholesaleQty || 1) : 1)
+                  onAddToCart(product, isWholesale ? (product.minWholesaleQty || 25) : 1)
                   return
                 }
                 onViewDetails?.(product)

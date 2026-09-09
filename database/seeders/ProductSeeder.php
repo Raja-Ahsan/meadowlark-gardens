@@ -125,7 +125,7 @@ class ProductSeeder extends Seeder
                     'manage_stock' => true,
                     'is_active' => true,
                     'is_featured' => $index < 2,
-                    'min_wholesale_qty' => 5,
+                    'min_wholesale_qty' => 25,
                 ]);
             }
         }
@@ -147,7 +147,7 @@ class ProductSeeder extends Seeder
                 'stock_quantity' => rand(20, 80),
                 'manage_stock' => true,
                 'is_active' => true,
-                'min_wholesale_qty' => 5,
+                'min_wholesale_qty' => 25,
             ]);
         }
     }

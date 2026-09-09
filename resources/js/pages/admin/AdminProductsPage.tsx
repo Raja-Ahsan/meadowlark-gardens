@@ -11,7 +11,7 @@ import type { Attribute, Brand, Category } from '@/types/admin'
 
 const emptyForm: ProductPayload = {
   name: '', type: 'simple', price: 0, wholesalePrice: 0, image: '', description: '',
-  inStock: true, minWholesaleQty: 5, stockQuantity: 0, isActive: true, isFeatured: false,
+  inStock: true, minWholesaleQty: 25, stockQuantity: 0, isActive: true, isFeatured: false,
   images: [], variations: [],
 }
 

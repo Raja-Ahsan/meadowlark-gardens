@@ -11,7 +11,7 @@ export const products: Product[] = [
     description: 'A stunning native flowering tree with vibrant magenta-pink blooms in early spring. Perfect for Tennessee landscapes.',
     badge: 'Native',
     inStock: true,
-    minWholesaleQty: 5,
+    minWholesaleQty: 25,
   },
   {
     id: '2',
@@ -23,7 +23,7 @@ export const products: Product[] = [
     description: 'Beloved native perennial with daisy-like purple petals. Drought-tolerant and beloved by pollinators.',
     badge: 'Bestseller',
     inStock: true,
-    minWholesaleQty: 5,
+    minWholesaleQty: 25,
   },
   {
     id: '3',
@@ -34,7 +34,7 @@ export const products: Product[] = [
     image: 'https://images.unsplash.com/photo-1468327768560-75b778cbb551?auto=format&fit=crop&w=800&q=80',
     description: 'Four-season interest with white flower clusters, exfoliating bark, and fiery fall foliage.',
     inStock: true,
-    minWholesaleQty: 5,
+    minWholesaleQty: 25,
   },
   {
     id: '4',
@@ -46,7 +46,7 @@ export const products: Product[] = [
     description: 'Cheerful golden-yellow wildflower that blooms all summer long. A Tennessee meadow staple.',
     badge: 'Native',
     inStock: true,
-    minWholesaleQty: 5,
+    minWholesaleQty: 25,
   },
   {
     id: '5',
@@ -57,7 +57,7 @@ export const products: Product[] = [
     image: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=800&q=80',
     description: 'Elegant multi-stem tree with peeling, cinnamon-colored bark. Thrives in moist Tennessee soil.',
     inStock: true,
-    minWholesaleQty: 5,
+    minWholesaleQty: 25,
   },
   {
     id: '6',
@@ -69,7 +69,7 @@ export const products: Product[] = [
     description: 'Brilliant orange milkweed that attracts monarch butterflies. Heat and drought tolerant.',
     badge: 'Pollinator',
     inStock: true,
-    minWholesaleQty: 5,
+    minWholesaleQty: 25,
   },
   {
     id: '7',
@@ -81,7 +81,7 @@ export const products: Product[] = [
     description: 'Upright native ornamental grass with airy seed heads. Turns golden-red in autumn.',
     badge: 'Native',
     inStock: true,
-    minWholesaleQty: 5,
+    minWholesaleQty: 25,
   },
   {
     id: '8',
@@ -93,7 +93,7 @@ export const products: Product[] = [
     description: 'Iconic Southern evergreen with large, fragrant white blossoms. A Tennessee classic.',
     badge: 'Bestseller',
     inStock: true,
-    minWholesaleQty: 5,
+    minWholesaleQty: 25,
   },
   {
     id: '9',
@@ -105,7 +105,7 @@ export const products: Product[] = [
     description: 'Fragrant lavender blooms attract bees, butterflies, and hummingbirds from July–September.',
     badge: 'Pollinator',
     inStock: false,
-    minWholesaleQty: 5,
+    minWholesaleQty: 25,
   },
   {
     id: '10',
@@ -116,7 +116,7 @@ export const products: Product[] = [
     image: 'https://images.unsplash.com/photo-1512389142860-9c449e58a543?auto=format&fit=crop&w=800&q=80',
     description: 'Evergreen native shrub with brilliant red berries in winter. Birds adore it.',
     inStock: true,
-    minWholesaleQty: 5,
+    minWholesaleQty: 25,
   },
   {
     id: '11',
@@ -128,7 +128,7 @@ export const products: Product[] = [
     description: 'Stunning deep blue flower spikes in late spring followed by decorative black seed pods.',
     badge: 'Native',
     inStock: true,
-    minWholesaleQty: 5,
+    minWholesaleQty: 25,
   },
   {
     id: '12',
@@ -139,7 +139,7 @@ export const products: Product[] = [
     image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=80',
     description: 'Fine-textured native grass that turns copper-orange in fall. Exceptional winter interest.',
     inStock: true,
-    minWholesaleQty: 5,
+    minWholesaleQty: 25,
   },
 ]
 
