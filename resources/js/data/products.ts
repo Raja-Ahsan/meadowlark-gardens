@@ -1,3 +1,4 @@
+// product page
 import { Product } from '@/types'
 
 export const products: Product[] = [
