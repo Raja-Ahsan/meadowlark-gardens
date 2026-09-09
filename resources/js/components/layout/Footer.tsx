@@ -107,11 +107,11 @@ export default function Footer() {
           <p className="text-cream-200 text-xs font-body">© {new Date().getFullYear()} {siteName}. All rights reserved.</p>
           <div className="flex flex-wrap gap-4 justify-center sm:justify-end">
             {[
-              { label: 'Privacy Policy', to: '/privacy-policy' },
+              // { label: 'Privacy Policy', to: '/privacy-policy' },
               { label: 'Shipping Policy', to: '/shipping-policy' },
               { label: 'Refund Policy', to: '/refund-policy' },
-              { label: 'Terms of Service', to: '/terms-of-service' },
-              { label: 'Cookies', to: '/cookies' },
+              // { label: 'Terms of Service', to: '/terms-of-service' },
+              { label: 'Cancellation Policy', to: '/cancellation-policy' },
             ].map(item => (
               <Link
                 key={item.to}
