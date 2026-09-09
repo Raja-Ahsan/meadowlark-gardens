@@ -43,10 +43,15 @@ import AdminProfilePage from '@/pages/admin/AdminProfilePage'
 import { RetailCartProvider } from '@/context/RetailCartContext'
 import { SiteSettingsProvider } from '@/context/SiteSettingsContext'
 import LegalPageView from '@/pages/LegalPageView'
+import PrivacyPolicyPage from '@/pages/PrivacyPolicyPage'
 import CheckoutPage from '@/pages/CheckoutPage'
 import AdminLegalPagesPage from '@/pages/admin/AdminLegalPagesPage'
 import AdminPlantTypesPage from '@/pages/admin/AdminPlantTypesPage'
 import AdminPlantTypeCategoriesPage from '@/pages/admin/AdminPlantTypeCategoriesPage'
+import ShippingPolicyPage from '@/pages/Shipping-Policy'
+import CancellationPolicyPage from '@/pages/Cancellation-Policy'
+import RefundPolicyPage from '@/pages/Refund-Policy'
+
 
 export default function App() {
   return (
@@ -66,14 +71,14 @@ export default function App() {
               <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/contact" element={<ContactPage />} />
-              <Route path="/privacy-policy" element={<LegalPageView />} />
-              <Route path="/shipping-policy" element={<LegalPageView />} />
-              <Route path="/refund-policy" element={<LegalPageView />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+              <Route path="/shipping-policy" element={<ShippingPolicyPage />} />
+              <Route path="/refund-policy" element={<RefundPolicyPage />} />
               <Route path="/plant-information" element={<PlantInformationPage />} />
               <Route path="/plant-information/:slug" element={<PlantTypeDetailPage />} />
               <Route path="/how-we-grow" element={<HowWeGrowPage />} />
               <Route path="/terms-of-service" element={<LegalPageView />} />
-              <Route path="/cookies" element={<LegalPageView />} />
+              <Route path="/cancellation-policy" element={<CancellationPolicyPage />} />
               <Route path="/login" element={<CustomerLoginPage />} />
               <Route path="/register" element={<CustomerRegisterPage />} />
               <Route path="/wholesale/apply" element={<WholesaleApplyPage />} />

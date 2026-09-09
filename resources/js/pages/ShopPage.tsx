@@ -62,9 +62,14 @@ export default function ShopPage() {
               <h1 className="font-display font-700 text-forest-900" style={{ fontSize: 'clamp(2rem, 4vw, 3rem)' }}>
                 Our Plant Shop
               </h1>
+          
               <p className="text-sage-600 font-body mt-1">{filtered.length} plants available this season</p>
             </div>
-
+            <div className=" bg-[#f8e61b] flex-1 md:flex-none md:w-72 md:ml-auto">
+<p className="text-[#d3492b] font-body  text-center font-bold text-[20px]">
+  Free Shipping on All Orders
+ </p>
+</div>
             <div className="relative flex-1 md:flex-none md:w-72 md:ml-auto">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-sage-400" />
               <input
