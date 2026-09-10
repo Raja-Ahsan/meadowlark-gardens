@@ -47,7 +47,7 @@ export default function WholesalePortalPage() {
   const [orders, setOrders] = useState<Order[]>([])
 
   useEffect(() => {
-    api.getCategories().then(({ categories: cats }) => setCategories(cats)).catch(() => {})
+    api.getCategories().then(({ categories: cats }) => setCategories(cats)).catch(() => { })
     api.getProducts({ category: activeCategory })
       .then(({ products: items }) => setProducts(items))
       .catch(() => setProducts([]))
@@ -83,16 +83,16 @@ export default function WholesalePortalPage() {
 
       {/* Welcome Banner */}
       {activeTab === 'shop' && (
-      <div className="bg-forest-50 border-b border-forest-200 py-4 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <p className="text-forest-700 font-sans font-600 text-sm">
-          Minimum order of 25 plants total (we don't care how you mix and match) and all prices include shipping!! No more having to buy a full tray of one product and no more factoring in your shipping.
-          </p>
-          {/* <span className="text-xs font-sans font-600 text-forest-600 bg-forest-100 px-2.5 py-1 rounded-full border border-forest-200">
+        <div className="bg-forest-50 border-b border-forest-200 py-4 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <p className="text-forest-700 font-sans font-600 text-sm">
+              Minimum order of 25 plants total (we don't care how you mix and match) and all prices include shipping!! No more having to buy a full tray of one product and no more factoring in your shipping.
+            </p>
+            {/* <span className="text-xs font-sans font-600 text-forest-600 bg-forest-100 px-2.5 py-1 rounded-full border border-forest-200">
             Min. qty set per product
           </span> */}
+          </div>
         </div>
-      </div>
       )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -105,9 +105,8 @@ export default function WholesalePortalPage() {
                   <button
                     key={cat.slug}
                     onClick={() => setActiveCategory(cat.name)}
-                    className={`px-4 py-1.5 rounded-full text-sm font-sans font-600 transition-all focus-ring ${
-                      activeCategory === cat.name ? 'bg-forest-600 text-white' : 'bg-white text-forest-700 border border-forest-200 hover:border-forest-400'
-                    }`}
+                    className={`px-4 py-1.5 rounded-full text-sm font-sans font-600 transition-all focus-ring ${activeCategory === cat.name ? 'bg-forest-600 text-white' : 'bg-white text-forest-700 border border-forest-200 hover:border-forest-400'
+                      }`}
                   >
                     {cat.name}
                     <span className={`ml-1.5 text-xs ${activeCategory === cat.name ? 'text-forest-200' : 'text-sage-400'}`}>
@@ -123,89 +122,85 @@ export default function WholesalePortalPage() {
                   const hasVariations = (product.variations?.length ?? 0) > 0
                   const detailUrl = `/wholesale/portal/product/${product.slug || product.id}`
                   return (
-                  <motion.div
-                    key={product.id}
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.04 }}
-                    className="bg-white rounded-2xl overflow-hidden border border-forest-100 shadow-sm"
-                  >
-                    <Link to={detailUrl} className="block relative aspect-[4/3] overflow-hidden">
-                      <img src={mediaUrl(product.image)} alt={product.name} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" loading="lazy" />
-                      {product.badge && (
-                        <span className="absolute top-3 left-3 text-xs font-sans font-600 px-2.5 py-1 rounded-full bg-forest-100 text-forest-700 border border-forest-200">
-                          {product.badge}
-                        </span>
-                      )}
-                    </Link>
-                    <div className="p-4">
-                      <Link to={detailUrl}>
-                        <p className="text-xs text-sage-500 font-sans font-500 uppercase tracking-wide mb-1">{product.category}</p>
-                        <h3 className="font-display font-700 text-forest-800 text-base mb-1 leading-snug hover:text-forest-600">{product.name}</h3>
+                    <motion.div
+                      key={product.id}
+                      initial={{ opacity: 0, y: 16 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.04 }}
+                      className="bg-white rounded-2xl overflow-hidden border border-forest-100 shadow-sm"
+                    >
+                      <Link to={detailUrl} className="block relative aspect-[4/3] overflow-hidden">
+                        <img src={mediaUrl(product.image)} alt={product.name} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" loading="lazy" />
+                        {product.badge && (
+                          <span className="absolute top-3 left-3 text-xs font-sans font-600 px-2.5 py-1 rounded-full bg-forest-100 text-forest-700 border border-forest-200">
+                            {product.badge}
+                          </span>
+                        )}
                       </Link>
-                      <div className="flex items-center justify-between mb-3">
-                        <div>
-                          <span className="font-sans font-800 text-forest-700 text-lg">${product.wholesalePrice.toFixed(2)}</span>
-                          <span className="text-sage-400 text-xs ml-1 line-through">${product.price.toFixed(2)}</span>
+                      <div className="p-4">
+                        <Link to={detailUrl}>
+                          <p className="text-xs text-sage-500 font-sans font-500 uppercase tracking-wide mb-1">{product.category}</p>
+                          <h3 className="font-display font-700 text-forest-800 text-base mb-1 leading-snug hover:text-forest-600">{product.name}</h3>
+                        </Link>
+                        <div className="flex items-center justify-between mb-3">
+                          <div>
+                            <span className="font-sans font-800 text-forest-700 text-lg">${product.wholesalePrice.toFixed(2)}</span>
+                            <span className="text-sage-400 text-xs ml-1 line-through">${product.price.toFixed(2)}</span>
+                          </div>
                         </div>
-                        <span className="text-xs text-forest-600 bg-forest-50 px-2 py-0.5 rounded-full border border-forest-200 flex items-center gap-1">
-                          <Tag className="w-3 h-3" />
-                          Min. {minWholesaleQty(product)}
-                        </span>
-                      </div>
-                      {!hasVariations && (
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="text-xs text-sage-600 font-sans font-500">Qty:</span>
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => setQuantities(q => ({
-                              ...q,
-                              [product.id]: Math.max(min, getQty(product) - 1),
-                            }))}
-                            className="w-7 h-7 bg-cream-100 border border-forest-200 rounded-lg text-forest-600 flex items-center justify-center hover:bg-cream-200 transition-colors"
-                          >
-                            <Minus className="w-3 h-3" />
-                          </button>
-                          <span className="w-10 text-center text-sm font-sans font-700 text-forest-800">{getQty(product)}</span>
-                          <button
-                            onClick={() => setQuantities(q => ({
-                              ...q,
-                              [product.id]: getQty(product) + 1,
-                            }))}
-                            className="w-7 h-7 bg-cream-100 border border-forest-200 rounded-lg text-forest-600 flex items-center justify-center hover:bg-cream-200 transition-colors"
-                          >
-                            <Plus className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </div>
-                      )}
-                      {product.inStock ? (
-                        hasVariations ? (
-                          <Link
-                            to={detailUrl}
-                            className="w-full py-2.5 bg-forest-600 hover:bg-forest-700 text-white text-sm font-sans font-600 rounded-xl transition-all hover:-translate-y-0.5 hover:shadow-sm focus-ring flex items-center justify-center gap-2"
-                          >
-                            Choose options
-                          </Link>
+                        {!hasVariations && (
+                          <div className="flex items-center gap-2 mb-3">
+                            <span className="text-xs text-sage-600 font-sans font-500">Qty:</span>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => setQuantities(q => ({
+                                  ...q,
+                                  [product.id]: Math.max(min, getQty(product) - 1),
+                                }))}
+                                className="w-7 h-7 bg-cream-100 border border-forest-200 rounded-lg text-forest-600 flex items-center justify-center hover:bg-cream-200 transition-colors"
+                              >
+                                <Minus className="w-3 h-3" />
+                              </button>
+                              <span className="w-10 text-center text-sm font-sans font-700 text-forest-800">{getQty(product)}</span>
+                              <button
+                                onClick={() => setQuantities(q => ({
+                                  ...q,
+                                  [product.id]: getQty(product) + 1,
+                                }))}
+                                className="w-7 h-7 bg-cream-100 border border-forest-200 rounded-lg text-forest-600 flex items-center justify-center hover:bg-cream-200 transition-colors"
+                              >
+                                <Plus className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                        {product.inStock ? (
+                          hasVariations ? (
+                            <Link
+                              to={detailUrl}
+                              className="w-full py-2.5 bg-forest-600 hover:bg-forest-700 text-white text-sm font-sans font-600 rounded-xl transition-all hover:-translate-y-0.5 hover:shadow-sm focus-ring flex items-center justify-center gap-2"
+                            >
+                              Choose options
+                            </Link>
+                          ) : (
+                            <button
+                              onClick={() => handleAddToCart(product)}
+                              className="w-full py-2.5 bg-forest-600 hover:bg-forest-700 text-white text-sm font-sans font-600 rounded-xl transition-all hover:-translate-y-0.5 hover:shadow-sm focus-ring flex items-center justify-center gap-2"
+                            >
+                              <ShoppingCart className="w-4 h-4" />
+                              Add to Cart — ${(product.wholesalePrice * getQty(product)).toFixed(2)}
+                            </button>
+                          )
                         ) : (
-                        <button
-                          onClick={() => handleAddToCart(product)}
-                          className="w-full py-2.5 bg-forest-600 hover:bg-forest-700 text-white text-sm font-sans font-600 rounded-xl transition-all hover:-translate-y-0.5 hover:shadow-sm focus-ring flex items-center justify-center gap-2"
-                        >
-                          <ShoppingCart className="w-4 h-4" />
-                          Add to Cart — ${(product.wholesalePrice * getQty(product)).toFixed(2)}
-                        </button>
-                        )
-                      ) : (
-                        <div className="w-full py-2.5 bg-gray-100 text-gray-400 text-sm font-sans font-600 rounded-xl text-center">
-                          Out of Stock
-                        </div>
-                      )}
-                      <Link to={detailUrl} className="block text-center text-xs text-forest-600 font-600 mt-2 hover:underline">
-                        View details
-                      </Link>
-                    </div>
-                  </motion.div>
+                          <div className="w-full py-2.5 bg-gray-100 text-gray-400 text-sm font-sans font-600 rounded-xl text-center">
+                            Out of Stock
+                          </div>
+                        )}
+                        <Link to={detailUrl} className="block text-center text-xs text-forest-600 font-600 mt-2 hover:underline">
+                          View details
+                        </Link>
+                      </div>
+                    </motion.div>
                   )
                 })}
               </div>
@@ -232,41 +227,41 @@ export default function WholesalePortalPage() {
                       const unitPrice = getWholesaleLinePrice(item)
                       const variationLabel = formatVariationLabel(item.variation)
                       return (
-                      <div key={lineKey} className="flex items-center gap-4 bg-white p-4 rounded-2xl border border-forest-100 shadow-sm">
-                        <img src={mediaUrl(item.variation?.image || item.product.image)} alt={item.product.name} className="w-20 h-20 rounded-xl object-cover shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-sans font-700 text-forest-800 truncate">{item.product.name}</p>
-                          {variationLabel && (
-                            <p className="text-xs text-forest-600">{variationLabel}</p>
-                          )}
-                          <p className="text-sage-500 text-sm">${unitPrice.toFixed(2)} / unit</p>
-                          <p className="text-xs text-sage-400">Min. order: {minWholesaleQty(item.product)} units</p>
-                          <p className="font-sans font-700 text-forest-700 text-sm mt-0.5">
-                            Subtotal: ${(unitPrice * item.quantity).toFixed(2)}
-                          </p>
+                        <div key={lineKey} className="flex items-center gap-4 bg-white p-4 rounded-2xl border border-forest-100 shadow-sm">
+                          <img src={mediaUrl(item.variation?.image || item.product.image)} alt={item.product.name} className="w-20 h-20 rounded-xl object-cover shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-sans font-700 text-forest-800 truncate">{item.product.name}</p>
+                            {variationLabel && (
+                              <p className="text-xs text-forest-600">{variationLabel}</p>
+                            )}
+                            <p className="text-sage-500 text-sm">${unitPrice.toFixed(2)} / unit</p>
+                            <p className="text-xs text-sage-400">Min. order: {minWholesaleQty(item.product)} units</p>
+                            <p className="font-sans font-700 text-forest-700 text-sm mt-0.5">
+                              Subtotal: ${(unitPrice * item.quantity).toFixed(2)}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.variation?.id)}
+                              className="w-8 h-8 bg-cream-100 border border-forest-200 rounded-lg text-forest-600 flex items-center justify-center hover:bg-cream-200 transition-colors"
+                            >
+                              <Minus className="w-3 h-3" />
+                            </button>
+                            <span className="w-10 text-center font-sans font-700 text-forest-800">{item.quantity}</span>
+                            <button
+                              onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.variation?.id)}
+                              className="w-8 h-8 bg-cream-100 border border-forest-200 rounded-lg text-forest-600 flex items-center justify-center hover:bg-cream-200 transition-colors"
+                            >
+                              <Plus className="w-3 h-3" />
+                            </button>
+                            <button
+                              onClick={() => removeItem(item.product.id, item.variation?.id)}
+                              className="w-8 h-8 text-terra-400 hover:text-terra-600 hover:bg-terra-50 rounded-lg flex items-center justify-center transition-colors ml-1"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.variation?.id)}
-                            className="w-8 h-8 bg-cream-100 border border-forest-200 rounded-lg text-forest-600 flex items-center justify-center hover:bg-cream-200 transition-colors"
-                          >
-                            <Minus className="w-3 h-3" />
-                          </button>
-                          <span className="w-10 text-center font-sans font-700 text-forest-800">{item.quantity}</span>
-                          <button
-                            onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.variation?.id)}
-                            className="w-8 h-8 bg-cream-100 border border-forest-200 rounded-lg text-forest-600 flex items-center justify-center hover:bg-cream-200 transition-colors"
-                          >
-                            <Plus className="w-3 h-3" />
-                          </button>
-                          <button
-                            onClick={() => removeItem(item.product.id, item.variation?.id)}
-                            className="w-8 h-8 text-terra-400 hover:text-terra-600 hover:bg-terra-50 rounded-lg flex items-center justify-center transition-colors ml-1"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
                       )
                     })}
                   </div>
@@ -277,10 +272,10 @@ export default function WholesalePortalPage() {
                         const lineKey = cartLineKey(item.product.id, item.variation?.id)
                         const unitPrice = getWholesaleLinePrice(item)
                         return (
-                        <div key={lineKey} className="flex justify-between text-sm font-body text-forest-700">
-                          <span className="truncate mr-2">{item.product.name} ×{item.quantity}</span>
-                          <span className="shrink-0 font-sans font-600">${(unitPrice * item.quantity).toFixed(2)}</span>
-                        </div>
+                          <div key={lineKey} className="flex justify-between text-sm font-body text-forest-700">
+                            <span className="truncate mr-2">{item.product.name} ×{item.quantity}</span>
+                            <span className="shrink-0 font-sans font-600">${(unitPrice * item.quantity).toFixed(2)}</span>
+                          </div>
                         )
                       })}
                     </div>
