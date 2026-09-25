@@ -48,13 +48,6 @@ export default function ProductCard({ product, isWholesale = false, onAddToCart,
             {product.badge}
           </span>
         )}
-        {!product.inStock && (
-          <div className="absolute inset-0 bg-white/60 backdrop-blur-sm flex items-center justify-center">
-            <span className="bg-white text-gray-600 font-sans font-600 text-sm px-3 py-1 rounded-full border border-gray-200">
-              Out of Stock
-            </span>
-          </div>
-        )}
       </div>
 
       <div className="p-5 flex flex-col flex-1">
@@ -70,7 +63,7 @@ export default function ProductCard({ product, isWholesale = false, onAddToCart,
           </p>
         </div>
 
-        <div className="mt-4 flex items-center justify-between">
+        <div className="mt-4 flex items-center justify-between gap-3">
           <div>
             <p className="font-sans font-800 text-xl text-forest-700">${price.toFixed(2)}</p>
             {isWholesale && (
@@ -80,7 +73,7 @@ export default function ProductCard({ product, isWholesale = false, onAddToCart,
               </p>
             )}
           </div>
-          {product.inStock && (
+          {product.inStock ? (
             <button
               onClick={() => {
                 if (onAddToCart) {
@@ -89,11 +82,15 @@ export default function ProductCard({ product, isWholesale = false, onAddToCart,
                 }
                 onViewDetails?.(product)
               }}
-              className="flex items-center gap-2 px-4 py-2 bg-forest-600 hover:bg-forest-700 text-white rounded-xl text-sm font-sans font-600 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 focus-ring"
+              className="flex items-center gap-2 px-4 py-2 bg-forest-600 hover:bg-forest-700 text-white rounded-xl text-sm font-sans font-600 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 focus-ring shrink-0"
             >
               <ShoppingCart className="w-4 h-4" />
               {isWholesale ? 'Add' : 'Add to Cart'}
             </button>
+          ) : (
+            <span className="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-500 border border-gray-200 rounded-xl text-sm font-sans font-600 shrink-0 cursor-not-allowed">
+              Out of Stock
+            </span>
           )}
         </div>
       </div>
