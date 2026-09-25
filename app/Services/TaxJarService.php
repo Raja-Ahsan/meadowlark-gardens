@@ -122,6 +122,12 @@ class TaxJarService
         $amount = round((float) ($tax['amount_to_collect'] ?? 0), 2);
         $rate = round((float) ($tax['rate'] ?? 0) * 100, 4);
 
+        // Invalid / incomplete destination data can make TaxJar return $0 for TN.
+        // Fall back to the admin tax rate so Tennessee orders still collect tax.
+        if ($amount <= 0 && $this->isTennessee($shipTo)) {
+            return $this->fallbackTax($taxableSubtotal, $shipping);
+        }
+
         return [
             'tax' => $amount,
             'rate' => $rate,
