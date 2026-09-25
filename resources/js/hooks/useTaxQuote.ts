@@ -38,7 +38,7 @@ export function useTaxQuote({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    if (!addressReady(shippingAddress) || items.length === 0 || type === 'wholesale') {
+    if (items.length === 0 || type === 'wholesale') {
       setTax(0)
       setTaxRate(0)
       setSource(type === 'wholesale' ? 'exempt' : '')
@@ -47,9 +47,28 @@ export function useTaxQuote({
     }
 
     if (!isTennessee(shippingAddress)) {
+      // If state isn't filled yet, wait; if it's a non-TN state, no tax.
+      if (!(shippingAddress.state || '').trim()) {
+        setTax(0)
+        setTaxRate(0)
+        setSource('')
+        setLoading(false)
+        return
+      }
       setTax(0)
       setTaxRate(0)
       setSource('out_of_state')
+      setLoading(false)
+      return
+    }
+
+    // TN: if city/zip missing, still apply admin rate so tax shows as soon as state is TN.
+    if (!addressReady(shippingAddress)) {
+      const fallbackRate = 9.25
+      const taxable = Math.max(0, subtotal - discount)
+      setTax(Math.round(taxable * (fallbackRate / 100) * 100) / 100)
+      setTaxRate(fallbackRate)
+      setSource('fallback')
       setLoading(false)
       return
     }
@@ -67,12 +86,19 @@ export function useTaxQuote({
         type,
       })
         .then((quote: TaxQuoteResponse) => {
+          if (quote.tax <= 0 && isTennessee(shippingAddress)) {
+            const fallbackRate = quote.taxRate > 0 ? quote.taxRate : 9.25
+            const taxable = Math.max(0, subtotal - discount)
+            setTax(Math.round(taxable * (fallbackRate / 100) * 100) / 100)
+            setTaxRate(fallbackRate)
+            setSource('fallback')
+            return
+          }
           setTax(quote.tax)
           setTaxRate(quote.taxRate)
           setSource(quote.source)
         })
         .catch(() => {
-          // Only TN orders fall back to the admin tax rate.
           const fallbackRate = 9.25
           const taxable = Math.max(0, subtotal - discount)
           setTax(Math.round(taxable * (fallbackRate / 100) * 100) / 100)

@@ -213,25 +213,35 @@ export default function CheckoutPage() {
     variationId: i.variation?.id,
   }))
 
+  const getBillingAddress = () => ({
+    firstName: form.firstName,
+    lastName: form.lastName,
+    addressLine1: form.address1,
+    city: form.city,
+    state: form.state,
+    postalCode: form.postalCode,
+    country: form.country,
+  })
+
   const getShippingAddress = () => {
     if (form.sameShipping) {
-      return {
-        firstName: form.firstName,
-        lastName: form.lastName,
-        addressLine1: form.address1,
-        city: form.city,
-        state: form.state,
-        postalCode: form.postalCode,
-        country: form.country,
-      }
+      return getBillingAddress()
     }
-    return {
+
+    const shipping = {
       addressLine1: form.shipAddress1,
       city: form.shipCity,
       state: form.shipState,
       postalCode: form.shipPostalCode,
       country: 'US',
     }
+
+    // If separate shipping fields aren't filled yet, quote tax from billing
+    // so TN tax still calculates while the customer completes the form.
+    const shippingReady = Boolean(
+      shipping.city.trim() && shipping.state.trim() && shipping.postalCode.trim()
+    )
+    return shippingReady ? shipping : getBillingAddress()
   }
 
   const { tax, taxRate, source: taxSource, loading: taxLoading } = useTaxQuote({
