@@ -150,6 +150,54 @@ export default function AdminSettingsPage() {
                     Total units required in the wholesale cart before checkout (e.g. 25).
                   </p>
                 </div>
+                <div>
+                  <label className="flex items-center justify-between p-3 rounded-xl border border-forest-100 cursor-pointer">
+                    <span className="text-sm font-sans font-600 text-forest-800">Show disclaimer on wholesale shop</span>
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 accent-forest-700"
+                      checked={get('general', 'wholesale_disclaimer_enabled') !== 'false'}
+                      onChange={e => set('general', 'wholesale_disclaimer_enabled', e.target.checked ? 'true' : 'false')}
+                    />
+                  </label>
+                </div>
+                <div>
+                  <label className={labelClass}>Wholesale portal disclaimer</label>
+                  <textarea
+                    rows={4}
+                    className={inputClass}
+                    value={get('general', 'wholesale_disclaimer_text')}
+                    onChange={e => set('general', 'wholesale_disclaimer_text', e.target.value)}
+                    placeholder="Enter the yellow ticker disclaimer shown on the wholesale shop tab..."
+                  />
+                  <p className="text-xs text-sage-500 mt-1">
+                    Shown as the scrolling yellow banner on the wholesale Shop tab. Leave blank to hide even when enabled.
+                  </p>
+                </div>
+                <div>
+                  <label className="flex items-center justify-between p-3 rounded-xl border border-forest-100 cursor-pointer">
+                    <span className="text-sm font-sans font-600 text-forest-800">Show second disclaimer on wholesale shop</span>
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 accent-forest-700"
+                      checked={get('general', 'wholesale_banner_enabled') !== 'false'}
+                      onChange={e => set('general', 'wholesale_banner_enabled', e.target.checked ? 'true' : 'false')}
+                    />
+                  </label>
+                </div>
+                <div>
+                  <label className={labelClass}>Second wholesale portal disclaimer</label>
+                  <textarea
+                    rows={3}
+                    className={inputClass}
+                    value={get('general', 'wholesale_banner_text')}
+                    onChange={e => set('general', 'wholesale_banner_text', e.target.value)}
+                    placeholder="Enter the green info banner shown under the yellow ticker..."
+                  />
+                  <p className="text-xs text-sage-500 mt-1">
+                    Shown as the green info banner under the yellow ticker on the wholesale Shop tab. Leave blank to hide even when enabled.
+                  </p>
+                </div>
               </div>
             </div>
 

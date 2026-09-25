@@ -54,6 +54,14 @@ class TaxJarService
             ];
         }
 
+        if (! $this->isTennessee($shipTo)) {
+            return [
+                'tax' => 0.0,
+                'rate' => 0.0,
+                'source' => 'out_of_state',
+            ];
+        }
+
         $subtotal = isset($data['subtotal'])
             ? (float) $data['subtotal']
             : $this->estimateSubtotal($items, $type);
@@ -256,6 +264,14 @@ class TaxJarService
             'postal_code' => $postal,
             'country' => $defaultCountry,
         ];
+    }
+
+    /** @param array<string, mixed> $address */
+    private function isTennessee(array $address): bool
+    {
+        $state = strtoupper(trim((string) ($address['state'] ?? $address['State'] ?? '')));
+
+        return in_array($state, ['TN', 'TENNESSEE'], true);
     }
 
     /** @param array<string, mixed> $address */

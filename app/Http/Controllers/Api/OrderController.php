@@ -278,9 +278,13 @@ class OrderController extends Controller
                 'items' => $data['items'],
                 'subtotal' => $subtotal,
                 'type' => $type,
-                'freeShipping' => $freeShipping,
-                'shippingMethod' => $data['shippingMethod'],
+                'freeShipping' => true,
+                'shippingMethod' => array_merge($data['shippingMethod'] ?? [], ['cost' => 0]),
             ]);
+
+            // Shipping is included in product price — never charge separately.
+            $shippingCost = 0.0;
+            $shipping['cost'] = 0.0;
 
             if ($type === 'wholesale') {
                 $tax = 0;
@@ -290,12 +294,11 @@ class OrderController extends Controller
                     'items' => $data['items'],
                     'subtotal' => $subtotal,
                     'discount' => $discount,
-                    'shipping' => $shipping['cost'],
+                    'shipping' => 0,
                     'type' => $type,
                 ]);
                 $tax = $taxQuote['tax'];
             }
-            $shippingCost = $shipping['cost'];
             $total = max(0, $subtotal - $discount + $tax + $shippingCost);
 
             $order = Order::create([

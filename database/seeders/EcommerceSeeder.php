@@ -117,6 +117,10 @@ class EcommerceSeeder extends Seeder
             'ups_fallback_flat_rate' => '9.99',
             'ups_free_shipping_threshold' => '75',
             'wholesale_min_cart_qty' => '25',
+            'wholesale_disclaimer_enabled' => 'true',
+            'wholesale_disclaimer_text' => 'WE CANNOT SHIP TO THE FOLLOWING STATES DUE TO SHIPPING RESTRICTIONS: CALIFORNIA, OREGON, WASHINGTON, ARIZONA, ALASKA, HAWAII, IDAHO, PUERTO RICO, NEVADA, MONTANA, UTAH AND NEW MEXICO',
+            'wholesale_banner_enabled' => 'true',
+            'wholesale_banner_text' => "Minimum order of 25 plants total (we don't care how you mix and match) and all prices include shipping!! No more having to buy a full tray of one product and no more factoring in your shipping.",
         ];
 
         foreach ($settings as $key => $value) {

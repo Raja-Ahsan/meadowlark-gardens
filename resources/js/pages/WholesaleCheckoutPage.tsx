@@ -6,13 +6,21 @@ import { useAuth } from '@/context/AuthContext'
 import { useSiteSettings } from '@/context/SiteSettingsContext'
 import { api, type ShippingRate } from '@/lib/api'
 import WholesalePortalHeader from '@/components/wholesale/WholesalePortalHeader'
-import ShippingMethodSelector from '@/components/checkout/ShippingMethodSelector'
 import AuthorizeCardForm, { collectAuthorizePayment } from '@/components/checkout/AuthorizeCardForm'
 import {
   cartLineKey,
   formatVariationLabel,
   getWholesaleLinePrice,
 } from '@/lib/cart'
+
+const FREE_SHIPPING: ShippingRate = {
+  carrier: 'included',
+  code: 'free',
+  name: 'Shipping included',
+  cost: 0,
+  currency: 'USD',
+  etaDays: null,
+}
 
 const inputClass = 'w-full px-4 py-3 rounded-xl border border-forest-200 text-sm focus:outline-none focus:ring-2 focus:ring-forest-500/30'
 const labelClass = 'block text-xs font-sans font-600 text-forest-700 mb-1.5'
@@ -57,13 +65,11 @@ export default function WholesaleCheckoutPage() {
   const [couponCode, setCouponCode] = useState('')
   const [discount, setDiscount] = useState(0)
   const [couponApplied, setCouponApplied] = useState('')
-  const [freeShippingCoupon, setFreeShippingCoupon] = useState(false)
-  const [selectedShipping, setSelectedShipping] = useState<ShippingRate | null>(null)
+  const [selectedShipping] = useState<ShippingRate>(FREE_SHIPPING)
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
 
   const subtotal = total
-  const shipping = selectedShipping?.cost ?? 0
 
   const cartItems = items.map(i => ({
     productId: i.product.id,
@@ -92,7 +98,7 @@ export default function WholesaleCheckoutPage() {
     }
   }
 
-  const grandTotal = Math.max(0, subtotal - discount + shipping)
+  const grandTotal = Math.max(0, subtotal - discount)
 
   useEffect(() => {
     api.getPaymentConfig()
@@ -122,7 +128,6 @@ export default function WholesaleCheckoutPage() {
       const res = await api.validateCoupon(couponCode, subtotal, 'wholesale')
       setDiscount(res.coupon.discount)
       setCouponApplied(res.coupon.code)
-      setFreeShippingCoupon(res.coupon.freeShipping)
     } catch (e) {
       alert(e instanceof Error ? e.message : 'Invalid coupon')
     }
@@ -130,7 +135,7 @@ export default function WholesaleCheckoutPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (items.length === 0 || !meetsMinCartQty || !form.paymentMethod || !selectedShipping) return
+    if (items.length === 0 || !meetsMinCartQty || !form.paymentMethod) return
 
     setSubmitting(true)
     try {
@@ -276,19 +281,6 @@ export default function WholesaleCheckoutPage() {
             </section>
 
             <section className="bg-white rounded-2xl border border-forest-100 p-6 shadow-sm">
-              <h2 className="font-sans font-700 text-lg text-forest-900 mb-4">Shipping method</h2>
-              <ShippingMethodSelector
-                shippingAddress={getShippingAddress()}
-                items={cartItems}
-                subtotal={subtotal - discount}
-                type="wholesale"
-                freeShipping={freeShippingCoupon}
-                selected={selectedShipping}
-                onSelect={setSelectedShipping}
-              />
-            </section>
-
-            <section className="bg-white rounded-2xl border border-forest-100 p-6 shadow-sm">
               <h2 className="font-sans font-700 text-lg text-forest-900 mb-4">Payment method</h2>
               {!paymentsLoaded ? (
                 <p className="text-sm text-sage-500">Loading payment options...</p>
@@ -347,13 +339,12 @@ export default function WholesaleCheckoutPage() {
               <div className="space-y-2 text-sm border-t border-forest-100 pt-4">
                 <div className="flex justify-between"><span className="text-sage-600">Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
                 {discount > 0 && <div className="flex justify-between text-forest-600"><span>Discount</span><span>-${discount.toFixed(2)}</span></div>}
-                <div className="flex justify-between"><span className="text-sage-600">Shipping</span><span>{shipping === 0 ? 'FREE' : `$${shipping.toFixed(2)}`}</span></div>
                 <div className="flex justify-between font-sans font-700 text-lg text-forest-900 pt-2 border-t border-forest-100">
                   <span>Total</span><span>${grandTotal.toFixed(2)}</span>
                 </div>
               </div>
 
-              <button type="submit" disabled={submitting || !form.paymentMethod || !selectedShipping} className="w-full mt-6 py-3.5 bg-forest-700 text-white rounded-xl font-sans font-600 hover:bg-forest-800 disabled:opacity-50">
+              <button type="submit" disabled={submitting || !form.paymentMethod} className="w-full mt-6 py-3.5 bg-forest-700 text-white rounded-xl font-sans font-600 hover:bg-forest-800 disabled:opacity-50">
                 {submitting ? 'Processing...' : `Place Order — $${grandTotal.toFixed(2)}`}
               </button>
             </div>
