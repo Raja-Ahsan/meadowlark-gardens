@@ -175,6 +175,10 @@ export interface PublicSiteSettings {
   footerDescription: string
   social: { facebook: string; instagram: string; twitter: string; youtube: string; pinterest: string }
   wholesaleMinCartQty: number
+  wholesaleDisclaimerEnabled: boolean
+  wholesaleDisclaimerText: string
+  wholesaleBannerEnabled: boolean
+  wholesaleBannerText: string
 }
 
 declare global {

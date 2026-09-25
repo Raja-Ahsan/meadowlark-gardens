@@ -9,6 +9,11 @@ function addressReady(addr: Record<string, string>): boolean {
   )
 }
 
+function isTennessee(addr: Record<string, string>): boolean {
+  const state = (addr.state || '').trim().toUpperCase()
+  return state === 'TN' || state === 'TENNESSEE'
+}
+
 interface Params {
   shippingAddress: Record<string, string>
   items: { productId: string; quantity: number; variationId?: string }[]
@@ -33,10 +38,19 @@ export function useTaxQuote({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    if (!addressReady(shippingAddress) || items.length === 0) {
+    if (!addressReady(shippingAddress) || items.length === 0 || type === 'wholesale') {
       setTax(0)
       setTaxRate(0)
-      setSource('')
+      setSource(type === 'wholesale' ? 'exempt' : '')
+      setLoading(false)
+      return
+    }
+
+    if (!isTennessee(shippingAddress)) {
+      setTax(0)
+      setTaxRate(0)
+      setSource('out_of_state')
+      setLoading(false)
       return
     }
 
@@ -49,7 +63,7 @@ export function useTaxQuote({
         items,
         subtotal,
         discount,
-        shipping,
+        shipping: 0,
         type,
       })
         .then((quote: TaxQuoteResponse) => {
@@ -58,6 +72,7 @@ export function useTaxQuote({
           setSource(quote.source)
         })
         .catch(() => {
+          // Only TN orders fall back to the admin tax rate.
           const fallbackRate = 9.25
           const taxable = Math.max(0, subtotal - discount)
           setTax(Math.round(taxable * (fallbackRate / 100) * 100) / 100)

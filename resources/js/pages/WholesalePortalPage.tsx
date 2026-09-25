@@ -9,7 +9,6 @@ import { api, ShopCategory } from '@/lib/api'
 import { Order, Product } from '@/types'
 import WholesalePortalHeader, { WholesaleTab } from '@/components/wholesale/WholesalePortalHeader'
 import Ticker from '@/components/ui/Ticker'
-import { SHIPPING_DISCLAIMER } from '@/lib/shippingDisclaimer'
 import { mediaUrl } from '@/lib/media'
 import {
   cartLineKey,
@@ -28,9 +27,19 @@ const statusColors: Record<string, string> = {
 export default function WholesalePortalPage() {
   const { logout } = useAuth()
   const { items, addItem, updateQuantity, removeItem, clearCart, total, itemCount } = useCart()
-  const { wholesaleMinCartQty } = useSiteSettings()
+  const {
+    wholesaleMinCartQty,
+    wholesaleDisclaimerEnabled,
+    wholesaleDisclaimerText,
+    wholesaleBannerEnabled,
+    wholesaleBannerText,
+  } = useSiteSettings()
   const minCartQty = wholesaleMinCartQty || 25
   const meetsMinCartQty = itemCount >= minCartQty
+  const disclaimerText = (wholesaleDisclaimerText || '').trim()
+  const showDisclaimer = wholesaleDisclaimerEnabled !== false && disclaimerText.length > 0
+  const bannerText = (wholesaleBannerText || '').trim()
+  const showBanner = wholesaleBannerEnabled !== false && bannerText.length > 0
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const activeTab = (['shop', 'cart', 'orders'].includes(searchParams.get('tab') || '')
@@ -79,18 +88,15 @@ export default function WholesalePortalPage() {
     <div className="min-h-screen bg-cream-50">
       <WholesalePortalHeader activeTab={activeTab} onTabChange={setActiveTab} onLogout={handleLogout} />
 
-      {activeTab === 'shop' && <Ticker text={SHIPPING_DISCLAIMER} />}
+      {activeTab === 'shop' && showDisclaimer && <Ticker text={disclaimerText} />}
 
       {/* Welcome Banner */}
-      {activeTab === 'shop' && (
+      {activeTab === 'shop' && showBanner && (
         <div className="bg-forest-50 border-b border-forest-200 py-4 px-4 sm:px-6 lg:px-8">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <p className="text-forest-700 font-sans font-600 text-sm">
-              Minimum order of 25 plants total (we don't care how you mix and match) and all prices include shipping!! No more having to buy a full tray of one product and no more factoring in your shipping.
+              {bannerText}
             </p>
-            {/* <span className="text-xs font-sans font-600 text-forest-600 bg-forest-100 px-2.5 py-1 rounded-full border border-forest-200">
-            Min. qty set per product
-          </span> */}
           </div>
         </div>
       )}

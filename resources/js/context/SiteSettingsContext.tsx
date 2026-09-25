@@ -21,6 +21,12 @@ const defaults: PublicSiteSettings = {
   footerDescription: 'Rooted in Tennessee, growing since 1998. We cultivate native plants that thrive in our unique climate and support local ecosystems.',
   social: { facebook: '', instagram: '', twitter: '', youtube: '', pinterest: '' },
   wholesaleMinCartQty: 25,
+  wholesaleDisclaimerEnabled: true,
+  wholesaleDisclaimerText:
+    'WE CANNOT SHIP TO THE FOLLOWING STATES DUE TO SHIPPING RESTRICTIONS: CALIFORNIA, OREGON, WASHINGTON, ARIZONA, ALASKA, HAWAII, IDAHO, PUERTO RICO, NEVADA, MONTANA, UTAH AND NEW MEXICO',
+  wholesaleBannerEnabled: true,
+  wholesaleBannerText:
+    "Minimum order of 25 plants total (we don't care how you mix and match) and all prices include shipping!! No more having to buy a full tray of one product and no more factoring in your shipping.",
 }
 
 type SiteSettingsContextValue = PublicSiteSettings & { ready: boolean }
