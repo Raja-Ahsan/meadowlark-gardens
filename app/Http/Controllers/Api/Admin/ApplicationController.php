@@ -33,14 +33,15 @@ class ApplicationController extends Controller
         $application->update(['status' => $data['status']]);
 
         if ($data['status'] === 'approved') {
-            $password = Str::random(10);
+            $passwordHash = $application->password
+                ?: Hash::make(Str::random(10));
 
             User::updateOrCreate(
                 ['email' => $application->email],
                 [
                     'name' => $application->contact_name,
                     'business_name' => $application->business_name,
-                    'password' => Hash::make($password),
+                    'password' => $passwordHash,
                     'role' => 'wholesale',
                     'approved' => true,
                 ]

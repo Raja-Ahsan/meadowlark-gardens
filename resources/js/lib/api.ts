@@ -71,6 +71,8 @@ interface WholesaleApplicationPayload {
   businessType: string
   licenseDocument: File
   message?: string
+  password: string
+  password_confirmation: string
 }
 
 interface RetailOrderPayload {
@@ -263,6 +265,8 @@ export const api = {
     formData.append('address', payload.address)
     formData.append('businessType', payload.businessType)
     formData.append('licenseDocument', payload.licenseDocument)
+    formData.append('password', payload.password)
+    formData.append('password_confirmation', payload.password_confirmation)
     if (payload.message) formData.append('message', payload.message)
 
     const headers: Record<string, string> = { Accept: 'application/json' }

@@ -16,6 +16,7 @@ class WholesaleApplication extends Model
         'license_document',
         'estimated_monthly_order',
         'message',
+        'password',
         'status',
         'submitted_at',
     ];
