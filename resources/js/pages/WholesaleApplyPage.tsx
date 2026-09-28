@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'motion/react'
 import { Link } from 'react-router-dom'
-import { Tag, Truck, BarChart3, Send, CheckCircle, ArrowRight, ClipboardList, FileUp } from 'lucide-react'
+import { Tag, Truck, BarChart3, Send, CheckCircle, ArrowRight, ClipboardList, FileUp, Eye, EyeOff } from 'lucide-react'
 import { api } from '@/lib/api'
 
 const benefits = [
@@ -18,14 +18,19 @@ type FormFields = {
   address: string
   businessType: string
   message: string
+  password: string
+  passwordConfirmation: string
 }
 
 export default function WholesaleApplyPage() {
   const [form, setForm] = useState<FormFields>({
     businessName: '', contactName: '', email: '', phone: '',
     address: '', businessType: '', message: '',
+    password: '', passwordConfirmation: '',
   })
   const [licenseFile, setLicenseFile] = useState<File | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [errors, setErrors] = useState<Partial<Record<keyof FormFields | 'licenseDocument', string>>>({})
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -39,6 +44,8 @@ export default function WholesaleApplyPage() {
     if (!form.address.trim()) e.address = 'Address is required'
     if (!form.businessType) e.businessType = 'Please select a business type'
     if (!licenseFile) e.licenseDocument = 'Please attach your nursery or business license'
+    if (form.password.length < 6) e.password = 'Password must be at least 6 characters'
+    if (form.password !== form.passwordConfirmation) e.passwordConfirmation = 'Passwords do not match'
     return e
   }
 
@@ -50,8 +57,16 @@ export default function WholesaleApplyPage() {
     setLoading(true)
     try {
       await api.submitWholesaleApplication({
-        ...form,
+        businessName: form.businessName,
+        contactName: form.contactName,
+        email: form.email,
+        phone: form.phone,
+        address: form.address,
+        businessType: form.businessType,
+        message: form.message || undefined,
         licenseDocument: licenseFile,
+        password: form.password,
+        password_confirmation: form.passwordConfirmation,
       })
       setSubmitted(true)
     } catch (error) {
@@ -79,7 +94,6 @@ export default function WholesaleApplyPage() {
 
   return (
     <div className="min-h-screen bg-cream-50 pt-20">
-      {/* Header */}
       <div className="bg-forest-900 py-16 relative overflow-hidden">
         <div className="absolute inset-0 opacity-15"
           style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=1920&q=40")', backgroundSize: 'cover' }} />
@@ -122,7 +136,6 @@ export default function WholesaleApplyPage() {
         </div>
       </div>
 
-      {/* Benefits */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid md:grid-cols-3 gap-6 mb-14">
           {benefits.map((b, i) => (
@@ -145,7 +158,6 @@ export default function WholesaleApplyPage() {
           ))}
         </div>
 
-        {/* Form */}
         <div className="max-w-3xl mx-auto">
           {submitted ? (
             <motion.div
@@ -252,6 +264,56 @@ export default function WholesaleApplyPage() {
                     placeholder="Any specific plant categories you're interested in, or questions about the program..."
                   />
                 </div>
+                <div className="grid sm:grid-cols-2 gap-5">
+                  <div>
+                    <label className="block text-sm font-sans font-600 text-forest-700 mb-1.5">
+                      Create Password <span className="text-terra-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={form.password}
+                        onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
+                        className={`w-full px-4 py-3 pr-12 border rounded-xl text-sm font-body text-forest-900 transition-colors ${errors.password ? 'border-terra-400 bg-terra-50' : 'border-forest-200 bg-cream-50'}`}
+                        placeholder="••••••••"
+                        autoComplete="new-password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(s => !s)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-sage-400 hover:text-sage-600 focus-ring rounded"
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    {errors.password && <p className="text-terra-500 text-xs mt-1">{errors.password}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-sans font-600 text-forest-700 mb-1.5">
+                      Confirm Password <span className="text-terra-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        value={form.passwordConfirmation}
+                        onChange={e => setForm(f => ({ ...f, passwordConfirmation: e.target.value }))}
+                        className={`w-full px-4 py-3 pr-12 border rounded-xl text-sm font-body text-forest-900 transition-colors ${errors.passwordConfirmation ? 'border-terra-400 bg-terra-50' : 'border-forest-200 bg-cream-50'}`}
+                        placeholder="••••••••"
+                        autoComplete="new-password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(s => !s)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-sage-400 hover:text-sage-600 focus-ring rounded"
+                        aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    {errors.passwordConfirmation && <p className="text-terra-500 text-xs mt-1">{errors.passwordConfirmation}</p>}
+                  </div>
+                </div>
                 <button
                   type="submit"
                   disabled={loading}
@@ -264,7 +326,7 @@ export default function WholesaleApplyPage() {
                   )}
                 </button>
                 <p className="text-sage-500 text-xs text-center font-body">
-                  Applications are reviewed within 2–3 business days. Approved partners receive login credentials via email.
+                  Applications are reviewed within 2–3 business days. After approval you can sign in with the password you created.
                 </p>
               </form>
             </motion.div>

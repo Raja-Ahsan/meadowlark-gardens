@@ -69,12 +69,6 @@ export default function WholesaleLoginPage() {
             <p className="text-sage-500 font-body text-sm mt-1">Sign in to your partner account</p>
           </div>
 
-          <div className="mb-6 p-3 bg-forest-50 rounded-xl border border-forest-200 text-xs font-body text-forest-700">
-            <p className="font-sans font-600 mb-1">Demo Credentials:</p>
-            <p>Email: <code className="bg-white px-1 rounded">wholesale@demo.com</code></p>
-            <p className="text-sage-500 mt-1">Password: <code className="bg-white px-1 rounded">password123</code></p>
-          </div>
-
           {error && (
             <motion.div
               initial={{ opacity: 0, y: -8 }}

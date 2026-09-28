@@ -8,6 +8,7 @@ use App\Support\ApiFormatter;
 use App\Support\MediaUrl;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 class WholesaleApplicationController extends Controller
@@ -23,6 +24,7 @@ class WholesaleApplicationController extends Controller
             'businessType' => ['required', 'string', 'max:255'],
             'licenseDocument' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,webp,doc,docx', 'max:10240'],
             'message' => ['nullable', 'string'],
+            'password' => ['required', 'string', 'min:6', 'confirmed'],
         ]);
 
         $file = $request->file('licenseDocument');
@@ -39,6 +41,7 @@ class WholesaleApplicationController extends Controller
             'license_document' => MediaUrl::fromStoragePath($path),
             'estimated_monthly_order' => '',
             'message' => $data['message'] ?? null,
+            'password' => Hash::make($data['password']),
             'status' => 'pending',
             'submitted_at' => now(),
         ]);
