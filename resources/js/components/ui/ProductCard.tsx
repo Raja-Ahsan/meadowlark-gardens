@@ -48,6 +48,10 @@ export default function ProductCard({ product, isWholesale = false, onAddToCart,
             {product.badge}
           </span>
         )}
+        {!product.inStock && (
+          <div className="absolute inset-0 bg-white/60 backdrop-blur-sm flex items-center justify-center">
+          </div>
+        )}
       </div>
 
       <div className="p-5 flex flex-col flex-1">

@@ -154,7 +154,8 @@ class EcommerceSeeder extends Seeder
             ['slug' => 'order_refunded', 'name' => 'Order Refunded', 'subject' => 'Refund processed for order {{order_number}}', 'body' => ''],
             ['slug' => 'password_reset', 'name' => 'Password Reset', 'subject' => 'Reset your password', 'body' => 'Use this secure link to reset your password: {{reset_link}}'],
             ['slug' => 'new_order_admin', 'name' => 'New Order (Admin)', 'subject' => 'New order {{order_number}}', 'body' => ''],
-            ['slug' => 'wholesale_approved', 'name' => 'Wholesale Approved', 'subject' => 'Your wholesale account is approved', 'body' => 'Congratulations! Your wholesale account has been approved. You can now sign in to the wholesale portal and place orders.'],
+            ['slug' => 'wholesale_approved', 'name' => 'Wholesale Approved', 'subject' => 'Your wholesale account is approved', 'body' => "Your wholesale application for {{business_name}} has been approved.\n\nYou can now sign in to the wholesale portal with:\nEmail: {{email}}\nPassword: the password you created on the application form.\n\nWelcome to Meadowlark Gardens!"],
+            ['slug' => 'wholesale_application_admin', 'name' => 'New Wholesale Application (Admin)', 'subject' => 'New wholesale application received', 'body' => "A new wholesale application has been submitted.\n\nBusiness: {{business_name}}\nContact: {{contact_name}}\nEmail: {{email}}\nPhone: {{phone}}\nType: {{business_type}}\n\nPlease review it in the admin panel."],
         ];
 
         foreach ($templates as $t) {
