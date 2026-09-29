@@ -72,14 +72,16 @@ function loadAcceptJs(sandbox: boolean): Promise<void> {
   const src = sandbox
     ? 'https://jstest.authorize.net/v1/Accept.js'
     : 'https://js.authorize.net/v1/Accept.js'
+  const mode = sandbox ? 'sandbox' : 'production'
 
-  const existing = document.querySelector<HTMLScriptElement>(`script[data-authorize-accept="1"]`)
+  const existing = document.querySelector<HTMLScriptElement>('script[data-authorize-accept="1"]')
   if (existing) {
-    if (window.Accept) return Promise.resolve()
-    return new Promise((resolve, reject) => {
-      existing.addEventListener('load', () => resolve())
-      existing.addEventListener('error', () => reject(new Error('Failed to load Accept.js')))
-    })
+    // Wrong environment script (sandbox vs live) causes "invalid authentication values"
+    if (existing.dataset.authorizeMode === mode && window.Accept) {
+      return Promise.resolve()
+    }
+    existing.remove()
+    delete window.Accept
   }
 
   return new Promise((resolve, reject) => {
@@ -87,6 +89,7 @@ function loadAcceptJs(sandbox: boolean): Promise<void> {
     script.src = src
     script.async = true
     script.dataset.authorizeAccept = '1'
+    script.dataset.authorizeMode = mode
     script.onload = () => resolve()
     script.onerror = () => reject(new Error('Failed to load Accept.js'))
     document.body.appendChild(script)
