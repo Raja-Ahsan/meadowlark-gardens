@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Setting;
 use App\Models\WholesaleApplication;
+use App\Services\EmailService;
 use App\Support\ApiFormatter;
 use App\Support\MediaUrl;
 use Illuminate\Http\JsonResponse;
@@ -45,6 +47,23 @@ class WholesaleApplicationController extends Controller
             'status' => 'pending',
             'submitted_at' => now(),
         ]);
+
+        $adminEmail = Setting::get('site_email');
+        if ($adminEmail) {
+            EmailService::send('wholesale_application_admin', $adminEmail, [
+                'name' => 'Admin',
+                'business_name' => $application->business_name,
+                'contact_name' => $application->contact_name,
+                'email' => $application->email,
+                'phone' => $application->phone,
+                'business_type' => $application->business_type,
+                'headline' => 'New wholesale application',
+                'cta' => [
+                    'label' => 'Review applications',
+                    'url' => url('/admin/wholesalers'),
+                ],
+            ]);
+        }
 
         return response()->json([
             'message' => 'Application submitted successfully! We will review it within 2–3 business days.',
