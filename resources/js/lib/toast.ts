@@ -30,7 +30,9 @@ export function showAddedToCartToast(
 export function showToastError(message: string) {
   Toast.fire({
     icon: 'error',
-    title: message,
+    title: message.length > 80 ? 'Something went wrong' : message,
+    text: message.length > 80 ? message : undefined,
+    timer: Math.min(8000, Math.max(3200, message.length * 40)),
   })
 }
 

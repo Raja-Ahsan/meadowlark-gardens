@@ -56,24 +56,53 @@ class ShippingQuoteService
             abort(422, 'Please select a shipping method.');
         }
 
+        $freeShipping = (bool) ($data['freeShipping'] ?? false);
+        $selectionCost = (float) ($selection['cost'] ?? 0);
+
+        // Shipping-included / free checkout: never fail on stale rate codes.
+        if ($freeShipping || $this->isFreeOrIncludedSelection($selection) || $selectionCost <= 0.0) {
+            return [
+                'cost' => 0.0,
+                'carrier' => 'free',
+                'code' => 'FREE',
+                'name' => (string) ($selection['name'] ?? 'Free Shipping'),
+            ];
+        }
+
         $quote = $this->quote([
             'shippingAddress' => $data['shippingAddress'] ?? [],
             'items' => $data['items'] ?? [],
             'subtotal' => $data['subtotal'] ?? null,
             'type' => $data['type'] ?? 'retail',
-            'freeShipping' => $data['freeShipping'] ?? false,
+            'freeShipping' => false,
         ]);
 
-        $matched = collect($quote['rates'])->first(
-            fn ($rate) => $rate['code'] === $selection['code'] && $rate['carrier'] === ($selection['carrier'] ?? $rate['carrier'])
-        );
+        $selCode = strtoupper(trim((string) $selection['code']));
+        $selCarrier = strtolower(trim((string) ($selection['carrier'] ?? '')));
+
+        $matched = collect($quote['rates'])->first(function ($rate) use ($selCode, $selCarrier) {
+            $rateCode = strtoupper(trim((string) $rate['code']));
+            $rateCarrier = strtolower(trim((string) $rate['carrier']));
+
+            if ($rateCode !== $selCode) {
+                return false;
+            }
+
+            // Carrier may be omitted by older clients; code match is enough when unique.
+            return $selCarrier === '' || $selCarrier === $rateCarrier;
+        });
 
         if (! $matched) {
-            abort(422, 'Selected shipping method is no longer available. Please refresh rates.');
+            // Reconcile: if only one rate remains, use it instead of hard-failing checkout.
+            if (count($quote['rates']) === 1) {
+                $matched = $quote['rates'][0];
+            } else {
+                abort(422, 'Selected shipping method is no longer available. Please refresh rates.');
+            }
         }
 
-        $expected = (float) $matched['cost'];
-        $submitted = (float) ($selection['cost'] ?? $expected);
+        $expected = round((float) $matched['cost'], 2);
+        $submitted = round((float) ($selection['cost'] ?? $expected), 2);
 
         if (abs($expected - $submitted) > 0.05) {
             abort(422, 'Shipping cost has changed. Please refresh and try again.');
@@ -85,6 +114,16 @@ class ShippingQuoteService
             'code' => $matched['code'],
             'name' => $matched['name'],
         ];
+    }
+
+    /** @param array<string, mixed> $selection */
+    private function isFreeOrIncludedSelection(array $selection): bool
+    {
+        $code = strtoupper(trim((string) ($selection['code'] ?? '')));
+        $carrier = strtolower(trim((string) ($selection['carrier'] ?? '')));
+
+        return in_array($code, ['FREE', 'INCLUDED'], true)
+            || in_array($carrier, ['free', 'included'], true);
     }
 
     /** @param array<int, array<string, mixed>> $items */

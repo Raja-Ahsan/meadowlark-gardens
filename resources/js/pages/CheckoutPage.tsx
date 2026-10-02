@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { ShoppingBag, Tag, CheckCircle, ArrowLeft } from 'lucide-react'
 import { useRetailCart } from '@/context/RetailCartContext'
@@ -8,10 +8,11 @@ import { api, type ShippingRate } from '@/lib/api'
 import { mediaUrl } from '@/lib/media'
 import AuthorizeCardForm, { collectAuthorizePayment } from '@/components/checkout/AuthorizeCardForm'
 import { useTaxQuote } from '@/hooks/useTaxQuote'
+import { showToastError, showToastSuccess } from '@/lib/toast'
 
 const FREE_SHIPPING: ShippingRate = {
-  carrier: 'included',
-  code: 'free',
+  carrier: 'free',
+  code: 'FREE',
   name: 'Shipping included',
   cost: 0,
   currency: 'USD',
@@ -204,6 +205,12 @@ export default function CheckoutPage() {
   const [couponApplied, setCouponApplied] = useState('')
   const [selectedShipping] = useState<ShippingRate>(FREE_SHIPPING)
   const [submitting, setSubmitting] = useState(false)
+  const submittingRef = useRef(false)
+  const checkoutIdRef = useRef(
+    typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `chk-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+  )
 
   const subtotal = total
 
@@ -278,15 +285,40 @@ export default function CheckoutPage() {
       const res = await api.validateCoupon(couponCode, subtotal, 'retail')
       setDiscount(res.coupon.discount)
       setCouponApplied(res.coupon.code)
+      showToastSuccess(`Coupon ${res.coupon.code} applied`)
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Invalid coupon')
+      showToastError(e instanceof Error ? e.message : 'Invalid coupon')
     }
+  }
+
+  const validateCheckoutFields = (): string | null => {
+    if (!form.firstName.trim() || !form.lastName.trim()) return 'Please enter your first and last name.'
+    if (!form.email.trim()) return 'Please enter your email address.'
+    if (!form.address1.trim()) return 'Please enter your billing address.'
+    if (!form.city.trim() || !form.state.trim() || !form.postalCode.trim()) {
+      return 'Please complete city, state, and ZIP for billing.'
+    }
+    if (!form.sameShipping) {
+      if (!form.shipAddress1.trim() || !form.shipCity.trim() || !form.shipState.trim() || !form.shipPostalCode.trim()) {
+        return 'Please complete the shipping address fields.'
+      }
+    }
+    if (!form.paymentMethod) return 'Please select a payment method.'
+    return null
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (items.length === 0 || !form.paymentMethod) return
+    if (submittingRef.current || submitting) return
 
+    const fieldError = validateCheckoutFields()
+    if (fieldError) {
+      showToastError(fieldError)
+      return
+    }
+
+    submittingRef.current = true
     setSubmitting(true)
     try {
       const billingAddress = {
@@ -318,6 +350,7 @@ export default function CheckoutPage() {
           cost: selectedShipping.cost,
         },
         items: cartItems,
+        checkoutId: checkoutIdRef.current,
         ...authorizePayment,
       }
 
@@ -347,8 +380,14 @@ export default function CheckoutPage() {
       clearCart()
       setSuccess(true)
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Checkout failed')
+      showToastError(e instanceof Error ? e.message : 'Checkout failed')
+      // Allow safe retry with a fresh checkout id after failure (new payment nonce needed)
+      checkoutIdRef.current =
+        typeof crypto !== 'undefined' && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `chk-${Date.now()}-${Math.random().toString(36).slice(2)}`
     } finally {
+      submittingRef.current = false
       setSubmitting(false)
     }
   }

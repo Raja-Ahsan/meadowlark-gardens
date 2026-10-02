@@ -36,10 +36,23 @@ return [
     ],
 
     'authorize_net' => [
-        'api_login_id' => env('AUTHORIZE_API_LOGIN_ID'),
-        'transaction_key' => env('AUTHORIZE_TRANSACTION_KEY'),
-        'client_key' => env('AUTHORIZE_CLIENT_KEY'),
-        'sandbox' => filter_var(env('AUTHORIZE_SANDBOX', true), FILTER_VALIDATE_BOOLEAN),
+        // Prefer AUTHORIZE_NET_* ; fall back to AUTHORIZE_* for older deploys.
+        'environment' => env(
+            'AUTHORIZE_NET_ENVIRONMENT',
+            filter_var(env('AUTHORIZE_SANDBOX', true), FILTER_VALIDATE_BOOLEAN) ? 'sandbox' : 'production'
+        ),
+        'api_login_id' => env('AUTHORIZE_NET_API_LOGIN_ID', env('AUTHORIZE_API_LOGIN_ID')),
+        'transaction_key' => env('AUTHORIZE_NET_TRANSACTION_KEY', env('AUTHORIZE_TRANSACTION_KEY')),
+        'client_key' => env('AUTHORIZE_NET_CLIENT_KEY', env('AUTHORIZE_CLIENT_KEY')),
+        // Derived sandbox flag (true unless environment is live/production)
+        'sandbox' => ! in_array(
+            strtolower((string) env(
+                'AUTHORIZE_NET_ENVIRONMENT',
+                filter_var(env('AUTHORIZE_SANDBOX', true), FILTER_VALIDATE_BOOLEAN) ? 'sandbox' : 'production'
+            )),
+            ['live', 'production'],
+            true
+        ),
     ],
 
     'taxjar' => [
