@@ -193,9 +193,9 @@ export default function AuthorizeCardForm({
             inputMode="numeric"
             autoComplete="cc-csc"
             placeholder="123"
-            maxLength={4}
+            maxLength={3}
             value={cardCode}
-            onChange={e => setCardCode(e.target.value.replace(/\D/g, '').slice(0, 4))}
+            onChange={e => setCardCode(e.target.value.replace(/\D/g, '').slice(0, 3))}
             disabled={!scriptReady}
           />
         </div>
@@ -237,8 +237,8 @@ function AuthorizeCardBridge(props: {
   useEffect(() => {
     const collect = (): Promise<AuthorizePaymentPayload> => {
       const number = props.cardNumber.replace(/\s+/g, '')
-      if (number.length < 13 || props.expMonth.length < 2 || props.expYear.length < 2 || props.cardCode.length < 3) {
-        return Promise.reject(new Error('Please enter a valid card number, expiry, and CVV.'))
+      if (number.length < 13 || props.expMonth.length < 2 || props.expYear.length < 2 || props.cardCode.length !== 3) {
+        return Promise.reject(new Error('Please enter a valid card number, expiry, and 3-digit CVV.'))
       }
 
       if (props.useDirect) {
@@ -280,8 +280,11 @@ function AuthorizeCardBridge(props: {
           response => {
             window.clearTimeout(timeout)
             if (response.messages.resultCode === 'Error') {
-              const msg = response.messages.message?.map(m => m.text).join(' ') || 'Card tokenization failed.'
-              reject(new Error(msg))
+              const parts = response.messages.message ?? []
+              const codes = parts.map(m => m.code).filter(Boolean).join(', ')
+              const texts = parts.map(m => m.text).filter(Boolean).join(' ') || 'Card tokenization failed.'
+              // Surface Accept.js code so sandbox/live mismatches are diagnosable
+              reject(new Error(codes ? `${texts} (${codes})` : texts))
               return
             }
             if (!response.opaqueData?.dataDescriptor || !response.opaqueData?.dataValue) {

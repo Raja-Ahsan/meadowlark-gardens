@@ -6,6 +6,7 @@
         "build": "vite build"
     },
     "dependencies": {
+        "country-state-city": "^3.2.1",
         "lucide-react": "^0.441.0",
         "motion": "^12.38.0",
         "quill": "^2.0.3",

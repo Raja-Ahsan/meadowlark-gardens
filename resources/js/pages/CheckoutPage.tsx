@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { ShoppingBag, Tag, CheckCircle, ArrowLeft } from 'lucide-react'
 import { useRetailCart } from '@/context/RetailCartContext'
@@ -9,6 +9,10 @@ import { mediaUrl } from '@/lib/media'
 import AuthorizeCardForm, { collectAuthorizePayment } from '@/components/checkout/AuthorizeCardForm'
 import { useTaxQuote } from '@/hooks/useTaxQuote'
 import { showToastError, showToastSuccess } from '@/lib/toast'
+import SearchableSelect from '@/components/ui/SearchableSelect'
+import { US_STATES, formatPostalCodeInput, isValidPostalCode, getCityOptionsForState } from '@/lib/usStates'
+
+const STATE_OPTIONS = US_STATES.map(s => ({ value: s.code, label: `${s.name} (${s.code})` }))
 
 const FREE_SHIPPING: ShippingRate = {
   carrier: 'free',
@@ -262,6 +266,9 @@ export default function CheckoutPage() {
 
   const grandTotal = Math.max(0, subtotal - discount + tax)
 
+  const billingCityOptions = useMemo(() => getCityOptionsForState(form.state), [form.state])
+  const shippingCityOptions = useMemo(() => getCityOptionsForState(form.shipState), [form.shipState])
+
   useEffect(() => {
     api.getPaymentConfig()
       .then(config => {
@@ -298,9 +305,15 @@ export default function CheckoutPage() {
     if (!form.city.trim() || !form.state.trim() || !form.postalCode.trim()) {
       return 'Please complete city, state, and ZIP for billing.'
     }
+    if (!isValidPostalCode(form.postalCode)) {
+      return 'ZIP code must be at least 3 digits (numbers only).'
+    }
     if (!form.sameShipping) {
       if (!form.shipAddress1.trim() || !form.shipCity.trim() || !form.shipState.trim() || !form.shipPostalCode.trim()) {
         return 'Please complete the shipping address fields.'
+      }
+      if (!isValidPostalCode(form.shipPostalCode)) {
+        return 'Shipping ZIP code must be at least 3 digits (numbers only).'
       }
     }
     if (!form.paymentMethod) return 'Please select a payment method.'
@@ -493,9 +506,45 @@ export default function CheckoutPage() {
               <div><label className={labelClass}>Company</label><input className={inputClass} value={form.company} onChange={e => setForm(f => ({ ...f, company: e.target.value }))} /></div>
               <div className="sm:col-span-2"><label className={labelClass}>Address *</label><input required className={inputClass} value={form.address1} onChange={e => setForm(f => ({ ...f, address1: e.target.value }))} /></div>
               <div className="sm:col-span-2"><label className={labelClass}>Apartment, suite, etc.</label><input className={inputClass} value={form.address2} onChange={e => setForm(f => ({ ...f, address2: e.target.value }))} /></div>
-              <div><label className={labelClass}>City *</label><input required className={inputClass} value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))} /></div>
-              <div><label className={labelClass}>State *</label><input required className={inputClass} value={form.state} onChange={e => setForm(f => ({ ...f, state: e.target.value }))} /></div>
-              <div className="sm:col-span-2 sm:max-w-xs"><label className={labelClass}>ZIP code *</label><input required className={inputClass} value={form.postalCode} onChange={e => setForm(f => ({ ...f, postalCode: e.target.value }))} /></div>
+              <div>
+                <label className={labelClass}>State *</label>
+                <SearchableSelect
+                  required
+                  options={STATE_OPTIONS}
+                  value={form.state}
+                  onChange={value => setForm(f => ({ ...f, state: value, city: '' }))}
+                  placeholder="Select state"
+                  searchPlaceholder="Search states…"
+                  emptyMessage="No states found"
+                />
+              </div>
+              <div>
+                <label className={labelClass}>City *</label>
+                <SearchableSelect
+                  required
+                  options={billingCityOptions}
+                  value={form.city}
+                  onChange={value => setForm(f => ({ ...f, city: value }))}
+                  placeholder={form.state ? 'Select city' : 'Select state first'}
+                  searchPlaceholder="Search cities…"
+                  emptyMessage={form.state ? 'No cities found' : 'Select a state first'}
+                  disabled={!form.state}
+                />
+              </div>
+              <div className="sm:col-span-2 sm:max-w-xs">
+                <label className={labelClass}>ZIP code *</label>
+                <input
+                  required
+                  inputMode="numeric"
+                  pattern="\d{3,10}"
+                  minLength={3}
+                  maxLength={10}
+                  className={inputClass}
+                  value={form.postalCode}
+                  onChange={e => setForm(f => ({ ...f, postalCode: formatPostalCodeInput(e.target.value) }))}
+                  placeholder="e.g. 37201"
+                />
+              </div>
             </div>
           </section>
 
@@ -513,9 +562,42 @@ export default function CheckoutPage() {
             {!form.sameShipping && (
               <div className="grid sm:grid-cols-2 gap-4 mb-4">
                 <div className="sm:col-span-2"><label className={labelClass}>Shipping address</label><input className={inputClass} value={form.shipAddress1} onChange={e => setForm(f => ({ ...f, shipAddress1: e.target.value }))} /></div>
-                <div><label className={labelClass}>City</label><input className={inputClass} value={form.shipCity} onChange={e => setForm(f => ({ ...f, shipCity: e.target.value }))} /></div>
-                <div><label className={labelClass}>State</label><input className={inputClass} value={form.shipState} onChange={e => setForm(f => ({ ...f, shipState: e.target.value }))} /></div>
-                <div className="sm:max-w-xs"><label className={labelClass}>ZIP code</label><input className={inputClass} value={form.shipPostalCode} onChange={e => setForm(f => ({ ...f, shipPostalCode: e.target.value }))} /></div>
+                <div>
+                  <label className={labelClass}>State</label>
+                  <SearchableSelect
+                    options={STATE_OPTIONS}
+                    value={form.shipState}
+                    onChange={value => setForm(f => ({ ...f, shipState: value, shipCity: '' }))}
+                    placeholder="Select state"
+                    searchPlaceholder="Search states…"
+                    emptyMessage="No states found"
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>City</label>
+                  <SearchableSelect
+                    options={shippingCityOptions}
+                    value={form.shipCity}
+                    onChange={value => setForm(f => ({ ...f, shipCity: value }))}
+                    placeholder={form.shipState ? 'Select city' : 'Select state first'}
+                    searchPlaceholder="Search cities…"
+                    emptyMessage={form.shipState ? 'No cities found' : 'Select a state first'}
+                    disabled={!form.shipState}
+                  />
+                </div>
+                <div className="sm:max-w-xs">
+                  <label className={labelClass}>ZIP code</label>
+                  <input
+                    inputMode="numeric"
+                    pattern="\d{3,10}"
+                    minLength={3}
+                    maxLength={10}
+                    className={inputClass}
+                    value={form.shipPostalCode}
+                    onChange={e => setForm(f => ({ ...f, shipPostalCode: formatPostalCodeInput(e.target.value) }))}
+                    placeholder="e.g. 37201"
+                  />
+                </div>
               </div>
             )}
             <div>
