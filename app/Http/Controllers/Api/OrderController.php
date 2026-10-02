@@ -17,7 +17,9 @@ use App\Services\ShippingQuoteService;
 use App\Services\TaxJarService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -51,6 +53,7 @@ class OrderController extends Controller
             'authorizeCard.expMonth' => ['required_with:authorizeCard', 'string'],
             'authorizeCard.expYear' => ['required_with:authorizeCard', 'string'],
             'authorizeCard.cardCode' => ['required_with:authorizeCard', 'string'],
+            'checkoutId' => ['nullable', 'string', 'max:64'],
         ]);
 
         $account = $this->resolveGuestCustomerAccount(
@@ -141,6 +144,7 @@ class OrderController extends Controller
             'authorizeCard.expMonth' => ['required_with:authorizeCard', 'string'],
             'authorizeCard.expYear' => ['required_with:authorizeCard', 'string'],
             'authorizeCard.cardCode' => ['required_with:authorizeCard', 'string'],
+            'checkoutId' => ['nullable', 'string', 'max:64'],
         ]);
 
         $order = $this->createOrder($data, 'retail', $user->id, $user->name, $user->email);
@@ -178,6 +182,7 @@ class OrderController extends Controller
             'authorizeCard.expMonth' => ['required_with:authorizeCard', 'string'],
             'authorizeCard.expYear' => ['required_with:authorizeCard', 'string'],
             'authorizeCard.cardCode' => ['required_with:authorizeCard', 'string'],
+            'checkoutId' => ['nullable', 'string', 'max:64'],
         ]);
 
         $order = $this->createOrder(
@@ -204,7 +209,32 @@ class OrderController extends Controller
         bool $enforceWholesaleMin = false,
         array $extraEmailVars = []
     ): Order {
-        return DB::transaction(function () use ($data, $type, $userId, $customerName, $customerEmail, $enforceWholesaleMin, $extraEmailVars) {
+        $checkoutId = isset($data['checkoutId']) ? trim((string) $data['checkoutId']) : '';
+        if ($checkoutId !== '') {
+            $cachedOrderId = Cache::get($this->checkoutCacheKey($checkoutId));
+            if ($cachedOrderId) {
+                $existing = Order::with(['items.product', 'items.variation', 'user', 'statusHistories'])
+                    ->find($cachedOrderId);
+                if ($existing) {
+                    Log::info('Checkout idempotent replay', [
+                        'checkoutId' => $checkoutId,
+                        'order_number' => $existing->order_number,
+                    ]);
+
+                    return $existing;
+                }
+            }
+        }
+
+        return DB::transaction(function () use ($data, $type, $userId, $customerName, $customerEmail, $enforceWholesaleMin, $extraEmailVars, $checkoutId) {
+            Log::info('Checkout started', [
+                'type' => $type,
+                'checkoutId' => $checkoutId !== '' ? $checkoutId : null,
+                'email' => $customerEmail,
+                'paymentMethod' => $data['paymentMethod'] ?? null,
+                'itemCount' => count($data['items'] ?? []),
+            ]);
+
             if ($type === 'wholesale') {
                 $totalQty = collect($data['items'])->sum('quantity');
                 $minCartQty = max(1, (int) Setting::get('wholesale_min_cart_qty', 25));
@@ -213,7 +243,7 @@ class OrderController extends Controller
                 }
             }
 
-            $subtotal = 0;
+            $subtotal = 0.0;
             $lineItems = [];
 
             foreach ($data['items'] as $item) {
@@ -247,7 +277,8 @@ class OrderController extends Controller
                         ? $product->getEffectivePrice(true)
                         : $product->getEffectivePrice(false);
                 }
-                $subtotal += $unitPrice * $item['quantity'];
+                $unitPrice = round($unitPrice, 2);
+                $subtotal += round($unitPrice * (int) $item['quantity'], 2);
 
                 $lineItems[] = [
                     'product' => $product,
@@ -257,8 +288,8 @@ class OrderController extends Controller
                 ];
             }
 
-            $discount = 0;
-            $freeShipping = false;
+            $subtotal = round($subtotal, 2);
+            $discount = 0.0;
             $couponCode = $data['couponCode'] ?? null;
             if ($couponCode) {
                 $couponRes = app(CouponController::class)->validateCode(new Request([
@@ -268,8 +299,7 @@ class OrderController extends Controller
                 ]));
                 if ($couponRes->getStatusCode() === 200) {
                     $couponData = json_decode($couponRes->getContent(), true);
-                    $discount = $couponData['coupon']['discount'] ?? 0;
-                    $freeShipping = (bool) ($couponData['coupon']['freeShipping'] ?? false);
+                    $discount = round((float) ($couponData['coupon']['discount'] ?? 0), 2);
                 }
             }
 
@@ -278,16 +308,23 @@ class OrderController extends Controller
                 'items' => $data['items'],
                 'subtotal' => $subtotal,
                 'type' => $type,
+                // Product prices include shipping — always treat as free/included.
                 'freeShipping' => true,
                 'shippingMethod' => array_merge($data['shippingMethod'] ?? [], ['cost' => 0]),
             ]);
 
-            // Shipping is included in product price — never charge separately.
             $shippingCost = 0.0;
             $shipping['cost'] = 0.0;
 
+            Log::info('Checkout shipping resolved', [
+                'checkoutId' => $checkoutId !== '' ? $checkoutId : null,
+                'carrier' => $shipping['carrier'] ?? null,
+                'code' => $shipping['code'] ?? null,
+                'cost' => $shippingCost,
+            ]);
+
             if ($type === 'wholesale') {
-                $tax = 0;
+                $tax = 0.0;
             } else {
                 $taxQuote = app(TaxJarService::class)->quote([
                     'shippingAddress' => $data['shippingAddress'] ?? [],
@@ -297,9 +334,19 @@ class OrderController extends Controller
                     'shipping' => 0,
                     'type' => $type,
                 ]);
-                $tax = $taxQuote['tax'];
+                $tax = round((float) $taxQuote['tax'], 2);
             }
-            $total = max(0, $subtotal - $discount + $tax + $shippingCost);
+
+            $total = round(max(0, $subtotal - $discount + $tax + $shippingCost), 2);
+
+            Log::info('Checkout totals calculated', [
+                'checkoutId' => $checkoutId !== '' ? $checkoutId : null,
+                'subtotal' => number_format($subtotal, 2, '.', ''),
+                'discount' => number_format($discount, 2, '.', ''),
+                'tax' => number_format($tax, 2, '.', ''),
+                'shipping' => number_format($shippingCost, 2, '.', ''),
+                'total' => number_format($total, 2, '.', ''),
+            ]);
 
             $order = Order::create([
                 'order_number' => 'ORD-'.now()->format('Y').'-'.str_pad((string) (Order::count() + 1), 3, '0', STR_PAD_LEFT),
@@ -353,6 +400,11 @@ class OrderController extends Controller
                     && ! empty($card['expYear']) && ! empty($card['cardCode']);
 
                 if ($hasOpaque) {
+                    Log::info('Checkout payment token received', [
+                        'checkoutId' => $checkoutId !== '' ? $checkoutId : null,
+                        'order_number' => $order->order_number,
+                        'descriptor' => $opaque['dataDescriptor'],
+                    ]);
                     $charge = $authorize->chargeOpaqueData(
                         (float) $order->total,
                         (string) $opaque['dataDescriptor'],
@@ -366,6 +418,10 @@ class OrderController extends Controller
                             'payment' => 'Card payments require HTTPS. Use a secure connection or sandbox mode.',
                         ]);
                     }
+                    Log::info('Checkout sandbox direct card charge', [
+                        'checkoutId' => $checkoutId !== '' ? $checkoutId : null,
+                        'order_number' => $order->order_number,
+                    ]);
                     $charge = $authorize->chargeCard(
                         (float) $order->total,
                         $card,
@@ -379,6 +435,11 @@ class OrderController extends Controller
                 }
 
                 if (! ($charge['success'] ?? false)) {
+                    Log::warning('Checkout payment failed', [
+                        'checkoutId' => $checkoutId !== '' ? $checkoutId : null,
+                        'order_number' => $order->order_number,
+                        'message' => $charge['message'] ?? 'unknown',
+                    ]);
                     throw ValidationException::withMessages([
                         'payment' => $charge['message'] ?? 'Card payment failed. Please try again.',
                     ]);
@@ -393,25 +454,64 @@ class OrderController extends Controller
                     'status' => 'paid',
                     'note' => 'Paid via Authorize.net',
                 ]);
+
+                Log::info('Checkout payment succeeded', [
+                    'checkoutId' => $checkoutId !== '' ? $checkoutId : null,
+                    'order_number' => $order->order_number,
+                    'transId' => $charge['transId'] ?? null,
+                ]);
             }
 
-            EmailService::sendOrder('order_confirmation', $customerEmail, $order, [
-                'name' => $customerName,
-                'account_email' => $extraEmailVars['account_email'] ?? null,
-                'account_password' => $extraEmailVars['account_password'] ?? null,
-                'account_is_new' => (bool) ($extraEmailVars['account_is_new'] ?? false),
-                'credentials_sent' => (bool) ($extraEmailVars['credentials_sent'] ?? false),
-            ]);
+            // Emails must not roll back a paid order / successful charge.
+            try {
+                EmailService::sendOrder('order_confirmation', $customerEmail, $order, [
+                    'name' => $customerName,
+                    'account_email' => $extraEmailVars['account_email'] ?? null,
+                    'account_password' => $extraEmailVars['account_password'] ?? null,
+                    'account_is_new' => (bool) ($extraEmailVars['account_is_new'] ?? false),
+                    'credentials_sent' => (bool) ($extraEmailVars['credentials_sent'] ?? false),
+                ]);
+            } catch (\Throwable $e) {
+                Log::error('Checkout confirmation email failed', [
+                    'order_number' => $order->order_number,
+                    'error' => $e->getMessage(),
+                ]);
+            }
 
-            $adminEmail = \App\Models\Setting::get('site_email', 'admin@meadowlarkgardens.com');
-            EmailService::sendOrder('new_order_admin', $adminEmail, $order, [
-                'name' => 'Admin',
-            ]);
+            try {
+                $adminEmail = \App\Models\Setting::get('site_email', 'admin@meadowlarkgardens.com');
+                EmailService::sendOrder('new_order_admin', $adminEmail, $order, [
+                    'name' => 'Admin',
+                ]);
+            } catch (\Throwable $e) {
+                Log::error('Checkout admin email failed', [
+                    'order_number' => $order->order_number,
+                    'error' => $e->getMessage(),
+                ]);
+            }
 
             AuditService::log('order.created', $order, null, ['total' => $order->total], $userId);
 
-            return $order->load(['items.product', 'items.variation', 'user', 'statusHistories']);
+            $order = $order->load(['items.product', 'items.variation', 'user', 'statusHistories']);
+
+            if ($checkoutId !== '') {
+                Cache::put($this->checkoutCacheKey($checkoutId), $order->id, now()->addMinutes(45));
+            }
+
+            Log::info('Checkout order created', [
+                'checkoutId' => $checkoutId !== '' ? $checkoutId : null,
+                'order_number' => $order->order_number,
+                'total' => (string) $order->total,
+                'status' => $order->status,
+            ]);
+
+            return $order;
         });
+    }
+
+    private function checkoutCacheKey(string $checkoutId): string
+    {
+        return 'checkout:idempotency:'.hash('sha256', $checkoutId);
     }
 
     /**

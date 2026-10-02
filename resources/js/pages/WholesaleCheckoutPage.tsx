@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ShoppingBag, Tag, CheckCircle } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
@@ -12,10 +12,11 @@ import {
   formatVariationLabel,
   getWholesaleLinePrice,
 } from '@/lib/cart'
+import { showToastError, showToastSuccess } from '@/lib/toast'
 
 const FREE_SHIPPING: ShippingRate = {
-  carrier: 'included',
-  code: 'free',
+  carrier: 'free',
+  code: 'FREE',
   name: 'Shipping included',
   cost: 0,
   currency: 'USD',
@@ -68,6 +69,12 @@ export default function WholesaleCheckoutPage() {
   const [selectedShipping] = useState<ShippingRate>(FREE_SHIPPING)
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
+  const submittingRef = useRef(false)
+  const checkoutIdRef = useRef(
+    typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `chk-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+  )
 
   const subtotal = total
 
@@ -128,15 +135,40 @@ export default function WholesaleCheckoutPage() {
       const res = await api.validateCoupon(couponCode, subtotal, 'wholesale')
       setDiscount(res.coupon.discount)
       setCouponApplied(res.coupon.code)
+      showToastSuccess(`Coupon ${res.coupon.code} applied`)
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Invalid coupon')
+      showToastError(e instanceof Error ? e.message : 'Invalid coupon')
     }
+  }
+
+  const validateCheckoutFields = (): string | null => {
+    if (!form.firstName.trim() || !form.lastName.trim()) return 'Please enter your first and last name.'
+    if (!form.email.trim()) return 'Please enter your email address.'
+    if (!form.address1.trim()) return 'Please enter your billing address.'
+    if (!form.city.trim() || !form.state.trim() || !form.postalCode.trim()) {
+      return 'Please complete city, state, and ZIP for billing.'
+    }
+    if (!form.sameShipping) {
+      if (!form.shipAddress1.trim() || !form.shipCity.trim() || !form.shipState.trim() || !form.shipPostalCode.trim()) {
+        return 'Please complete the shipping address fields.'
+      }
+    }
+    if (!form.paymentMethod) return 'Please select a payment method.'
+    return null
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (items.length === 0 || !meetsMinCartQty || !form.paymentMethod) return
+    if (submittingRef.current || submitting) return
 
+    const fieldError = validateCheckoutFields()
+    if (fieldError) {
+      showToastError(fieldError)
+      return
+    }
+
+    submittingRef.current = true
     setSubmitting(true)
     try {
       const billingAddress = {
@@ -180,14 +212,20 @@ export default function WholesaleCheckoutPage() {
           cost: selectedShipping.cost,
         },
         items: cartItems,
+        checkoutId: checkoutIdRef.current,
         ...authorizePayment,
       })
 
       clearCart()
       setSuccess(true)
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Checkout failed')
+      showToastError(e instanceof Error ? e.message : 'Checkout failed')
+      checkoutIdRef.current =
+        typeof crypto !== 'undefined' && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `chk-${Date.now()}-${Math.random().toString(36).slice(2)}`
     } finally {
+      submittingRef.current = false
       setSubmitting(false)
     }
   }

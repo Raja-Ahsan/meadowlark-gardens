@@ -27,6 +27,7 @@ class PaymentController extends Controller
             'authorizeApiLoginId' => config('services.authorize_net.api_login_id'),
             'authorizeClientKey' => config('services.authorize_net.client_key'),
             'authorizeSandbox' => $authorize->isSandbox(),
+            'authorizeEnvironment' => $authorize->environment(),
             // Accept.js requires HTTPS; sandbox allows server-side card charge on local HTTP
             'authorizeDirectCard' => $authorize->allowsDirectCard(),
             'methods' => PaymentMethodService::enabledLabels(),

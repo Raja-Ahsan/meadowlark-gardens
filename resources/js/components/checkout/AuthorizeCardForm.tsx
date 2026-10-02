@@ -258,6 +258,10 @@ function AuthorizeCardBridge(props: {
           return
         }
 
+        const timeout = window.setTimeout(() => {
+          reject(new Error('Card tokenization timed out. Please try again.'))
+        }, 25000)
+
         window.Accept.dispatchData(
           {
             authData: {
@@ -274,6 +278,7 @@ function AuthorizeCardBridge(props: {
             },
           },
           response => {
+            window.clearTimeout(timeout)
             if (response.messages.resultCode === 'Error') {
               const msg = response.messages.message?.map(m => m.text).join(' ') || 'Card tokenization failed.'
               reject(new Error(msg))

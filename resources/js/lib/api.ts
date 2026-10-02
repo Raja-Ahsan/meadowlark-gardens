@@ -49,7 +49,12 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const data = await response.json().catch(() => ({}))
 
   if (!response.ok) {
-    throw new Error(data.message || 'Request failed')
+    const errors = (data as { errors?: Record<string, string[]> }).errors
+    if (errors && typeof errors === 'object') {
+      const first = Object.values(errors).flat().find(Boolean)
+      if (first) throw new Error(String(first))
+    }
+    throw new Error((data as { message?: string }).message || 'Request failed')
   }
 
   return data as T
@@ -87,6 +92,7 @@ interface RetailOrderPayload {
   shippingMethod: ShippingMethodPayload
   authorizeOpaqueData?: { dataDescriptor: string; dataValue: string }
   authorizeCard?: { cardNumber: string; expMonth: string; expYear: string; cardCode: string }
+  checkoutId?: string
 }
 
 export interface ShippingMethodPayload {
@@ -128,6 +134,7 @@ interface WholesaleOrderPayload {
   shippingMethod: ShippingMethodPayload
   authorizeOpaqueData?: { dataDescriptor: string; dataValue: string }
   authorizeCard?: { cardNumber: string; expMonth: string; expYear: string; cardCode: string }
+  checkoutId?: string
 }
 
 export interface ShopCategory {
@@ -677,6 +684,7 @@ export const api = {
     authorizeApiLoginId?: string
     authorizeClientKey?: string
     authorizeSandbox?: boolean
+    authorizeEnvironment?: string
     authorizeDirectCard?: boolean
     methods: string[]
   }>('/payments/config'),

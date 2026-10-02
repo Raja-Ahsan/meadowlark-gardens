@@ -14,9 +14,16 @@ class AuthorizeNetService
             && filled(config('services.authorize_net.client_key'));
     }
 
+    public function environment(): string
+    {
+        $env = strtolower((string) config('services.authorize_net.environment', 'sandbox'));
+
+        return in_array($env, ['live', 'production'], true) ? 'production' : 'sandbox';
+    }
+
     public function isSandbox(): bool
     {
-        return (bool) config('services.authorize_net.sandbox', true);
+        return $this->environment() === 'sandbox';
     }
 
     /**
@@ -72,7 +79,7 @@ class AuthorizeNetService
         ?string $email = null
     ): array {
         if (! $this->allowsDirectCard()) {
-            return ['success' => false, 'message' => 'Direct card entry is only available in Authorize.net sandbox.'];
+            return ['success' => false, 'message' => 'Card payments require a secure connection. Please use HTTPS.'];
         }
 
         $number = preg_replace('/\D+/', '', (string) ($card['cardNumber'] ?? '')) ?: '';
@@ -112,7 +119,12 @@ class AuthorizeNetService
         ?string $email = null
     ): array {
         if (! $this->isConfigured()) {
-            return ['success' => false, 'message' => 'Authorize.net is not configured.'];
+            return ['success' => false, 'message' => 'Payment gateway is not configured.'];
+        }
+
+        $amount = round(max(0, $amount), 2);
+        if ($amount < 0.01) {
+            return ['success' => false, 'message' => 'A valid payment amount is required.'];
         }
 
         $payload = [
@@ -137,15 +149,26 @@ class AuthorizeNetService
             ],
         ];
 
+        Log::info('Authorize.net charge started', [
+            'environment' => $this->environment(),
+            'endpoint' => $this->endpoint(),
+            'invoice' => $invoiceNumber,
+            'amount' => number_format($amount, 2, '.', ''),
+            'payment_type' => isset($payment['opaqueData']) ? 'opaqueData' : 'creditCard',
+        ]);
+
         try {
             $response = Http::timeout(30)
                 ->acceptJson()
                 ->asJson()
                 ->post($this->endpoint(), $payload);
         } catch (\Throwable $e) {
-            Log::error('Authorize.net request failed', ['error' => $e->getMessage()]);
+            Log::error('Authorize.net request failed', [
+                'invoice' => $invoiceNumber,
+                'error' => $e->getMessage(),
+            ]);
 
-            return ['success' => false, 'message' => 'Payment gateway connection failed.'];
+            return ['success' => false, 'message' => 'Payment gateway connection failed. Please try again.'];
         }
 
         // Authorize.net often prefixes JSON with a UTF-8 BOM, which breaks json_decode.
@@ -153,8 +176,9 @@ class AuthorizeNetService
         $json = json_decode($body, true);
         if (! is_array($json)) {
             Log::error('Authorize.net returned unreadable response', [
+                'invoice' => $invoiceNumber,
                 'status' => $response->status(),
-                'body' => substr($body, 0, 500),
+                'body' => substr($body, 0, 300),
             ]);
 
             return ['success' => false, 'message' => 'Payment gateway returned an invalid response.'];
@@ -163,8 +187,15 @@ class AuthorizeNetService
         $txn = $json['transactionResponse'] ?? [];
         $resultCode = $json['messages']['resultCode'] ?? null;
         $responseCode = (string) ($txn['responseCode'] ?? '');
+        $messageCode = (string) ($json['messages']['message'][0]['code'] ?? '');
 
         if ($resultCode === 'Ok' && in_array($responseCode, ['1', '4'], true) && ! empty($txn['transId'])) {
+            Log::info('Authorize.net charge approved', [
+                'invoice' => $invoiceNumber,
+                'transId' => $txn['transId'],
+                'responseCode' => $responseCode,
+            ]);
+
             return [
                 'success' => true,
                 'transId' => (string) $txn['transId'],
@@ -176,10 +207,17 @@ class AuthorizeNetService
             ?? $json['messages']['message'][0]['text']
             ?? 'Card payment was declined.';
 
+        // Friendly mapping for common auth / env mismatches
+        if (str_contains(strtolower($message), 'authentication') || $messageCode === 'E00007') {
+            $message = 'Payment configuration error. Please contact the store (invalid Authorize.Net credentials or sandbox/live mismatch).';
+        }
+
         Log::warning('Authorize.net charge declined', [
             'invoice' => $invoiceNumber,
             'message' => $message,
             'responseCode' => $responseCode,
+            'resultCode' => $resultCode,
+            'messageCode' => $messageCode,
         ]);
 
         return [

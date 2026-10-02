@@ -301,7 +301,7 @@ export default function AdminSettingsPage() {
             ))}
             <p className="text-xs text-sage-500">
               Authorize.net API Login ID, Transaction Key, and Client Key are read from the server <code className="font-mono">.env</code> file
-              (<code className="font-mono">AUTHORIZE_*</code>). Enable the toggle above to show Credit Card at checkout.
+              (<code className="font-mono">AUTHORIZE_NET_*</code> or legacy <code className="font-mono">AUTHORIZE_*</code>). Enable the toggle above to show Credit Card at checkout.
             </p>
             <div><label className={labelClass}>Stripe Publishable Key</label><input className={inputClass} value={get('general', 'stripe_key')} onChange={e => set('general', 'stripe_key', e.target.value)} placeholder="pk_live_..." /></div>
             <div><label className={labelClass}>Stripe Secret Key</label><input type="password" className={inputClass} value={get('general', 'stripe_secret')} onChange={e => set('general', 'stripe_secret', e.target.value)} /></div>
