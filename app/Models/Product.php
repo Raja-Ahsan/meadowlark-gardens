@@ -85,6 +85,24 @@ class Product extends Model
         return $this->stock_quantity > 0 || $this->allow_backorder;
     }
 
+    /**
+     * Push out-of-stock products after available ones while preserving later orderBy clauses.
+     * Mirrors isInStock() at the SQL level so pagination stays correct.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder<\App\Models\Product>  $query
+     * @return \Illuminate\Database\Eloquent\Builder<\App\Models\Product>
+     */
+    public function scopeOrderByAvailability($query)
+    {
+        return $query->orderByRaw(
+            'CASE
+                WHEN manage_stock = 0 AND in_stock = 1 THEN 0
+                WHEN manage_stock = 1 AND (stock_quantity > 0 OR allow_backorder = 1) THEN 0
+                ELSE 1
+            END ASC'
+        );
+    }
+
     public function resolveRouteBinding($value, $field = null): ?self
     {
         if ($field) {
