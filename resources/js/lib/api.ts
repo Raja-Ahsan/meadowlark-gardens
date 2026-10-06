@@ -391,6 +391,66 @@ export const api = {
       method: 'PATCH', body: JSON.stringify({ status, note, trackingNumber }),
     }),
 
+  exportAdminOrders: async (payload: {
+    mode: 'all' | 'selected' | 'filtered'
+    ids?: string[]
+    search?: string
+    status?: string
+    type?: string
+    date_from?: string
+    date_to?: string
+    sort_by?: string
+    sort_dir?: 'asc' | 'desc'
+  }): Promise<void> => {
+    const headers: Record<string, string> = {
+      Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/json',
+      'Content-Type': 'application/json',
+    }
+    const token = getToken()
+    if (token) headers.Authorization = `Bearer ${token}`
+
+    const body = {
+      ...payload,
+      ids: payload.ids?.map(id => Number(id)).filter(n => Number.isFinite(n) && n > 0),
+    }
+
+    const response = await fetch(`${API_BASE}/admin/orders/export`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    })
+
+    const contentType = response.headers.get('Content-Type') || ''
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({})) as { message?: string; errors?: Record<string, string[]> }
+      const firstError = data.errors
+        ? Object.values(data.errors).flat().find(Boolean)
+        : undefined
+      throw new Error(firstError || data.message || 'Unable to export orders. Please try again.')
+    }
+
+    if (contentType.includes('application/json')) {
+      const data = await response.json().catch(() => ({})) as { message?: string }
+      throw new Error(data.message || 'Unable to export orders. Please try again.')
+    }
+
+    const disposition = response.headers.get('Content-Disposition') || ''
+    const match = /filename\*?=(?:UTF-8''|")?([^\";]+)/i.exec(disposition)
+    const filename = match
+      ? decodeURIComponent(match[1].replace(/["']/g, ''))
+      : `shipment-orders-${new Date().toISOString().slice(0, 10)}.xlsx`
+
+    const blob = await response.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  },
+
   getAdminCustomers: (params?: ListParams) =>
     request<PaginatedResponse<Customer>>(`/admin/customers${buildQuery(params)}`),
 

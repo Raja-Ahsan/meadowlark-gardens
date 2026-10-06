@@ -124,6 +124,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('attributes', AdminAttributeController::class)->except(['show']);
 
         Route::get('/orders', [AdminOrderController::class, 'index']);
+        Route::post('/orders/export', [AdminOrderController::class, 'export']);
         Route::get('/orders/{order}', [AdminOrderController::class, 'show']);
         Route::patch('/orders/{order}/status', [AdminOrderController::class, 'updateStatus']);
 

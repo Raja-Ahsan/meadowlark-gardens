@@ -107,6 +107,7 @@ class ProductController extends Controller
             ->where('is_active', true)
             ->where('id', '!=', $model->id)
             ->when($model->category_id, fn ($q) => $q->where('category_id', $model->category_id))
+            ->orderByAvailability()
             ->orderByDesc('is_featured')
             ->limit(8)
             ->get();
@@ -114,6 +115,7 @@ class ProductController extends Controller
         $moreFromShop = Product::with(['categoryRelation', 'brand', 'images'])
             ->where('is_active', true)
             ->where('id', '!=', $model->id)
+            ->orderByAvailability()
             ->orderByDesc('is_featured')
             ->limit(4)
             ->get();
@@ -127,6 +129,9 @@ class ProductController extends Controller
 
     private function applySort($query, Request $request): void
     {
+        // Always list available products before out-of-stock, then apply requested sort.
+        $query->orderByAvailability();
+
         $sort = $request->input('sort', 'relevance');
 
         match ($sort) {
