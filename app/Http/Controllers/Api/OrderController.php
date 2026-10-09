@@ -41,6 +41,7 @@ class OrderController extends Controller
             'shippingMethod.code' => ['required', 'string', 'max:32'],
             'shippingMethod.name' => ['required', 'string', 'max:255'],
             'shippingMethod.cost' => ['required', 'numeric', 'min:0'],
+            'shippingQuoteId' => ['nullable', 'string', 'max:64'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.productId' => ['required', 'exists:products,id'],
             'items.*.variationId' => ['nullable', 'exists:product_variations,id'],
@@ -132,6 +133,7 @@ class OrderController extends Controller
             'shippingMethod.code' => ['required', 'string', 'max:32'],
             'shippingMethod.name' => ['required', 'string', 'max:255'],
             'shippingMethod.cost' => ['required', 'numeric', 'min:0'],
+            'shippingQuoteId' => ['nullable', 'string', 'max:64'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.productId' => ['required', 'exists:products,id'],
             'items.*.variationId' => ['nullable', 'exists:product_variations,id'],
@@ -170,6 +172,7 @@ class OrderController extends Controller
             'shippingMethod.code' => ['required', 'string', 'max:32'],
             'shippingMethod.name' => ['required', 'string', 'max:255'],
             'shippingMethod.cost' => ['required', 'numeric', 'min:0'],
+            'shippingQuoteId' => ['nullable', 'string', 'max:64'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.productId' => ['required', 'exists:products,id'],
             'items.*.variationId' => ['nullable', 'exists:product_variations,id'],
@@ -290,6 +293,7 @@ class OrderController extends Controller
 
             $subtotal = round($subtotal, 2);
             $discount = 0.0;
+            $freeShipping = false;
             $couponCode = $data['couponCode'] ?? null;
             if ($couponCode) {
                 $couponRes = app(CouponController::class)->validateCode(new Request([
@@ -300,6 +304,7 @@ class OrderController extends Controller
                 if ($couponRes->getStatusCode() === 200) {
                     $couponData = json_decode($couponRes->getContent(), true);
                     $discount = round((float) ($couponData['coupon']['discount'] ?? 0), 2);
+                    $freeShipping = (bool) ($couponData['coupon']['freeShipping'] ?? false);
                 }
             }
 
@@ -308,13 +313,12 @@ class OrderController extends Controller
                 'items' => $data['items'],
                 'subtotal' => $subtotal,
                 'type' => $type,
-                // Product prices include shipping — always treat as free/included.
-                'freeShipping' => true,
-                'shippingMethod' => array_merge($data['shippingMethod'] ?? [], ['cost' => 0]),
+                'freeShipping' => $freeShipping,
+                'shippingQuoteId' => $data['shippingQuoteId'] ?? null,
+                'shippingMethod' => $data['shippingMethod'] ?? [],
             ]);
 
-            $shippingCost = 0.0;
-            $shipping['cost'] = 0.0;
+            $shippingCost = round((float) $shipping['cost'], 2);
 
             Log::info('Checkout shipping resolved', [
                 'checkoutId' => $checkoutId !== '' ? $checkoutId : null,
@@ -331,7 +335,7 @@ class OrderController extends Controller
                     'items' => $data['items'],
                     'subtotal' => $subtotal,
                     'discount' => $discount,
-                    'shipping' => 0,
+                    'shipping' => $shippingCost,
                     'type' => $type,
                 ]);
                 $tax = round((float) $taxQuote['tax'], 2);

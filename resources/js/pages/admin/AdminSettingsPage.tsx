@@ -312,7 +312,11 @@ export default function AdminSettingsPage() {
         {tab === 'ups' && (
           <div className="space-y-6">
             <p className="text-sm text-sage-600">
-              Connect your UPS Developer account for live rate quotes at checkout. Get credentials at{' '}
+              Prefer credentials in server <code className="font-mono text-xs">.env</code> (
+              <code className="font-mono text-xs">UPS_CLIENT_ID</code>,{' '}
+              <code className="font-mono text-xs">UPS_CLIENT_SECRET</code>,{' '}
+              <code className="font-mono text-xs">UPS_ENVIRONMENT</code>).
+              Values below are used only when env credentials are empty. Get keys at{' '}
               <a href="https://developer.ups.com" target="_blank" rel="noreferrer" className="text-forest-700 underline">developer.ups.com</a>.
             </p>
 
@@ -348,17 +352,12 @@ export default function AdminSettingsPage() {
             </div>
 
             <div className="pt-4 border-t border-forest-100">
-              <h2 className="font-sans font-700 text-forest-900 text-sm mb-4">Fallback & promotions</h2>
+              <h2 className="font-sans font-700 text-forest-900 text-sm mb-4">Promotions</h2>
               <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <label className={labelClass}>Flat rate fallback ($)</label>
-                  <input className={inputClass} value={get('general', 'ups_fallback_flat_rate')} onChange={e => set('general', 'ups_fallback_flat_rate', e.target.value)} placeholder="9.99" />
-                  <p className="text-xs text-sage-500 mt-1">Used when UPS is disabled or unavailable.</p>
-                </div>
                 <div>
                   <label className={labelClass}>Free shipping threshold ($)</label>
                   <input className={inputClass} value={get('general', 'ups_free_shipping_threshold')} onChange={e => set('general', 'ups_free_shipping_threshold', e.target.value)} placeholder="75" />
-                  <p className="text-xs text-sage-500 mt-1">Orders at or above this subtotal ship free.</p>
+                  <p className="text-xs text-sage-500 mt-1">Orders at or above this subtotal ship free. Checkout uses live UPS rates only — there is no flat-rate fallback.</p>
                 </div>
               </div>
             </div>

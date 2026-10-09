@@ -87,6 +87,10 @@ export interface Order {
   paymentMethod: string
   couponCode?: string
   trackingNumber?: string
+  upsShipmentId?: string | null
+  upsLabelAvailable?: boolean
+  upsShipmentEnvironment?: string | null
+  upsShipmentCreatedAt?: string | null
   billingAddress?: Record<string, string> | null
   shippingAddress?: Record<string, string> | null
   orderNotes?: string | null

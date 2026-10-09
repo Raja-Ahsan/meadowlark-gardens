@@ -14,6 +14,7 @@ class Order extends Model
         'discount', 'tax', 'shipping_cost', 'shipping_carrier', 'shipping_method_code', 'shipping_method_name',
         'billing_address', 'shipping_address',
         'order_notes', 'tracking_number', 'payment_id', 'paid_at',
+        'ups_shipment_id', 'ups_label_path', 'ups_shipment_environment', 'ups_shipment_created_at',
     ];
 
     protected function casts(): array
@@ -27,7 +28,13 @@ class Order extends Model
             'billing_address' => 'array',
             'shipping_address' => 'array',
             'paid_at' => 'datetime',
+            'ups_shipment_created_at' => 'datetime',
         ];
+    }
+
+    public function hasUpsLabel(): bool
+    {
+        return filled($this->ups_label_path);
     }
 
     public function user(): BelongsTo
