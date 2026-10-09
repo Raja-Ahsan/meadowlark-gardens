@@ -62,8 +62,14 @@ export default function AdminOrdersPage() {
   }
 
   const updateStatus = async (id: string, status: string) => {
-    await api.updateOrderStatus(id, status)
-    list.reload()
+    try {
+      const res = await api.updateOrderStatus(id, status)
+      showToastSuccess(res.message || 'Order status updated.')
+      list.reload()
+    } catch (e) {
+      showToastError(e instanceof Error ? e.message : 'Unable to update order status.')
+      list.reload()
+    }
   }
 
   const runExport = async (mode: 'all' | 'selected' | 'filtered') => {

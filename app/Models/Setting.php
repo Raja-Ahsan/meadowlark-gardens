@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
 
 class Setting extends Model
 {
@@ -11,11 +12,19 @@ class Setting extends Model
 
     public static function get(string $key, mixed $default = null): mixed
     {
-        return Cache::remember("setting.{$key}", 3600, function () use ($key, $default) {
-            $setting = static::where('key', $key)->first();
+        try {
+            if (! Schema::hasTable('settings')) {
+                return $default;
+            }
 
-            return $setting?->value ?? $default;
-        });
+            return Cache::remember("setting.{$key}", 3600, function () use ($key, $default) {
+                $setting = static::where('key', $key)->first();
+
+                return $setting?->value ?? $default;
+            });
+        } catch (\Throwable) {
+            return $default;
+        }
     }
 
     public static function set(string $key, mixed $value, string $group = 'general'): void

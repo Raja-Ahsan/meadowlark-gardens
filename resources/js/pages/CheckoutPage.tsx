@@ -7,21 +7,13 @@ import { useAuth } from '@/context/AuthContext'
 import { api, type ShippingRate } from '@/lib/api'
 import { mediaUrl } from '@/lib/media'
 import AuthorizeCardForm, { collectAuthorizePayment } from '@/components/checkout/AuthorizeCardForm'
+import ShippingMethodSelector from '@/components/checkout/ShippingMethodSelector'
 import { useTaxQuote } from '@/hooks/useTaxQuote'
 import { showToastError, showToastSuccess } from '@/lib/toast'
 import SearchableSelect from '@/components/ui/SearchableSelect'
 import { US_STATES, formatPostalCodeInput, isValidPostalCode, getCityOptionsForState } from '@/lib/usStates'
 
 const STATE_OPTIONS = US_STATES.map(s => ({ value: s.code, label: `${s.name} (${s.code})` }))
-
-const FREE_SHIPPING: ShippingRate = {
-  carrier: 'free',
-  code: 'FREE',
-  name: 'Shipping included',
-  cost: 0,
-  currency: 'USD',
-  etaDays: null,
-}
 
 const inputClass = 'w-full px-4 py-3 rounded-xl border border-forest-200 text-sm focus:outline-none focus:ring-2 focus:ring-forest-500/30'
 const labelClass = 'block text-xs font-sans font-600 text-forest-700 mb-1.5'
@@ -64,6 +56,8 @@ function OrderSummaryPanel({
   tax,
   taxLoading,
   taxSource,
+  shippingCost,
+  shippingReady,
   grandTotal,
   couponCode,
   setCouponCode,
@@ -79,6 +73,8 @@ function OrderSummaryPanel({
   tax: number
   taxLoading: boolean
   taxSource: string
+  shippingCost: number
+  shippingReady: boolean
   grandTotal: number
   couponCode: string
   setCouponCode: (v: string) => void
@@ -145,6 +141,16 @@ function OrderSummaryPanel({
           <div className="flex justify-between text-forest-600"><span>Discount</span><span>-${discount.toFixed(2)}</span></div>
         )}
         <div className="flex justify-between">
+          <span className="text-sage-600">Shipping</span>
+          <span>
+            {!shippingReady
+              ? '$0.00'
+              : shippingCost === 0
+                ? 'FREE'
+                : `$${shippingCost.toFixed(2)}`}
+          </span>
+        </div>
+        <div className="flex justify-between">
           <span className="text-sage-600">
             Sales tax{taxSource === 'taxjar' ? '' : taxRate > 0 ? ` (${taxRate}%)` : ''}
           </span>
@@ -207,7 +213,10 @@ export default function CheckoutPage() {
   const [couponCode, setCouponCode] = useState('')
   const [discount, setDiscount] = useState(0)
   const [couponApplied, setCouponApplied] = useState('')
-  const [selectedShipping] = useState<ShippingRate>(FREE_SHIPPING)
+  const [couponFreeShipping, setCouponFreeShipping] = useState(false)
+  const [selectedShipping, setSelectedShipping] = useState<ShippingRate | null>(null)
+  const [shippingQuoteId, setShippingQuoteId] = useState<string | undefined>()
+  const [shippingFieldErrors, setShippingFieldErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
   const submittingRef = useRef(false)
   const checkoutIdRef = useRef(
@@ -255,16 +264,24 @@ export default function CheckoutPage() {
     return shippingReady ? shipping : getBillingAddress()
   }
 
+  const shippingReady = Boolean(
+    selectedShipping
+    && shippingQuoteId
+    && (selectedShipping.carrier === 'ups' || selectedShipping.carrier === 'free'),
+  )
+  const shippingCost = shippingReady ? (selectedShipping?.cost ?? 0) : 0
+
   const { tax, taxRate, source: taxSource, loading: taxLoading } = useTaxQuote({
     shippingAddress: getShippingAddress(),
     items: cartItems,
     subtotal,
     discount,
-    shipping: 0,
+    shipping: shippingCost,
     type: 'retail',
   })
 
-  const grandTotal = Math.max(0, subtotal - discount + tax)
+  const grandTotal = Math.max(0, subtotal - discount + tax + shippingCost)
+  const canSubmitOrder = Boolean(form.paymentMethod && shippingReady)
 
   const billingCityOptions = useMemo(() => getCityOptionsForState(form.state), [form.state])
   const shippingCityOptions = useMemo(() => getCityOptionsForState(form.shipState), [form.shipState])
@@ -292,6 +309,7 @@ export default function CheckoutPage() {
       const res = await api.validateCoupon(couponCode, subtotal, 'retail')
       setDiscount(res.coupon.discount)
       setCouponApplied(res.coupon.code)
+      setCouponFreeShipping(!!res.coupon.freeShipping)
       showToastSuccess(`Coupon ${res.coupon.code} applied`)
     } catch (e) {
       showToastError(e instanceof Error ? e.message : 'Invalid coupon')
@@ -317,6 +335,7 @@ export default function CheckoutPage() {
       }
     }
     if (!form.paymentMethod) return 'Please select a payment method.'
+    if (!shippingReady) return 'Please wait for shipping rates to calculate, then select a shipping method.'
     return null
   }
 
@@ -328,6 +347,10 @@ export default function CheckoutPage() {
     const fieldError = validateCheckoutFields()
     if (fieldError) {
       showToastError(fieldError)
+      return
+    }
+    if (!selectedShipping || !shippingQuoteId) {
+      showToastError('Please wait for shipping rates to calculate, then select a shipping method.')
       return
     }
 
@@ -357,11 +380,12 @@ export default function CheckoutPage() {
         billingAddress,
         shippingAddress,
         shippingMethod: {
-          carrier: selectedShipping.carrier,
-          code: selectedShipping.code,
-          name: selectedShipping.name,
-          cost: selectedShipping.cost,
+          carrier: selectedShipping!.carrier,
+          code: selectedShipping!.code,
+          name: selectedShipping!.name,
+          cost: selectedShipping!.cost,
         },
+        shippingQuoteId,
         items: cartItems,
         checkoutId: checkoutIdRef.current,
         ...authorizePayment,
@@ -485,13 +509,15 @@ export default function CheckoutPage() {
             tax={tax}
             taxLoading={taxLoading}
             taxSource={taxSource}
+            shippingCost={shippingCost}
+            shippingReady={shippingReady}
             grandTotal={grandTotal}
             couponCode={couponCode}
             setCouponCode={setCouponCode}
             applyCoupon={applyCoupon}
             couponApplied={couponApplied}
             submitting={submitting}
-            canSubmit={!!form.paymentMethod}
+            canSubmit={canSubmitOrder}
           />
         </div>
 
@@ -539,11 +565,14 @@ export default function CheckoutPage() {
                   pattern="\d{3,10}"
                   minLength={3}
                   maxLength={10}
-                  className={inputClass}
+                  className={`${inputClass}${form.sameShipping && shippingFieldErrors.postalCode ? ' border-terra-400' : ''}`}
                   value={form.postalCode}
                   onChange={e => setForm(f => ({ ...f, postalCode: formatPostalCodeInput(e.target.value) }))}
                   placeholder="e.g. 37201"
                 />
+                {form.sameShipping && shippingFieldErrors.postalCode && (
+                  <p className="text-xs text-terra-600 mt-1.5">{shippingFieldErrors.postalCode}</p>
+                )}
               </div>
             </div>
           </section>
@@ -592,14 +621,47 @@ export default function CheckoutPage() {
                     pattern="\d{3,10}"
                     minLength={3}
                     maxLength={10}
-                    className={inputClass}
+                    className={`${inputClass}${shippingFieldErrors.postalCode ? ' border-terra-400' : ''}`}
                     value={form.shipPostalCode}
                     onChange={e => setForm(f => ({ ...f, shipPostalCode: formatPostalCodeInput(e.target.value) }))}
                     placeholder="e.g. 37201"
                   />
+                  {shippingFieldErrors.postalCode && (
+                    <p className="text-xs text-terra-600 mt-1.5">{shippingFieldErrors.postalCode}</p>
+                  )}
                 </div>
+                {shippingFieldErrors.city && (
+                  <p className="sm:col-span-2 text-xs text-terra-600">{shippingFieldErrors.city}</p>
+                )}
+                {shippingFieldErrors.state && (
+                  <p className="sm:col-span-2 text-xs text-terra-600">{shippingFieldErrors.state}</p>
+                )}
               </div>
             )}
+            {form.sameShipping && (shippingFieldErrors.city || shippingFieldErrors.state) && (
+              <div className="mb-3 space-y-1">
+                {shippingFieldErrors.city && (
+                  <p className="text-xs text-terra-600">{shippingFieldErrors.city}</p>
+                )}
+                {shippingFieldErrors.state && (
+                  <p className="text-xs text-terra-600">{shippingFieldErrors.state}</p>
+                )}
+              </div>
+            )}
+            <div className="mb-4">
+              <label className={labelClass}>Shipping method *</label>
+              <ShippingMethodSelector
+                shippingAddress={getShippingAddress()}
+                items={cartItems}
+                subtotal={subtotal}
+                type="retail"
+                freeShipping={couponFreeShipping}
+                selected={selectedShipping}
+                onSelect={setSelectedShipping}
+                onQuote={quote => setShippingQuoteId(quote?.quoteId || undefined)}
+                onFieldErrors={setShippingFieldErrors}
+              />
+            </div>
             <div>
               <label className={labelClass}>Order notes</label>
               <textarea rows={3} className={inputClass} value={form.orderNotes} onChange={e => setForm(f => ({ ...f, orderNotes: e.target.value }))} placeholder="Special delivery instructions, gift message, etc." />
@@ -645,7 +707,7 @@ export default function CheckoutPage() {
 
           <button
             type="submit"
-            disabled={submitting || !form.paymentMethod}
+            disabled={submitting || !canSubmitOrder}
             className="lg:hidden w-full py-3.5 bg-forest-700 text-white rounded-xl font-sans font-600 hover:bg-forest-800 disabled:opacity-50 transition-colors"
           >
             {submitting ? 'Processing...' : `Place order — $${grandTotal.toFixed(2)}`}

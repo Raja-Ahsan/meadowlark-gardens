@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
-import { Loader2, Truck } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Loader2 } from 'lucide-react'
 import { api, type ShippingQuoteResponse, type ShippingRate } from '@/lib/api'
 
 const optionClass = (selected: boolean) =>
@@ -14,8 +14,9 @@ interface Props {
   type: 'retail' | 'wholesale'
   freeShipping?: boolean
   selected: ShippingRate | null
-  onSelect: (rate: ShippingRate) => void
-  onQuote?: (quote: ShippingQuoteResponse) => void
+  onSelect: (rate: ShippingRate | null) => void
+  onQuote?: (quote: ShippingQuoteResponse | null) => void
+  onFieldErrors?: (errors: Record<string, string>) => void
 }
 
 function addressReady(addr: Record<string, string>): boolean {
@@ -35,25 +36,36 @@ export default function ShippingMethodSelector({
   selected,
   onSelect,
   onQuote,
+  onFieldErrors,
 }: Props) {
   const [rates, setRates] = useState<ShippingRate[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [source, setSource] = useState('')
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const requestSeq = useRef(0)
+  const itemsKey = useMemo(
+    () => items.map(i => `${i.productId}:${i.variationId || ''}:${i.quantity}`).join('|'),
+    [items],
+  )
 
   useEffect(() => {
+    // Invalidate immediately so Place Order stays disabled while rates recalculate.
+    setRates([])
+    setError('')
+    onSelect(null)
+    onQuote?.(null)
+    onFieldErrors?.({})
+
     if (!addressReady(shippingAddress) || items.length === 0) {
-      setRates([])
-      setError('')
+      setLoading(false)
       return
     }
 
     if (debounceRef.current) clearTimeout(debounceRef.current)
+    setLoading(true)
 
     debounceRef.current = setTimeout(() => {
-      setLoading(true)
-      setError('')
+      const seq = ++requestSeq.current
       api.getShippingQuote({
         shippingAddress,
         items,
@@ -62,33 +74,60 @@ export default function ShippingMethodSelector({
         freeShipping,
       })
         .then(quote => {
-          setRates(quote.rates)
-          setSource(quote.source)
-          onQuote?.(quote)
-          if (quote.rates.length > 0) {
-            const stillValid = selected && quote.rates.some(
-              r => r.code === selected.code && r.carrier === selected.carrier
-            )
-            if (!stillValid) onSelect(quote.rates[0])
+          if (seq !== requestSeq.current) return
+          const fieldErrors = quote.fieldErrors ?? {}
+          onFieldErrors?.(fieldErrors)
+
+          if (!quote.rates.length || !quote.quoteId) {
+            setRates([])
+            onSelect(null)
+            onQuote?.(null)
+            setError(quote.error || 'No shipping methods available for this address.')
+            return
           }
+
+          // Only accept UPS or promotional free rates — never flat/fallback.
+          const validRates = quote.rates.filter(
+            r => r.carrier === 'ups' || r.carrier === 'free' || quote.source === 'promotion',
+          )
+          if (validRates.length === 0) {
+            setRates([])
+            onSelect(null)
+            onQuote?.(null)
+            setError(quote.error || 'No shipping methods available for this address.')
+            return
+          }
+
+          setRates(validRates)
+          setError('')
+          onQuote?.(quote)
+          onSelect(validRates[0])
         })
         .catch(e => {
+          if (seq !== requestSeq.current) return
           setRates([])
-          setError(e instanceof Error ? e.message : 'Could not load shipping rates')
+          onSelect(null)
+          onQuote?.(null)
+          onFieldErrors?.({})
+          setError(e instanceof Error ? e.message : 'Unable to calculate shipping. Please try again.')
         })
-        .finally(() => setLoading(false))
-    }, 450)
+        .finally(() => {
+          if (seq === requestSeq.current) setLoading(false)
+        })
+    }, 500)
 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- invalidate + requote on address/cart inputs only
   }, [
     shippingAddress.city,
     shippingAddress.state,
     shippingAddress.postalCode,
     shippingAddress.addressLine1,
     shippingAddress.address1,
-    items.length,
+    shippingAddress.country,
+    itemsKey,
     subtotal,
     type,
     freeShipping,
@@ -121,15 +160,6 @@ export default function ShippingMethodSelector({
 
   return (
     <div className="space-y-3">
-      {source === 'ups' && (
-        <p className="text-xs text-sage-500 flex items-center gap-1">
-          <Truck className="w-3.5 h-3.5" />
-          Live UPS rates
-        </p>
-      )}
-      {source === 'fallback' && (
-        <p className="text-xs text-sage-500">Standard flat rate (UPS unavailable)</p>
-      )}
       {rates.map(rate => {
         const isSelected = selected?.code === rate.code && selected?.carrier === rate.carrier
         return (

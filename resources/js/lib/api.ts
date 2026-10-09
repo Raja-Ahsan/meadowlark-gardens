@@ -90,6 +90,7 @@ interface RetailOrderPayload {
   billingAddress?: Record<string, string>
   shippingAddress?: Record<string, string>
   shippingMethod: ShippingMethodPayload
+  shippingQuoteId?: string
   authorizeOpaqueData?: { dataDescriptor: string; dataValue: string }
   authorizeCard?: { cardNumber: string; expMonth: string; expYear: string; cardCode: string }
   checkoutId?: string
@@ -108,6 +109,7 @@ export interface ShippingRate extends ShippingMethodPayload {
 }
 
 export interface ShippingQuoteResponse {
+  quoteId?: string | null
   rates: ShippingRate[]
   source: string
   upsEnabled: boolean
@@ -115,6 +117,8 @@ export interface ShippingQuoteResponse {
   subtotal: number
   taxRate: number
   freeShippingThreshold: number
+  error?: string | null
+  fieldErrors?: Record<string, string>
 }
 
 export interface TaxQuoteResponse {
@@ -132,6 +136,7 @@ interface WholesaleOrderPayload {
   billingAddress?: Record<string, string>
   shippingAddress?: Record<string, string>
   shippingMethod: ShippingMethodPayload
+  shippingQuoteId?: string
   authorizeOpaqueData?: { dataDescriptor: string; dataValue: string }
   authorizeCard?: { cardNumber: string; expMonth: string; expYear: string; cardCode: string }
   checkoutId?: string
@@ -390,6 +395,28 @@ export const api = {
     request<{ message: string; order: Order }>(`/admin/orders/${id}/status`, {
       method: 'PATCH', body: JSON.stringify({ status, note, trackingNumber }),
     }),
+
+  downloadUpsLabel: async (orderId: string, orderNumber?: string): Promise<void> => {
+    const headers: Record<string, string> = { Accept: '*/*' }
+    const token = getToken()
+    if (token) headers.Authorization = `Bearer ${token}`
+
+    const response = await fetch(`${API_BASE}/admin/orders/${orderId}/ups-label`, { headers })
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}))
+      throw new Error((data as { message?: string }).message || 'Unable to download UPS label')
+    }
+
+    const blob = await response.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `ups-label-${orderNumber || orderId}.gif`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  },
 
   exportAdminOrders: async (payload: {
     mode: 'all' | 'selected' | 'filtered'

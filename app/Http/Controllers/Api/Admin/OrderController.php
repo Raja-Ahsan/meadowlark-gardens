@@ -2,20 +2,24 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use App\Exceptions\UpsShipmentException;
 use App\Exports\ShipmentOrdersExport;
 use App\Http\Controllers\Concerns\HandlesPaginatedListing;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Services\AdminOrderQueryService;
 use App\Services\OrderEmailService;
+use App\Services\OrderUpsFulfillmentService;
 use App\Support\ApiFormatter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class OrderController extends Controller
 {
@@ -23,6 +27,7 @@ class OrderController extends Controller
 
     public function __construct(
         private readonly AdminOrderQueryService $orderQuery,
+        private readonly OrderUpsFulfillmentService $upsFulfillment,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -58,16 +63,57 @@ class OrderController extends Controller
         ]);
 
         $previousStatus = $order->status;
+        $shipmentCreated = false;
+
+        // Create UPS shipment BEFORE status change when entering the trigger status.
+        // On failure, do not mark the order as shipped/fulfilled.
+        if ($this->upsFulfillment->shouldCreateShipment($order, $data['status'])) {
+            try {
+                $result = $this->upsFulfillment->createShipmentIfNeeded($order, $data['status']);
+                $shipmentCreated = is_array($result);
+                $order->refresh();
+            } catch (UpsShipmentException $e) {
+                Log::warning('Admin status update blocked — UPS shipment failed', [
+                    'order_id' => $order->id,
+                    'target_status' => $data['status'],
+                    'message' => $e->getMessage(),
+                ]);
+
+                return response()->json([
+                    'message' => $e->getUserMessage(),
+                ], 422);
+            } catch (\Throwable $e) {
+                Log::error('Admin status update blocked — unexpected UPS error', [
+                    'order_id' => $order->id,
+                    'message' => $e->getMessage(),
+                ]);
+
+                return response()->json([
+                    'message' => 'UPS shipment could not be created. The order status was not changed.',
+                ], 422);
+            }
+        }
+
+        $tracking = $data['trackingNumber'] ?? $order->tracking_number;
+        // Prefer UPS-generated tracking when we just created (or already have) a shipment.
+        if ($shipmentCreated || $this->upsFulfillment->hasUpsShipment($order)) {
+            $tracking = $order->tracking_number ?: $tracking;
+        }
 
         $order->update([
             'status' => $data['status'],
-            'tracking_number' => $data['trackingNumber'] ?? $order->tracking_number,
+            'tracking_number' => $tracking,
             'paid_at' => $data['status'] === 'paid' ? now() : $order->paid_at,
         ]);
 
+        $note = $data['note'] ?? null;
+        if ($shipmentCreated) {
+            $note = trim(($note ? $note.' — ' : '').'UPS shipment created. Tracking: '.$order->fresh()->tracking_number);
+        }
+
         $order->statusHistories()->create([
             'status' => $data['status'],
-            'note' => $data['note'] ?? null,
+            'note' => $note,
             'user_id' => $request->user()->id,
         ]);
 
@@ -76,9 +122,22 @@ class OrderController extends Controller
         OrderEmailService::sendForStatus($order, $data['status'], $previousStatus);
 
         return response()->json([
-            'message' => 'Order status updated.',
+            'message' => $shipmentCreated
+                ? 'Order updated and UPS shipment created successfully.'
+                : 'Order status updated.',
             'order' => ApiFormatter::order($order->fresh(['items.product', 'items.variation', 'user', 'statusHistories'])),
         ]);
+    }
+
+    public function downloadUpsLabel(Order $order): StreamedResponse|JsonResponse
+    {
+        if (! $order->hasUpsLabel() || ! Storage::disk('local')->exists((string) $order->ups_label_path)) {
+            return response()->json(['message' => 'No UPS shipping label is available for this order.'], 404);
+        }
+
+        $filename = 'ups-label-'.$order->order_number.'.'.pathinfo((string) $order->ups_label_path, PATHINFO_EXTENSION);
+
+        return Storage::disk('local')->download((string) $order->ups_label_path, $filename);
     }
 
     /**

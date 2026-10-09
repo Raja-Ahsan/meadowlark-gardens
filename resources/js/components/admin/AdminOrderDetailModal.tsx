@@ -110,8 +110,12 @@ export default function AdminOrderDetailModal({ orderId, open, onClose, onUpdate
       setOrder(res.order)
       const detail = await api.getAdminOrder(order.id)
       setStatusHistory(detail.statusHistory)
-      setStatusForm(f => ({ ...f, note: '' }))
-      setMessage('Order updated. Customer email sent if SMTP is configured for this status.')
+      setStatusForm({
+        status: res.order.status,
+        note: '',
+        trackingNumber: res.order.trackingNumber || '',
+      })
+      setMessage(res.message || 'Order updated. Customer email sent if SMTP is configured for this status.')
       onUpdated?.()
     } catch (e) {
       setMessage(e instanceof Error ? e.message : 'Update failed')
@@ -381,8 +385,35 @@ export default function AdminOrderDetailModal({ orderId, open, onClose, onUpdate
                   className={inputClass}
                   value={statusForm.trackingNumber}
                   onChange={e => setStatusForm(f => ({ ...f, trackingNumber: e.target.value }))}
-                  placeholder="Used in shipping email"
+                  placeholder={order.shippingCarrier === 'ups' ? 'Filled automatically when UPS shipment is created' : 'Used in shipping email'}
+                  readOnly={!!order.upsShipmentCreatedAt}
                 />
+                {order.shippingCarrier === 'ups' && !order.upsShipmentCreatedAt && (
+                  <p className="text-xs text-sage-500 mt-1">
+                    Setting status to <span className="font-600">shipped</span> creates the UPS shipment and tracking label.
+                  </p>
+                )}
+                {order.upsShipmentCreatedAt && (
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <p className="text-xs text-forest-700">
+                      UPS shipment created {new Date(order.upsShipmentCreatedAt).toLocaleString()}
+                      {order.upsShipmentEnvironment ? ` (${order.upsShipmentEnvironment})` : ''}
+                    </p>
+                    {order.upsLabelAvailable && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          api.downloadUpsLabel(order.id, order.orderNumber)
+                            .then(() => setMessage('UPS label downloaded.'))
+                            .catch(e => setMessage(e instanceof Error ? e.message : 'Label download failed'))
+                        }}
+                        className="px-3 py-1.5 rounded-lg border border-forest-200 text-xs font-600 text-forest-700 hover:bg-forest-50"
+                      >
+                        Download UPS label
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
               <div>
                 <label className={labelClass}>Internal note (optional)</label>

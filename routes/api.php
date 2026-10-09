@@ -127,6 +127,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/orders/export', [AdminOrderController::class, 'export']);
         Route::get('/orders/{order}', [AdminOrderController::class, 'show']);
         Route::patch('/orders/{order}/status', [AdminOrderController::class, 'updateStatus']);
+        Route::get('/orders/{order}/ups-label', [AdminOrderController::class, 'downloadUpsLabel']);
 
         Route::get('/customers', [AdminCustomerController::class, 'index']);
         Route::patch('/customers/{customer}', [AdminCustomerController::class, 'update']);

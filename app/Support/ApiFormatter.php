@@ -243,6 +243,10 @@ class ApiFormatter
             'shippingAddress' => $order->shipping_address,
             'orderNotes' => $order->order_notes,
             'trackingNumber' => $order->tracking_number,
+            'upsShipmentId' => $order->ups_shipment_id,
+            'upsLabelAvailable' => $order->hasUpsLabel(),
+            'upsShipmentEnvironment' => $order->ups_shipment_environment,
+            'upsShipmentCreatedAt' => $order->ups_shipment_created_at?->toIso8601String(),
             'paidAt' => $order->paid_at?->toIso8601String(),
             'statusHistory' => $order->relationLoaded('statusHistories')
                 ? $order->statusHistories->sortBy('created_at')->values()->map(fn ($h) => [
