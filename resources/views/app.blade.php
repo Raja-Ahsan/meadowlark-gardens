@@ -21,5 +21,10 @@
 </head>
 <body>
     <div id="root"></div>
+    <noscript>
+        <div style="padding:2rem;font-family:system-ui,sans-serif;text-align:center;color:#244526">
+            Meadowlark Gardens TN requires JavaScript. Please enable JavaScript in your browser settings, then reload.
+        </div>
+    </noscript>
 </body>
 </html>
