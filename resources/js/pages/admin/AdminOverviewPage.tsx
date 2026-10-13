@@ -5,6 +5,7 @@ import {
   Download, ClipboardList, ArrowRight, TrendingUp, Box, ExternalLink,
 } from 'lucide-react'
 import { api } from '@/lib/api'
+import { useDragScroll } from '@/hooks/useDragScroll'
 import type { ExtendedAdminStats } from '@/types/admin'
 import DashboardStatCard, { pctChange } from '@/components/admin/dashboard/DashboardStatCard'
 import RevenueAreaChart, { DailyRevenueChart } from '@/components/admin/dashboard/RevenueCharts'
@@ -29,8 +30,8 @@ function ChartCard({ title, subtitle, children, className = '' }: {
   className?: string
 }) {
   return (
-    <div className={`bg-white rounded-2xl border border-forest-100 shadow-sm overflow-hidden ${className}`}>
-      <div className="px-6 py-4 border-b border-forest-50">
+    <div className={`min-w-0 bg-white rounded-2xl border border-forest-100 shadow-sm overflow-hidden ${className}`}>
+      <div className="px-4 sm:px-6 py-4 border-b border-forest-50">
         <h2 className="font-sans font-700 text-forest-900">{title}</h2>
         {subtitle && <p className="text-xs text-sage-500 mt-0.5">{subtitle}</p>}
       </div>
@@ -41,10 +42,18 @@ function ChartCard({ title, subtitle, children, className = '' }: {
 
 export default function AdminOverviewPage() {
   const [stats, setStats] = useState<ExtendedAdminStats | null>(null)
+  const recentOrdersScrollRef = useDragScroll<HTMLDivElement>()
 
-  useEffect(() => {
-    api.getAdminStats().then(r => setStats(r.stats)).catch(() => {})
-  }, [])
+  const [loadError, setLoadError] = useState('')
+
+  const loadStats = () => {
+    setLoadError('')
+    api.getAdminStats()
+      .then(r => setStats(r.stats))
+      .catch(e => setLoadError(e instanceof Error ? e.message : 'Failed to load analytics'))
+  }
+
+  useEffect(() => { loadStats() }, [])
 
   const handleExport = async (type: 'orders' | 'products' | 'customers') => {
     const res = await api.exportData(type)
@@ -58,6 +67,23 @@ export default function AdminOverviewPage() {
     a.href = url
     a.download = `${type}-export.csv`
     a.click()
+  }
+
+  if (!stats && loadError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-72 gap-3 text-center px-4">
+        <AlertTriangle className="w-8 h-8 text-terra-500" />
+        <p className="text-sm text-forest-800 font-sans font-600">Couldn’t load analytics</p>
+        <p className="text-xs text-sage-500">{loadError}</p>
+        <button
+          type="button"
+          onClick={loadStats}
+          className="mt-1 px-4 py-2 rounded-xl bg-forest-700 text-white text-sm font-sans font-600 hover:bg-forest-800"
+        >
+          Try again
+        </button>
+      </div>
+    )
   }
 
   if (!stats) {
@@ -74,16 +100,16 @@ export default function AdminOverviewPage() {
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
 
   const alerts = [
-    stats.pendingApplications > 0 && { label: `${stats.pendingApplications} wholesale applications pending`, to: '/admin/wholesalers', color: 'text-amber-700 bg-amber-50' },
-    stats.lowStockProducts > 0 && { label: `${stats.lowStockProducts} products low on stock`, to: '/admin/products', color: 'text-amber-700 bg-amber-50' },
-    stats.outOfStock > 0 && { label: `${stats.outOfStock} products out of stock`, to: '/admin/products', color: 'text-terra-700 bg-terra-50' },
-    stats.pendingReviews > 0 && { label: `${stats.pendingReviews} reviews awaiting approval`, to: '/admin/reviews', color: 'text-violet-700 bg-violet-50' },
+    stats.pendingApplications > 0 && { label: `${stats.pendingApplications} wholesale applications pending`, to: '/admin/wholesalers?status=pending', color: 'text-amber-700 bg-amber-50' },
+    stats.lowStockProducts > 0 && { label: `${stats.lowStockProducts} products low on stock`, to: '/admin/products?stock_status=low', color: 'text-amber-700 bg-amber-50' },
+    stats.outOfStock > 0 && { label: `${stats.outOfStock} products out of stock`, to: '/admin/products?stock_status=out', color: 'text-terra-700 bg-terra-50' },
+    stats.pendingReviews > 0 && { label: `${stats.pendingReviews} reviews awaiting approval`, to: '/admin/reviews?status=pending', color: 'text-violet-700 bg-violet-50' },
   ].filter(Boolean) as { label: string; to: string; color: string }[]
 
   return (
     <div className="space-y-6">
       {/* Hero header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-forest-800 via-forest-900 to-forest-950 text-white p-6 lg:p-8 shadow-lg">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-forest-800 via-forest-900 to-forest-950 text-white p-5 sm:p-6 lg:p-8 shadow-lg">
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_80%_20%,#67a469_0%,transparent_50%)]" />
         <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div>
@@ -130,6 +156,7 @@ export default function AdminOverviewPage() {
           icon={DollarSign}
           trend={revenueTrend}
           accent="forest"
+          to="/admin/orders"
         />
         <DashboardStatCard
           label="This Month Revenue"
@@ -137,6 +164,7 @@ export default function AdminOverviewPage() {
           icon={TrendingUp}
           trend={revenueTrend}
           accent="blue"
+          to="/admin/orders"
         />
         <DashboardStatCard
           label="Total Orders"
@@ -144,26 +172,28 @@ export default function AdminOverviewPage() {
           icon={ShoppingBag}
           trend={ordersTrend}
           accent="violet"
+          to="/admin/orders"
         />
         <DashboardStatCard
           label="Customers"
           value={String(stats.totalCustomers)}
           icon={Users}
           accent="sage"
+          to="/admin/customers?role=customer"
         />
       </div>
 
       {/* Secondary metrics */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
         {[
-          { icon: Package, label: 'Products', value: stats.totalProducts, color: 'text-forest-700 bg-forest-50' },
-          { icon: Users, label: 'Wholesalers', value: stats.activeWholesalers, color: 'text-indigo-700 bg-indigo-50' },
-          { icon: AlertTriangle, label: 'Low Stock', value: stats.lowStockProducts, color: 'text-amber-700 bg-amber-50' },
-          { icon: Box, label: 'Out of Stock', value: stats.outOfStock, color: 'text-terra-700 bg-terra-50' },
-          { icon: Star, label: 'Pending Reviews', value: stats.pendingReviews, color: 'text-violet-700 bg-violet-50' },
-          { icon: ClipboardList, label: 'Wholesale Apps', value: stats.pendingApplications, color: 'text-blue-700 bg-blue-50' },
+          { icon: Package, label: 'Products', value: stats.totalProducts, to: '/admin/products', color: 'text-forest-700 bg-forest-50' },
+          { icon: Users, label: 'Wholesalers', value: stats.activeWholesalers, to: '/admin/customers?role=wholesale&approved=true', color: 'text-indigo-700 bg-indigo-50' },
+          { icon: AlertTriangle, label: 'Low Stock', value: stats.lowStockProducts, to: '/admin/products?stock_status=low', color: 'text-amber-700 bg-amber-50' },
+          { icon: Box, label: 'Out of Stock', value: stats.outOfStock, to: '/admin/products?stock_status=out', color: 'text-terra-700 bg-terra-50' },
+          { icon: Star, label: 'Pending Reviews', value: stats.pendingReviews, to: '/admin/reviews?status=pending', color: 'text-violet-700 bg-violet-50' },
+          { icon: ClipboardList, label: 'Wholesale Apps', value: stats.pendingApplications, to: '/admin/wholesalers?status=pending', color: 'text-blue-700 bg-blue-50' },
         ].map(m => (
-          <div key={m.label} className="bg-white rounded-xl border border-forest-100 p-4 flex items-center gap-3">
+          <Link key={m.label} to={m.to} className="bg-white rounded-xl border border-forest-100 p-4 flex items-center gap-3 hover:border-forest-300 hover:shadow-sm transition-all focus-ring">
             <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${m.color}`}>
               <m.icon className="w-4 h-4" />
             </div>
@@ -171,7 +201,7 @@ export default function AdminOverviewPage() {
               <p className="text-lg font-sans font-700 text-forest-900 leading-none">{m.value}</p>
               <p className="text-[10px] text-sage-500 mt-1 uppercase tracking-wide font-600">{m.label}</p>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
 
@@ -221,8 +251,8 @@ export default function AdminOverviewPage() {
           <TopProductsBarChart products={stats.topProducts} />
         </ChartCard>
 
-        <div className="lg:col-span-3 bg-white rounded-2xl border border-forest-100 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-forest-50 flex items-center justify-between">
+        <div className="lg:col-span-3 min-w-0 bg-white rounded-2xl border border-forest-100 shadow-sm overflow-hidden">
+          <div className="px-4 sm:px-6 py-4 border-b border-forest-50 flex items-center justify-between gap-3">
             <div>
               <h2 className="font-sans font-700 text-forest-900">Recent Orders</h2>
               <p className="text-xs text-sage-500 mt-0.5">Latest transactions</p>
@@ -231,11 +261,34 @@ export default function AdminOverviewPage() {
               View all <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
-          <div className="overflow-x-auto">
+          <ul className="md:hidden divide-y divide-forest-50">
+            {stats.recentOrders.length === 0 ? (
+              <li className="px-4 py-12 text-center text-sage-500 text-sm">No orders yet.</li>
+            ) : (
+              stats.recentOrders.map(o => (
+                <li key={o.id} className="px-4 py-3.5 space-y-1.5">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="font-mono text-xs text-forest-800">{o.orderNumber}</span>
+                    <span className="font-700 text-forest-900 text-sm">${o.total.toFixed(2)}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-sm font-600 text-forest-800 truncate min-w-0">{o.customer}</span>
+                    <span className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-600 capitalize ${statusStyles[o.status] ?? 'bg-sage-100 text-sage-700'}`}>
+                      {o.status}
+                    </span>
+                  </div>
+                  <p className="text-xs text-sage-500 capitalize">
+                    {o.type} · {new Date(o.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </p>
+                </li>
+              ))
+            )}
+          </ul>
+          <div className="hidden md:block scroll-x" ref={recentOrdersScrollRef}>
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-xs text-sage-500 border-b border-forest-50">
-                  <th className="px-6 py-3 font-600">Order</th>
+                  <th className="px-4 sm:px-6 py-3 font-600">Order</th>
                   <th className="px-4 py-3 font-600">Customer</th>
                   <th className="px-4 py-3 font-600">Type</th>
                   <th className="px-4 py-3 font-600">Total</th>
@@ -251,10 +304,10 @@ export default function AdminOverviewPage() {
                 ) : (
                   stats.recentOrders.map(o => (
                     <tr key={o.id} className="border-b border-forest-50 last:border-0 hover:bg-cream-50/50">
-                      <td className="px-6 py-3.5 font-mono text-xs text-forest-800">{o.orderNumber}</td>
+                      <td className="px-4 sm:px-6 py-3.5 font-mono text-xs text-forest-800 whitespace-nowrap">{o.orderNumber}</td>
                       <td className="px-4 py-3.5 text-forest-800 font-600 truncate max-w-[140px]">{o.customer}</td>
                       <td className="px-4 py-3.5 capitalize text-sage-600">{o.type}</td>
-                      <td className="px-4 py-3.5 font-700 text-forest-900">${o.total.toFixed(2)}</td>
+                      <td className="px-4 py-3.5 font-700 text-forest-900 whitespace-nowrap">${o.total.toFixed(2)}</td>
                       <td className="px-4 py-3.5">
                         <span className={`px-2 py-0.5 rounded-full text-xs font-600 capitalize ${statusStyles[o.status] ?? 'bg-sage-100 text-sage-700'}`}>
                           {o.status}

@@ -93,7 +93,7 @@ export default function AboutPage() {
                 className="w-full h-[480px] object-cover rounded-3xl shadow-2xl"
                 loading="lazy"
               />
-              <div className="absolute -bottom-6 -right-6 bg-white p-4 rounded-2xl shadow-xl">
+              <div className="absolute -bottom-6 right-3 sm:-right-6 bg-white p-4 rounded-2xl shadow-xl">
                 <p className="font-sans font-700 text-forest-900 text-2xl">25+</p>
                 <p className="text-sage-500 text-sm">Years of Growing</p>
               </div>

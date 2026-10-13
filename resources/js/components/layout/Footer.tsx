@@ -37,6 +37,7 @@ export default function Footer() {
                 { label: 'About Us', to: '/about' },
                 { label: 'How We Grow', to: '/how-we-grow' },
                 { label: 'Plant Information', to: '/plant-information' },
+                { label: 'Announcements', to: '/announcements' },
                 { label: 'Contact Us', to: '/contact' },
                 { label: 'Wholesale Apply', to: '/wholesale/apply' },
                 { label: 'Wholesale Login', to: '/wholesale/login' },

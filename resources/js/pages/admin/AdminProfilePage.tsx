@@ -82,7 +82,7 @@ export default function AdminProfilePage() {
       {message && <div className="px-4 py-3 rounded-xl bg-forest-50 text-forest-800 text-sm">{message}</div>}
       {error && <div className="px-4 py-3 rounded-xl bg-terra-50 text-terra-800 text-sm">{error}</div>}
 
-      <div className="bg-white rounded-2xl border border-forest-100 p-6 shadow-sm space-y-6">
+      <div className="bg-white rounded-2xl border border-forest-100 p-4 sm:p-6 shadow-sm space-y-6">
         <div className="flex items-center gap-3 pb-4 border-b border-forest-100">
           <div className="w-10 h-10 bg-forest-100 rounded-xl flex items-center justify-center">
             <User className="w-5 h-5 text-forest-600" />
@@ -147,7 +147,7 @@ export default function AdminProfilePage() {
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl border border-forest-100 p-6 shadow-sm space-y-4">
+      <div className="bg-white rounded-2xl border border-forest-100 p-4 sm:p-6 shadow-sm space-y-4">
         <div>
           <h2 className="font-sans font-700 text-forest-900">Change password</h2>
           <p className="text-xs text-sage-500 mt-1">Use at least 6 characters.</p>

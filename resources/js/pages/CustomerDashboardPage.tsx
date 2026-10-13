@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useDragScroll } from '@/hooks/useDragScroll'
 import { motion } from 'motion/react'
 import { Package, LogOut, Leaf, User, ShoppingBag, ExternalLink, MapPin, Heart, Star, RotateCcw, Download } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
@@ -6,6 +7,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { api } from '@/lib/api'
 import { useRetailCart } from '@/context/RetailCartContext'
 import { showToastSuccess } from '@/lib/toast'
+import NotificationBell from '@/components/notifications/NotificationBell'
 import type { Order, Address, CustomerReview, Product } from '@/types'
 
 type Tab = 'orders' | 'addresses' | 'wishlist' | 'reviews' | 'profile'
@@ -26,6 +28,7 @@ const labelClass = 'block text-xs font-600 text-forest-700 mb-1'
 const emptyAddress = { label: 'Home', firstName: '', lastName: '', addressLine1: '', city: '', state: 'TN', postalCode: '', country: 'US', isDefault: false }
 
 export default function CustomerDashboardPage() {
+  const tabsScrollRef = useDragScroll<HTMLDivElement>()
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const { addItem } = useRetailCart()
@@ -107,12 +110,13 @@ export default function CustomerDashboardPage() {
               <div className="w-8 h-8 bg-forest-600 rounded-lg flex items-center justify-center"><Leaf className="w-4 h-4 text-white" /></div>
               <span className="font-sans font-700 text-cream-100 text-sm">My Account</span>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <NotificationBell />
               <Link to="/shop" className="hidden sm:flex items-center gap-1.5 px-3 py-2 bg-forest-800 rounded-lg text-sm font-600 text-sage-300"><ShoppingBag className="w-4 h-4" />Shop</Link>
               <button onClick={handleLogout} className="flex items-center gap-1.5 px-3 py-2 bg-forest-800 rounded-lg text-sm font-600 text-sage-300"><LogOut className="w-4 h-4" /><span className="hidden sm:inline">Sign Out</span></button>
             </div>
           </div>
-          <div className="flex gap-1 overflow-x-auto pb-0 scrollbar-hide">
+          <div ref={tabsScrollRef} className="flex gap-1 overflow-x-auto pb-0 scrollbar-hide">
             {tabs.map(tab => (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-4 py-3 text-sm font-600 border-b-2 whitespace-nowrap ${activeTab === tab.id ? 'border-cream-200 text-cream-100' : 'border-transparent text-forest-400'}`}>
@@ -123,7 +127,7 @@ export default function CustomerDashboardPage() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 py-8">
+      <main className="max-w-5xl mx-auto px-4 py-6 sm:py-8">
         {msg && <div className="mb-4 px-4 py-2 bg-forest-50 text-forest-800 rounded-xl text-sm">{msg}</div>}
 
         {activeTab === 'orders' && (
@@ -139,7 +143,7 @@ export default function CustomerDashboardPage() {
               <div className="space-y-4">
                 {orders.map(order => (
                   <div key={order.id} className="bg-white rounded-2xl border border-forest-100 shadow-sm overflow-hidden">
-                    <div className="p-5 flex flex-wrap justify-between gap-4 border-b border-forest-50">
+                    <div className="p-4 sm:p-5 flex flex-wrap justify-between gap-4 border-b border-forest-50">
                       <div>
                         <div className="flex items-center gap-3 flex-wrap">
                           <p className="font-700 text-forest-900">{order.orderNumber}</p>
@@ -156,8 +160,8 @@ export default function CustomerDashboardPage() {
                           <p className="text-xs text-sage-500 mt-1">Ship via {order.shippingMethodName}</p>
                         )}
                       </div>
-                      <div className="flex items-center gap-3">
-                        <p className="font-700 text-xl text-forest-900">${order.total.toFixed(2)}</p>
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                        <p className="font-700 text-xl text-forest-900 w-full sm:w-auto">${order.total.toFixed(2)}</p>
                         <button onClick={() => reorder(order)} className="flex items-center gap-1 px-3 py-1.5 text-sm font-600 text-forest-700 border border-forest-200 rounded-lg hover:bg-forest-50">
                           <RotateCcw className="w-3.5 h-3.5" /> Reorder
                         </button>
@@ -166,18 +170,18 @@ export default function CustomerDashboardPage() {
                         </button>
                       </div>
                     </div>
-                    <div className="p-5 grid sm:grid-cols-2 gap-3">
+                    <div className="p-4 sm:p-5 grid sm:grid-cols-2 gap-3">
                       {order.items.map(item => (
                         <div key={`${item.product.id}-${item.variationId || 'base'}`} className="flex items-center gap-3 bg-cream-50 rounded-xl p-3">
-                          <img src={item.product.image} alt="" className="w-12 h-12 rounded-lg object-cover" />
-                          <div>
+                          <img src={item.product.image} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
+                          <div className="min-w-0">
                             <p className="font-600 text-sm">{item.product.name}</p>
                             <p className="text-xs text-sage-500">Qty: {item.quantity} · ${(item.lineTotal ?? item.unitPrice * item.quantity).toFixed(2)}</p>
                           </div>
                         </div>
                       ))}
                     </div>
-                    <div className="px-5 pb-5 grid sm:grid-cols-2 gap-4 text-sm">
+                    <div className="px-4 sm:px-5 pb-4 sm:pb-5 grid sm:grid-cols-2 gap-4 text-sm">
                       <div className="bg-cream-50 rounded-xl p-3">
                         <p className="text-xs font-600 text-forest-700 mb-1">Order totals</p>
                         <p className="text-sage-600">Subtotal: ${(order.subtotal ?? order.total).toFixed(2)}</p>
@@ -213,12 +217,12 @@ export default function CustomerDashboardPage() {
 
         {activeTab === 'addresses' && (
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
               <h1 className="font-display font-700 text-2xl text-forest-900">Address Book</h1>
               <button onClick={() => setShowAddrForm(true)} className="px-4 py-2 bg-forest-700 text-white rounded-xl text-sm font-600">Add Address</button>
             </div>
             {showAddrForm && (
-              <div className="bg-white rounded-2xl border p-6 mb-6 grid sm:grid-cols-2 gap-4">
+              <div className="bg-white rounded-2xl border p-4 sm:p-6 mb-6 grid sm:grid-cols-2 gap-4">
                 {[
                   ['label', 'Label'], ['firstName', 'First Name'], ['lastName', 'Last Name'],
                   ['addressLine1', 'Address'], ['city', 'City'], ['state', 'State'], ['postalCode', 'ZIP'],
@@ -246,7 +250,7 @@ export default function CustomerDashboardPage() {
                   <button onClick={async () => { await api.deleteAddress(a.id); load() }} className="text-terra-600 text-xs mt-3 hover:underline">Delete</button>
                 </div>
               ))}
-              {addresses.length === 0 && <p className="text-sage-500 col-span-2">No addresses saved.</p>}
+              {addresses.length === 0 && <p className="text-sage-500 sm:col-span-2">No addresses saved.</p>}
             </div>
           </motion.div>
         )}
@@ -283,8 +287,8 @@ export default function CustomerDashboardPage() {
               <div className="space-y-4">
                 {reviews.map(r => (
                   <div key={r.id} className="bg-white rounded-2xl border p-5">
-                    <div className="flex justify-between mb-2">
-                      <span className="font-600">{r.productName}</span>
+                    <div className="flex justify-between items-start gap-3 mb-2">
+                      <span className="font-600 min-w-0">{r.productName}</span>
                       <span className={`text-xs px-2 py-0.5 rounded-full ${r.status === 'approved' ? 'bg-forest-100 text-forest-700' : 'bg-amber-100 text-amber-700'}`}>{r.status}</span>
                     </div>
                     <div className="flex mb-2">{Array.from({ length: 5 }, (_, i) => (
@@ -300,16 +304,16 @@ export default function CustomerDashboardPage() {
 
         {activeTab === 'profile' && (
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-            <div className="bg-white rounded-2xl border p-6 max-w-lg">
+            <div className="bg-white rounded-2xl border p-4 sm:p-6 max-w-lg">
               <h2 className="font-700 text-forest-900 mb-4">Profile Information</h2>
               <div className="space-y-3">
                 <div><label className={labelClass}>Name</label><input className={inputClass} value={profileForm.name} onChange={e => setProfileForm(f => ({ ...f, name: e.target.value }))} /></div>
                 <div><label className={labelClass}>Phone</label><input className={inputClass} value={profileForm.phone} onChange={e => setProfileForm(f => ({ ...f, phone: e.target.value }))} /></div>
-                <p className="text-sm text-sage-500">Email: {user?.email}</p>
+                <p className="text-sm text-sage-500 break-all">Email: {user?.email}</p>
                 <button onClick={saveProfile} className="px-6 py-2 bg-forest-700 text-white rounded-xl text-sm font-600">Save Profile</button>
               </div>
             </div>
-            <div className="bg-white rounded-2xl border p-6 max-w-lg">
+            <div className="bg-white rounded-2xl border p-4 sm:p-6 max-w-lg">
               <h2 className="font-700 text-forest-900 mb-4">Change Password</h2>
               <div className="space-y-3">
                 <div><label className={labelClass}>Current Password</label><input type="password" className={inputClass} value={pwForm.current} onChange={e => setPwForm(f => ({ ...f, current: e.target.value }))} /></div>

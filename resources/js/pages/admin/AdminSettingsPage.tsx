@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useDragScroll } from '@/hooks/useDragScroll'
 import { api } from '@/lib/api'
 import SettingImageUpload from '@/components/admin/SettingImageUpload'
 
@@ -14,6 +15,7 @@ const CONTACT_KEYS = [
 ] as const
 
 export default function AdminSettingsPage() {
+  const tabsScrollRef = useDragScroll<HTMLDivElement>()
   const [tab, setTab] = useState<Tab>('general')
   const [settings, setSettings] = useState<Record<string, Record<string, string>>>({})
   const [saving, setSaving] = useState(false)
@@ -81,15 +83,15 @@ export default function AdminSettingsPage() {
     <div className="space-y-6">
       <div><h1 className="font-sans font-700 text-2xl text-forest-900">Settings</h1><p className="text-sage-600 text-sm mt-1">Configure store settings</p></div>
 
-      <div className="flex gap-2 border-b border-forest-100 pb-0">
+      <div ref={tabsScrollRef} className="flex gap-1 sm:gap-2 border-b border-forest-100 pb-0 overflow-x-auto scrollbar-hide">
         {tabs.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} className={`px-4 py-2.5 text-sm font-sans font-600 border-b-2 -mb-px ${tab === t.id ? 'border-forest-700 text-forest-900' : 'border-transparent text-sage-500'}`}>{t.label}</button>
+          <button key={t.id} onClick={() => setTab(t.id)} className={`shrink-0 whitespace-nowrap px-3 sm:px-4 py-2.5 text-sm font-sans font-600 border-b-2 ${tab === t.id ? 'border-forest-700 text-forest-900' : 'border-transparent text-sage-500'}`}>{t.label}</button>
         ))}
       </div>
 
       {message && <div className="px-4 py-3 rounded-xl bg-forest-50 text-forest-800 text-sm">{message}</div>}
 
-      <div className="bg-white rounded-2xl border border-forest-100 p-6 shadow-sm max-w-2xl">
+      <div className="bg-white rounded-2xl border border-forest-100 p-4 sm:p-6 shadow-sm max-w-2xl">
         {tab === 'general' && (
           <div className="space-y-6">
             <div>

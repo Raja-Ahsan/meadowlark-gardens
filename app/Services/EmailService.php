@@ -202,6 +202,10 @@ class EmailService
     {
         $host = Setting::get('smtp_host');
         if (! $host) {
+            if (config('mail.default') === 'log') {
+                Log::warning('Email is not being delivered: no SMTP host in Settings and MAIL_MAILER is "log". Set SMTP in Admin → Settings or MAIL_MAILER=smtp in .env.');
+            }
+
             return;
         }
 
@@ -216,5 +220,8 @@ class EmailService
             'mail.from.address' => Setting::get('smtp_from_email', 'noreply@meadowlarkgardens.com'),
             'mail.from.name' => Setting::get('smtp_from_name', 'Meadowlark Gardens'),
         ]);
+
+        // A mailer resolved earlier in the request keeps its old (.env) transport otherwise.
+        app('mail.manager')->purge('smtp');
     }
 }

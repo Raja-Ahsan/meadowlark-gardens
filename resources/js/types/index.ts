@@ -232,6 +232,31 @@ export interface PlantType {
   updatedAt?: string
 }
 
+export interface AppNotification {
+  id: string
+  kind: 'order' | 'application' | 'message' | 'review' | 'announcement' | 'account' | string
+  title: string
+  message: string
+  url: string | null
+  read: boolean
+  createdAt: string | null
+}
+
+export type AnnouncementAudience = 'retail' | 'wholesale'
+
+export interface Announcement {
+  id: string
+  audience: AnnouncementAudience
+  title: string
+  excerpt?: string | null
+  content: string
+  image?: string | null
+  eventDate?: string | null
+  isPublished: boolean
+  createdAt?: string
+  updatedAt?: string
+}
+
 export interface AdminStats {
   totalRevenue: number
   totalOrders: number

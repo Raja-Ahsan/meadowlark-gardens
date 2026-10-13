@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import type { LucideIcon } from 'lucide-react'
 import { TrendingDown, TrendingUp } from 'lucide-react'
 
@@ -9,6 +10,7 @@ interface Props {
   trendLabel?: string
   accent?: 'forest' | 'blue' | 'violet' | 'amber' | 'terra' | 'sage'
   className?: string
+  to?: string
 }
 
 const accents = {
@@ -28,11 +30,12 @@ export default function DashboardStatCard({
   trendLabel = 'vs last month',
   accent = 'forest',
   className = '',
+  to,
 }: Props) {
   const trendUp = trend !== undefined && trend !== null && trend >= 0
 
   return (
-    <div className={`relative overflow-hidden rounded-2xl bg-white border border-forest-100 p-5 shadow-sm hover:shadow-md transition-shadow ${className}`}>
+    <Wrapper to={to} className={`relative overflow-hidden rounded-2xl bg-white border border-forest-100 p-5 shadow-sm hover:shadow-md transition-shadow ${to ? 'block hover:border-forest-300 focus-ring' : ''} ${className}`}>
       <div className={`absolute -right-4 -top-4 w-24 h-24 rounded-full bg-gradient-to-br ${accents[accent]} opacity-10`} />
       <div className="flex items-start justify-between gap-3 relative">
         <div>
@@ -49,8 +52,13 @@ export default function DashboardStatCard({
           <Icon className="w-5 h-5 text-white" />
         </div>
       </div>
-    </div>
+    </Wrapper>
   )
+}
+
+function Wrapper({ to, className, children }: { to?: string; className: string; children: React.ReactNode }) {
+  if (to) return <Link to={to} className={className}>{children}</Link>
+  return <div className={className}>{children}</div>
 }
 
 export function pctChange(current: number, previous: number): number | null {

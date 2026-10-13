@@ -219,7 +219,7 @@ export default function AdminPlantTypesPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="font-sans font-700 text-2xl text-forest-900">Plant Types</h1>
           <p className="text-sage-600 text-sm mt-1">
@@ -229,7 +229,7 @@ export default function AdminPlantTypesPage() {
         <button
           type="button"
           onClick={openCreate}
-          className="flex items-center gap-2 px-4 py-2.5 bg-forest-700 text-white rounded-xl text-sm font-sans font-600 hover:bg-forest-800"
+          className="self-start sm:self-auto shrink-0 flex items-center gap-2 px-4 py-2.5 bg-forest-700 text-white rounded-xl text-sm font-sans font-600 hover:bg-forest-800"
         >
           <Plus className="w-4 h-4" /> Add Plant Type
         </button>

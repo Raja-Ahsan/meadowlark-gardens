@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use App\Models\WholesaleApplication;
 use App\Services\EmailService;
+use App\Services\NotificationService;
 use App\Support\ApiFormatter;
 use App\Support\MediaUrl;
 use Illuminate\Http\JsonResponse;
@@ -24,13 +25,18 @@ class WholesaleApplicationController extends Controller
             'phone' => ['required', 'string', 'max:50'],
             'address' => ['required', 'string'],
             'businessType' => ['required', 'string', 'max:255'],
-            'licenseDocument' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,webp,doc,docx', 'max:10240'],
+            'licenseDocument' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,webp,heic,heif,doc,docx', 'max:10240'],
             'message' => ['nullable', 'string'],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
+        ], [
+            'licenseDocument.uploaded' => 'The license file could not be uploaded. It may be too large — please choose a smaller file or take a new photo.',
+            'licenseDocument.max' => 'The license file must be 10MB or smaller.',
+            'licenseDocument.mimes' => 'The license must be a PDF, Word document, or image (JPG, PNG, WEBP, HEIC).',
         ]);
 
         $file = $request->file('licenseDocument');
-        $name = Str::uuid().'.'.$file->getClientOriginalExtension();
+        $extension = strtolower($file->getClientOriginalExtension() ?: ($file->guessExtension() ?: 'bin'));
+        $name = Str::uuid().'.'.$extension;
         $path = $file->storeAs('wholesale-licenses', $name, 'public');
 
         $application = WholesaleApplication::create([
@@ -64,6 +70,13 @@ class WholesaleApplicationController extends Controller
                 ],
             ]);
         }
+
+        NotificationService::toAdmins(
+            'application',
+            'New wholesale application',
+            "{$application->business_name} ({$application->contact_name}) applied for a wholesale account.",
+            '/admin/wholesalers?status=pending'
+        );
 
         return response()->json([
             'message' => 'Application submitted successfully! We will review it within 2–3 business days.',

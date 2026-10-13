@@ -15,6 +15,7 @@ const AboutPage = lazy(() => import('@/pages/AboutPage'))
 const PlantInformationPage = lazy(() => import('@/pages/PlantInformationPage'))
 const PlantTypeDetailPage = lazy(() => import('@/pages/PlantTypeDetailPage'))
 const HowWeGrowPage = lazy(() => import('@/pages/HowWeGrowPage'))
+const AnnouncementsPage = lazy(() => import('@/pages/AnnouncementsPage'))
 const ContactPage = lazy(() => import('@/pages/ContactPage'))
 const WholesaleApplyPage = lazy(() => import('@/pages/WholesaleApplyPage'))
 const WholesaleLoginPage = lazy(() => import('@/pages/WholesaleLoginPage'))
@@ -55,6 +56,7 @@ const AdminProfilePage = lazy(() => import('@/pages/admin/AdminProfilePage'))
 const AdminLegalPagesPage = lazy(() => import('@/pages/admin/AdminLegalPagesPage'))
 const AdminPlantTypesPage = lazy(() => import('@/pages/admin/AdminPlantTypesPage'))
 const AdminPlantTypeCategoriesPage = lazy(() => import('@/pages/admin/AdminPlantTypeCategoriesPage'))
+const AdminAnnouncementsPage = lazy(() => import('@/pages/admin/AdminAnnouncementsPage'))
 
 function RouteFallback() {
   return (
@@ -89,6 +91,7 @@ export default function App() {
                     <Route path="/plant-information" element={<PlantInformationPage />} />
                     <Route path="/plant-information/:slug" element={<PlantTypeDetailPage />} />
                     <Route path="/how-we-grow" element={<HowWeGrowPage />} />
+                    <Route path="/announcements" element={<AnnouncementsPage />} />
                     <Route path="/terms-of-service" element={<LegalPageView />} />
                     <Route path="/cancellation-policy" element={<CancellationPolicyPage />} />
                     <Route path="/login" element={<CustomerLoginPage />} />
@@ -153,6 +156,7 @@ export default function App() {
                     <Route path="legal-pages" element={<AdminLegalPagesPage />} />
                     <Route path="plant-type-categories" element={<AdminPlantTypeCategoriesPage />} />
                     <Route path="plant-types" element={<AdminPlantTypesPage />} />
+                    <Route path="announcements" element={<AdminAnnouncementsPage />} />
                     <Route path="attributes" element={<AdminAttributesPage />} />
                     <Route path="contact" element={<AdminContactPage />} />
                     <Route path="audit-logs" element={<AdminAuditLogsPage />} />

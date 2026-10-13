@@ -12,6 +12,7 @@ const navLinks = [
   { label: 'About Us', to: '/about' },
   { label: 'How We Grow', to: '/how-we-grow' },
   { label: 'Plant Information', to: '/plant-information' },
+  { label: 'News', to: '/announcements' },
   { label: 'Contact', to: '/contact' },
   { label: 'Wholesale', to: '/wholesale/apply' },
 ]

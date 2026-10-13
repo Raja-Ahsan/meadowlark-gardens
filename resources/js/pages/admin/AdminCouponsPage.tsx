@@ -49,16 +49,16 @@ export default function AdminCouponsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div><h1 className="font-sans font-700 text-2xl text-forest-900">Coupons</h1><p className="text-sage-600 text-sm mt-1">Discount codes and promotions</p></div>
-        <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2.5 bg-forest-700 text-white rounded-xl text-sm font-sans font-600"><Plus className="w-4 h-4" /> Add Coupon</button>
+        <button onClick={openCreate} className="self-start sm:self-auto shrink-0 flex items-center gap-2 px-4 py-2.5 bg-forest-700 text-white rounded-xl text-sm font-sans font-600"><Plus className="w-4 h-4" /> Add Coupon</button>
       </div>
       <FilterBar search={list.search} onSearchChange={list.setSearch} placeholder="Search coupons..." filters={[{ key: 'type', label: 'Type', options: [{ value: 'percentage', label: 'Percentage' }, { value: 'fixed', label: 'Fixed' }, { value: 'free_shipping', label: 'Free Shipping' }] }]} filterValues={list.filters} onFilterChange={list.setFilter} onClear={list.clearFilters} />
       <DataTable columns={columns} data={list.data} meta={list.meta} onPageChange={list.setPage} sortBy={list.sortBy} sortDir={list.sortDir} onSort={list.handleSort} loading={list.loading} rowKey={c => c.id} />
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Coupon' : 'Add Coupon'}>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="col-span-2"><label className={labelClass}>Code *</label><input className={inputClass} value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value.toUpperCase() }))} /></div>
-          <div className="col-span-2"><label className={labelClass}>Description</label><input className={inputClass} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} /></div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="sm:col-span-2"><label className={labelClass}>Code *</label><input className={inputClass} value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value.toUpperCase() }))} /></div>
+          <div className="sm:col-span-2"><label className={labelClass}>Description</label><input className={inputClass} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} /></div>
           <div><label className={labelClass}>Type</label><select className={inputClass} value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value as Coupon['type'] }))}><option value="percentage">Percentage</option><option value="fixed">Fixed Amount</option><option value="free_shipping">Free Shipping</option></select></div>
           <div><label className={labelClass}>Value</label><input type="number" className={inputClass} value={form.value} onChange={e => setForm(f => ({ ...f, value: +e.target.value }))} /></div>
           <div><label className={labelClass}>Min Cart Value</label><input type="number" className={inputClass} value={form.minCartValue} onChange={e => setForm(f => ({ ...f, minCartValue: +e.target.value }))} /></div>

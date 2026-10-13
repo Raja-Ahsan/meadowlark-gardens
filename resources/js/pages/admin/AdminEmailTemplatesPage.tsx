@@ -39,16 +39,16 @@ export default function AdminEmailTemplatesPage() {
 
       <div className="grid gap-3">
         {templates.map(t => (
-          <div key={t.id} className="bg-white rounded-2xl border border-forest-100 p-5 flex items-center justify-between shadow-sm">
-            <div>
-              <div className="flex items-center gap-2">
+          <div key={t.id} className="bg-white rounded-2xl border border-forest-100 p-4 sm:p-5 flex items-start sm:items-center justify-between gap-3 shadow-sm">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
                 <h3 className="font-sans font-700 text-forest-900">{t.name}</h3>
                 <span className={`text-xs px-2 py-0.5 rounded-full ${t.isActive ? 'bg-forest-100 text-forest-700' : 'bg-sage-100 text-sage-600'}`}>{t.isActive ? 'Active' : 'Inactive'}</span>
               </div>
-              <p className="text-sm text-sage-600 mt-1">Subject: {t.subject}</p>
-              <p className="text-xs text-sage-400 mt-0.5 font-mono">{t.slug}</p>
+              <p className="text-sm text-sage-600 mt-1 break-words">Subject: {t.subject}</p>
+              <p className="text-xs text-sage-400 mt-0.5 font-mono break-all">{t.slug}</p>
             </div>
-            <button onClick={() => openEdit(t)} className="p-2 rounded-lg hover:bg-forest-50 text-forest-600"><Pencil className="w-4 h-4" /></button>
+            <button onClick={() => openEdit(t)} className="p-2 shrink-0 rounded-lg hover:bg-forest-50 text-forest-600"><Pencil className="w-4 h-4" /></button>
           </div>
         ))}
       </div>

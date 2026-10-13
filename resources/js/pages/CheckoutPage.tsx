@@ -4,7 +4,7 @@ import { ShoppingBag, Tag, CheckCircle, ArrowLeft } from 'lucide-react'
 import { useRetailCart } from '@/context/RetailCartContext'
 import { cartLineKey, formatVariationLabel, getCartLineImage, getCartLinePrice } from '@/lib/cart'
 import { useAuth } from '@/context/AuthContext'
-import { api, type ShippingRate } from '@/lib/api'
+import { api, isRequestTimeout, type ShippingRate } from '@/lib/api'
 import { mediaUrl } from '@/lib/media'
 import AuthorizeCardForm, { collectAuthorizePayment } from '@/components/checkout/AuthorizeCardForm'
 import ShippingMethodSelector from '@/components/checkout/ShippingMethodSelector'
@@ -164,8 +164,8 @@ function OrderSummaryPanel({
 
       <button
         type="submit"
-        disabled={submitting || !canSubmit}
-        className="hidden lg:block w-full mt-6 py-3.5 bg-forest-700 text-white rounded-xl font-sans font-600 hover:bg-forest-800 disabled:opacity-50 transition-colors"
+        disabled={submitting}
+        className={`hidden lg:block w-full mt-6 py-3.5 bg-forest-700 text-white rounded-xl font-sans font-600 hover:bg-forest-800 disabled:opacity-50 transition-colors${canSubmit ? '' : ' opacity-60'}`}
       >
         {submitting ? 'Processing...' : `Place order — $${grandTotal.toFixed(2)}`}
       </button>
@@ -319,6 +319,7 @@ export default function CheckoutPage() {
   const validateCheckoutFields = (): string | null => {
     if (!form.firstName.trim() || !form.lastName.trim()) return 'Please enter your first and last name.'
     if (!form.email.trim()) return 'Please enter your email address.'
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) return 'Please enter a valid email address.'
     if (!form.address1.trim()) return 'Please enter your billing address.'
     if (!form.city.trim() || !form.state.trim() || !form.postalCode.trim()) {
       return 'Please complete city, state, and ZIP for billing.'
@@ -341,7 +342,7 @@ export default function CheckoutPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (items.length === 0 || !form.paymentMethod) return
+    if (items.length === 0) return
     if (submittingRef.current || submitting) return
 
     const fieldError = validateCheckoutFields()
@@ -418,7 +419,8 @@ export default function CheckoutPage() {
       setSuccess(true)
     } catch (e) {
       showToastError(e instanceof Error ? e.message : 'Checkout failed')
-      // Allow safe retry with a fresh checkout id after failure (new payment nonce needed)
+      // A timed-out request may still have placed the order; reuse the id so a retry returns it instead of charging again.
+      if (isRequestTimeout(e)) return
       checkoutIdRef.current =
         typeof crypto !== 'undefined' && crypto.randomUUID
           ? crypto.randomUUID()
@@ -498,9 +500,9 @@ export default function CheckoutPage() {
 
   return (
     <PageShell>
-      <form onSubmit={handleSubmit} className="grid lg:grid-cols-3 gap-8 lg:gap-10 items-start">
+      <form onSubmit={handleSubmit} noValidate className="grid lg:grid-cols-3 gap-8 lg:gap-10 items-start">
         {/* Order summary first on mobile */}
-        <div className="lg:col-span-1 order-2 lg:order-2">
+        <div className="lg:col-span-1 order-2 lg:order-2 min-w-0">
           <OrderSummaryPanel
             items={items}
             subtotal={subtotal}
@@ -521,7 +523,7 @@ export default function CheckoutPage() {
           />
         </div>
 
-        <div className="lg:col-span-2 space-y-6 order-1 lg:order-1">
+        <div className="lg:col-span-2 space-y-6 order-1 lg:order-1 min-w-0">
           <section className="bg-white rounded-2xl border border-forest-100 p-5 md:p-6 shadow-sm">
             <h2 className="font-sans font-700 text-lg text-forest-900 mb-4">Billing information</h2>
             <div className="grid sm:grid-cols-2 gap-4">
@@ -548,11 +550,12 @@ export default function CheckoutPage() {
                 <label className={labelClass}>City *</label>
                 <SearchableSelect
                   required
+                  allowCustom
                   options={billingCityOptions}
                   value={form.city}
                   onChange={value => setForm(f => ({ ...f, city: value }))}
                   placeholder={form.state ? 'Select city' : 'Select state first'}
-                  searchPlaceholder="Search cities…"
+                  searchPlaceholder="Search or type your city…"
                   emptyMessage={form.state ? 'No cities found' : 'Select a state first'}
                   disabled={!form.state}
                 />
@@ -605,11 +608,12 @@ export default function CheckoutPage() {
                 <div>
                   <label className={labelClass}>City</label>
                   <SearchableSelect
+                    allowCustom
                     options={shippingCityOptions}
                     value={form.shipCity}
                     onChange={value => setForm(f => ({ ...f, shipCity: value }))}
                     placeholder={form.shipState ? 'Select city' : 'Select state first'}
-                    searchPlaceholder="Search cities…"
+                    searchPlaceholder="Search or type your city…"
                     emptyMessage={form.shipState ? 'No cities found' : 'Select a state first'}
                     disabled={!form.shipState}
                   />
@@ -707,8 +711,8 @@ export default function CheckoutPage() {
 
           <button
             type="submit"
-            disabled={submitting || !canSubmitOrder}
-            className="lg:hidden w-full py-3.5 bg-forest-700 text-white rounded-xl font-sans font-600 hover:bg-forest-800 disabled:opacity-50 transition-colors"
+            disabled={submitting}
+            className={`lg:hidden w-full py-3.5 bg-forest-700 text-white rounded-xl font-sans font-600 hover:bg-forest-800 disabled:opacity-50 transition-colors${canSubmitOrder ? '' : ' opacity-60'}`}
           >
             {submitting ? 'Processing...' : `Place order — $${grandTotal.toFixed(2)}`}
           </button>

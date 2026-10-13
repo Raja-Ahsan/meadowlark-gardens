@@ -41,6 +41,7 @@ export default function ShippingMethodSelector({
   const [rates, setRates] = useState<ShippingRate[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [retryKey, setRetryKey] = useState(0)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const requestSeq = useRef(0)
   const itemsKey = useMemo(
@@ -131,6 +132,7 @@ export default function ShippingMethodSelector({
     subtotal,
     type,
     freeShipping,
+    retryKey,
   ])
 
   if (!addressReady(shippingAddress)) {
@@ -151,7 +153,18 @@ export default function ShippingMethodSelector({
   }
 
   if (error && rates.length === 0) {
-    return <p className="text-sm text-terra-600">{error}</p>
+    return (
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <p className="text-sm text-terra-600">{error}</p>
+        <button
+          type="button"
+          onClick={() => setRetryKey(k => k + 1)}
+          className="text-sm font-sans font-600 text-forest-700 underline underline-offset-2"
+        >
+          Try again
+        </button>
+      </div>
+    )
   }
 
   if (rates.length === 0) {

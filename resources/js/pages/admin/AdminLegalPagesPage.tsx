@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useDragScroll } from '@/hooks/useDragScroll'
 import { ExternalLink } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { api } from '@/lib/api'
@@ -17,6 +18,7 @@ const SLUGS = [
 ] as const
 
 export default function AdminLegalPagesPage() {
+  const tabsScrollRef = useDragScroll<HTMLDivElement>()
   const [pages, setPages] = useState<LegalPage[]>([])
   const [activeSlug, setActiveSlug] = useState<string>('privacy-policy')
   const [form, setForm] = useState({
@@ -75,13 +77,13 @@ export default function AdminLegalPagesPage() {
         <p className="text-sage-600 text-sm mt-1">Manage Privacy, Shipping, Refund, Terms, and Cookie Policy content.</p>
       </div>
 
-      <div className="flex flex-wrap gap-2 border-b border-forest-100 pb-0">
+      <div ref={tabsScrollRef} className="flex gap-1 sm:gap-2 border-b border-forest-100 pb-0 overflow-x-auto scrollbar-hide">
         {SLUGS.map(tab => (
           <button
             key={tab.slug}
             type="button"
             onClick={() => setActiveSlug(tab.slug)}
-            className={`px-4 py-2.5 text-sm font-sans font-600 border-b-2 -mb-px ${
+            className={`shrink-0 whitespace-nowrap px-3 sm:px-4 py-2.5 text-sm font-sans font-600 border-b-2 ${
               activeSlug === tab.slug
                 ? 'border-forest-700 text-forest-900'
                 : 'border-transparent text-sage-500 hover:text-forest-700'
@@ -99,7 +101,7 @@ export default function AdminLegalPagesPage() {
       {loading ? (
         <p className="text-sm text-sage-500">Loading...</p>
       ) : (
-        <div className="bg-white rounded-2xl border border-forest-100 p-6 shadow-sm max-w-4xl space-y-5">
+        <div className="bg-white rounded-2xl border border-forest-100 p-4 sm:p-6 shadow-sm max-w-4xl space-y-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <label className="flex items-center gap-2 text-sm font-sans font-600 text-forest-800">
               <input

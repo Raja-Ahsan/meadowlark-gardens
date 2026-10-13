@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\AnnouncementController as AdminAnnouncementController;
 use App\Http\Controllers\Api\Admin\ApplicationController as AdminApplicationController;
 use App\Http\Controllers\Api\Admin\AttributeController as AdminAttributeController;
 use App\Http\Controllers\Api\Admin\AuditLogController;
@@ -20,11 +21,13 @@ use App\Http\Controllers\Api\Admin\StatsController;
 use App\Http\Controllers\Api\Admin\UpsController;
 use App\Http\Controllers\Api\Admin\VariationController;
 use App\Http\Controllers\Api\AddressController;
+use App\Http\Controllers\Api\AnnouncementController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ContactController;
 use App\Http\Controllers\Api\CouponController;
 use App\Http\Controllers\Api\CustomerReviewController;
 use App\Http\Controllers\Api\LegalPageController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PlantTypeController;
 use App\Http\Controllers\Api\PlantTypeCategoryController;
 use App\Http\Controllers\Api\InvoiceController;
@@ -62,6 +65,8 @@ Route::post('/tax/quote', [TaxController::class, 'quote']);
 Route::get('/legal-pages', [LegalPageController::class, 'index']);
 Route::get('/legal-pages/{legalPage:slug}', [LegalPageController::class, 'show']);
 
+Route::get('/announcements', [AnnouncementController::class, 'retail']);
+
 Route::get('/plant-type-categories', [PlantTypeCategoryController::class, 'index']);
 Route::get('/plant-types', [PlantTypeController::class, 'index']);
 Route::get('/plant-types/{plantType:slug}', [PlantTypeController::class, 'show']);
@@ -78,6 +83,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/auth/password', [AuthController::class, 'updatePassword']);
 
     Route::post('/upload', [UploadController::class, 'store']);
+
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead']);
 
     Route::get('/addresses', [AddressController::class, 'index']);
     Route::post('/addresses', [AddressController::class, 'store']);
@@ -98,6 +107,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/payments/stripe/intent', [PaymentController::class, 'createStripeIntent']);
     Route::post('/payments/paypal/confirm', [PaymentController::class, 'confirmPaypal']);
 
+    Route::get('/wholesale/announcements', [AnnouncementController::class, 'wholesale']);
     Route::get('/wholesale/orders', [OrderController::class, 'wholesaleIndex']);
     Route::post('/wholesale/orders', [OrderController::class, 'storeWholesale']);
 
@@ -167,5 +177,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/plant-type-categories/all', [AdminPlantTypeCategoryController::class, 'all']);
         Route::apiResource('plant-type-categories', AdminPlantTypeCategoryController::class)->except(['show']);
         Route::apiResource('plant-types', AdminPlantTypeController::class)->except(['show']);
+        Route::apiResource('announcements', AdminAnnouncementController::class)->except(['show']);
     });
 });

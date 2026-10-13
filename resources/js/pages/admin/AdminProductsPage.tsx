@@ -337,12 +337,12 @@ export default function AdminProductsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="font-sans font-700 text-2xl text-forest-900">Products</h1>
           <p className="text-sage-600 text-sm mt-1">Manage simple products with galleries or variable products with variations</p>
         </div>
-        <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2.5 bg-forest-700 text-white rounded-xl text-sm font-sans font-600 hover:bg-forest-800">
+        <button onClick={openCreate} className="self-start sm:self-auto shrink-0 flex items-center gap-2 px-4 py-2.5 bg-forest-700 text-white rounded-xl text-sm font-sans font-600 hover:bg-forest-800">
           <Plus className="w-4 h-4" /> Add Product
         </button>
       </div>
@@ -533,7 +533,7 @@ export default function AdminProductsPage() {
           {/* Variations */}
           {isVariable && (
             <div className="border border-violet-100 rounded-xl p-4 space-y-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h3 className="font-sans font-600 text-forest-900 text-sm">Variations</h3>
                   <p className="text-xs text-sage-500">Define options like Size or Color. Create attributes first under Admin → Attributes.</p>

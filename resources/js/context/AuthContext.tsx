@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react'
-import { api, AuthUser, getToken, setToken } from '@/lib/api'
+import { api, AuthUser, getToken, setToken, UNAUTHORIZED_EVENT } from '@/lib/api'
 
 interface AuthContextType {
   user: AuthUser | null
@@ -41,12 +41,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(currentUser)
         localStorage.setItem('mg_user', JSON.stringify(currentUser))
       })
-      .catch(() => {
-        setToken(null)
-        setUser(null)
-        localStorage.removeItem('mg_user')
-      })
+      // A 401 clears auth via UNAUTHORIZED_EVENT; network blips must not sign the user out.
+      .catch(() => {})
       .finally(() => setLoading(false))
+  }, [])
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      setToken(null)
+      setUser(null)
+      localStorage.removeItem('mg_user')
+    }
+    window.addEventListener(UNAUTHORIZED_EVENT, handleUnauthorized)
+    return () => window.removeEventListener(UNAUTHORIZED_EVENT, handleUnauthorized)
   }, [])
 
   const login = async (email: string, password: string) => {

@@ -1,9 +1,11 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { Leaf, LogOut, ShoppingCart, Package } from 'lucide-react'
+import { useDragScroll } from '@/hooks/useDragScroll'
+import { Leaf, LogOut, ShoppingCart, Package, Megaphone } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useCart } from '@/context/CartContext'
+import NotificationBell from '@/components/notifications/NotificationBell'
 
-export type WholesaleTab = 'shop' | 'cart' | 'orders'
+export type WholesaleTab = 'shop' | 'cart' | 'orders' | 'announcements'
 
 interface Props {
   activeTab?: WholesaleTab
@@ -12,6 +14,7 @@ interface Props {
 }
 
 export default function WholesalePortalHeader({ activeTab, onTabChange, onLogout }: Props) {
+  const tabsScrollRef = useDragScroll<HTMLDivElement>()
   const { user } = useAuth()
   const { itemCount } = useCart()
   const navigate = useNavigate()
@@ -20,26 +23,28 @@ export default function WholesalePortalHeader({ activeTab, onTabChange, onLogout
     { id: 'shop', label: 'Shop', icon: Leaf, to: '/wholesale/portal' },
     { id: 'cart', label: `Cart${itemCount > 0 ? ` (${itemCount})` : ''}`, icon: ShoppingCart, to: '/wholesale/portal?tab=cart' },
     { id: 'orders', label: 'My Orders', icon: Package, to: '/wholesale/portal?tab=orders' },
+    { id: 'announcements', label: 'Announcements', icon: Megaphone, to: '/wholesale/portal?tab=announcements' },
   ]
 
   return (
     <header className="bg-forest-900 text-white sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <Link to="/wholesale/portal" className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-forest-600 rounded-lg flex items-center justify-center">
+          <Link to="/wholesale/portal" className="flex items-center gap-3 min-w-0">
+            <div className="w-8 h-8 bg-forest-600 rounded-lg flex items-center justify-center shrink-0">
               <Leaf className="w-4 h-4 text-white" />
             </div>
-            <div>
-              <span className="font-sans font-700 text-cream-100 text-sm">Meadowlark Gardens TN</span>
+            <div className="min-w-0">
+              <span className="font-sans font-700 text-cream-100 text-sm block truncate">Meadowlark Gardens TN</span>
               <span className="text-forest-400 text-xs block leading-none">Wholesale Portal</span>
             </div>
           </Link>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
             <div className="hidden sm:block text-right">
               <p className="text-cream-200 text-sm font-sans font-600">{user?.businessName}</p>
               <p className="text-forest-400 text-xs">{user?.email}</p>
             </div>
+            <NotificationBell />
             <button
               onClick={onLogout}
               className="flex items-center gap-1.5 px-3 py-2 bg-forest-800 hover:bg-forest-700 rounded-lg text-sm font-sans font-600 text-sage-300 transition-colors focus-ring"
@@ -50,7 +55,7 @@ export default function WholesalePortalHeader({ activeTab, onTabChange, onLogout
           </div>
         </div>
         {activeTab && onTabChange && (
-          <div className="flex border-t border-forest-800">
+          <div ref={tabsScrollRef} className="flex border-t border-forest-800 -mx-4 sm:mx-0 overflow-x-auto scrollbar-hide">
             {tabs.map(tab => (
               <button
                 key={tab.id}
@@ -59,7 +64,7 @@ export default function WholesalePortalHeader({ activeTab, onTabChange, onLogout
                   onTabChange(tab.id)
                   navigate(tab.to)
                 }}
-                className={`flex items-center gap-2 px-5 py-3 text-sm font-sans font-600 transition-colors border-b-2 focus-ring ${
+                className={`flex-1 sm:flex-none shrink-0 whitespace-nowrap flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-3 text-sm font-sans font-600 transition-colors border-b-2 focus-ring ${
                   activeTab === tab.id
                     ? 'border-forest-400 text-cream-100'
                     : 'border-transparent text-forest-400 hover:text-sage-300'

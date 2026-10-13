@@ -47,9 +47,9 @@ export default function AdminBrandsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div><h1 className="font-sans font-700 text-2xl text-forest-900">Brands</h1><p className="text-sage-600 text-sm mt-1">Manage product brands</p></div>
-        <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2.5 bg-forest-700 text-white rounded-xl text-sm font-sans font-600 hover:bg-forest-800"><Plus className="w-4 h-4" /> Add Brand</button>
+        <button onClick={openCreate} className="self-start sm:self-auto shrink-0 flex items-center gap-2 px-4 py-2.5 bg-forest-700 text-white rounded-xl text-sm font-sans font-600 hover:bg-forest-800"><Plus className="w-4 h-4" /> Add Brand</button>
       </div>
       <FilterBar search={list.search} onSearchChange={list.setSearch} placeholder="Search brands..." onClear={list.clearFilters} />
       <DataTable columns={columns} data={list.data} meta={list.meta} onPageChange={list.setPage} sortBy={list.sortBy} sortDir={list.sortDir} onSort={list.handleSort} loading={list.loading} rowKey={b => b.id} />

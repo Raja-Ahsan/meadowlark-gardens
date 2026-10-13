@@ -193,9 +193,9 @@ export default function AuthorizeCardForm({
             inputMode="numeric"
             autoComplete="cc-csc"
             placeholder="123"
-            maxLength={3}
+            maxLength={4}
             value={cardCode}
-            onChange={e => setCardCode(e.target.value.replace(/\D/g, '').slice(0, 3))}
+            onChange={e => setCardCode(e.target.value.replace(/\D/g, '').slice(0, 4))}
             disabled={!scriptReady}
           />
         </div>
@@ -237,8 +237,8 @@ function AuthorizeCardBridge(props: {
   useEffect(() => {
     const collect = (): Promise<AuthorizePaymentPayload> => {
       const number = props.cardNumber.replace(/\s+/g, '')
-      if (number.length < 13 || props.expMonth.length < 2 || props.expYear.length < 2 || props.cardCode.length !== 3) {
-        return Promise.reject(new Error('Please enter a valid card number, expiry, and 3-digit CVV.'))
+      if (number.length < 13 || props.expMonth.length < 2 || props.expYear.length < 2 || props.cardCode.length < 3) {
+        return Promise.reject(new Error('Please enter a valid card number, expiry, and CVV.'))
       }
 
       if (props.useDirect) {

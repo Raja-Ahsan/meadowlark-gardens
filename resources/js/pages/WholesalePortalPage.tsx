@@ -6,8 +6,9 @@ import { useAuth } from '@/context/AuthContext'
 import { useCart } from '@/context/CartContext'
 import { useSiteSettings } from '@/context/SiteSettingsContext'
 import { api, ShopCategory } from '@/lib/api'
-import { Order, Product } from '@/types'
+import { Announcement, Order, Product } from '@/types'
 import WholesalePortalHeader, { WholesaleTab } from '@/components/wholesale/WholesalePortalHeader'
+import AnnouncementList from '@/components/announcements/AnnouncementList'
 import Ticker from '@/components/ui/Ticker'
 import { mediaUrl } from '@/lib/media'
 import {
@@ -42,7 +43,7 @@ export default function WholesalePortalPage() {
   const showBanner = wholesaleBannerEnabled !== false && bannerText.length > 0
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const activeTab = (['shop', 'cart', 'orders'].includes(searchParams.get('tab') || '')
+  const activeTab = (['shop', 'cart', 'orders', 'announcements'].includes(searchParams.get('tab') || '')
     ? searchParams.get('tab')
     : 'shop') as WholesaleTab
   const setActiveTab = (tab: WholesaleTab) => {
@@ -54,6 +55,9 @@ export default function WholesalePortalPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<ShopCategory[]>([{ name: 'All', slug: 'all', count: 0 }])
   const [orders, setOrders] = useState<Order[]>([])
+  const [announcements, setAnnouncements] = useState<Announcement[]>([])
+  const [announcementsLoading, setAnnouncementsLoading] = useState(true)
+  const [announcementsError, setAnnouncementsError] = useState('')
 
   useEffect(() => {
     api.getCategories().then(({ categories: cats }) => setCategories(cats)).catch(() => { })
@@ -64,6 +68,15 @@ export default function WholesalePortalPage() {
 
   useEffect(() => {
     api.getWholesaleOrders().then(({ orders: data }) => setOrders(data)).catch(() => setOrders([]))
+  }, [activeTab])
+
+  useEffect(() => {
+    if (activeTab !== 'announcements') return
+    setAnnouncementsError('')
+    api.getWholesaleAnnouncements()
+      .then(({ announcements: data }) => setAnnouncements(data))
+      .catch(() => setAnnouncementsError('Announcements could not be loaded. Please try again later.'))
+      .finally(() => setAnnouncementsLoading(false))
   }, [activeTab])
 
   const handleLogout = () => { logout(); navigate('/wholesale/login') }
@@ -101,7 +114,7 @@ export default function WholesalePortalPage() {
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <AnimatePresence mode="wait">
           {/* Shop Tab */}
           {activeTab === 'shop' && (
@@ -141,6 +154,9 @@ export default function WholesalePortalPage() {
                           <span className="absolute top-3 left-3 text-xs font-sans font-600 px-2.5 py-1 rounded-full bg-forest-100 text-forest-700 border border-forest-200">
                             {product.badge}
                           </span>
+                        )}
+                        {!product.inStock && (
+                          <div className="absolute inset-0 bg-white/60 backdrop-blur-sm" />
                         )}
                       </Link>
                       <div className="p-4">
@@ -227,15 +243,15 @@ export default function WholesalePortalPage() {
                 </div>
               ) : (
                 <div className="grid lg:grid-cols-3 gap-6">
-                  <div className="lg:col-span-2 space-y-3">
+                  <div className="lg:col-span-2 space-y-3 min-w-0">
                     {items.map(item => {
                       const lineKey = cartLineKey(item.product.id, item.variation?.id)
                       const unitPrice = getWholesaleLinePrice(item)
                       const variationLabel = formatVariationLabel(item.variation)
                       return (
-                        <div key={lineKey} className="flex items-center gap-4 bg-white p-4 rounded-2xl border border-forest-100 shadow-sm">
-                          <img src={mediaUrl(item.variation?.image || item.product.image)} alt={item.product.name} className="w-20 h-20 rounded-xl object-cover shrink-0" />
-                          <div className="flex-1 min-w-0">
+                        <div key={lineKey} className="flex flex-wrap sm:flex-nowrap items-center gap-3 sm:gap-4 bg-white p-3 sm:p-4 rounded-2xl border border-forest-100 shadow-sm">
+                          <img src={mediaUrl(item.variation?.image || item.product.image)} alt={item.product.name} className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover shrink-0" />
+                          <div className="flex-1 min-w-0 basis-[calc(100%-5rem)] sm:basis-auto">
                             <p className="font-sans font-700 text-forest-800 truncate">{item.product.name}</p>
                             {variationLabel && (
                               <p className="text-xs text-forest-600">{variationLabel}</p>
@@ -246,7 +262,7 @@ export default function WholesalePortalPage() {
                               Subtotal: ${(unitPrice * item.quantity).toFixed(2)}
                             </p>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 w-full sm:w-auto justify-end shrink-0 pt-2 sm:pt-0 border-t sm:border-0 border-forest-50">
                             <button
                               onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.variation?.id)}
                               className="w-8 h-8 bg-cream-100 border border-forest-200 rounded-lg text-forest-600 flex items-center justify-center hover:bg-cream-200 transition-colors"
@@ -271,7 +287,7 @@ export default function WholesalePortalPage() {
                       )
                     })}
                   </div>
-                  <div className="bg-white rounded-2xl border border-forest-100 shadow-sm p-6 h-fit">
+                  <div className="min-w-0 bg-white rounded-2xl border border-forest-100 shadow-sm p-4 sm:p-6 h-fit">
                     <h3 className="font-display font-700 text-forest-900 text-xl mb-4">Order Summary</h3>
                     <div className="space-y-2 mb-4">
                       {items.map(item => {
@@ -347,26 +363,26 @@ export default function WholesalePortalPage() {
                       transition={{ delay: i * 0.08 }}
                       className="bg-white rounded-2xl border border-forest-100 shadow-sm overflow-hidden"
                     >
-                      <div className="flex items-center justify-between p-5 border-b border-forest-50">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 bg-forest-100 rounded-xl flex items-center justify-center">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 sm:p-5 border-b border-forest-50">
+                        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                          <div className="w-10 h-10 bg-forest-100 rounded-xl flex items-center justify-center shrink-0">
                             <Package className="w-5 h-5 text-forest-600" />
                           </div>
-                          <div>
+                          <div className="min-w-0">
                             <p className="font-sans font-700 text-forest-900">{order.orderNumber}</p>
                             <p className="text-sage-500 text-xs font-body">
                               {new Date(order.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center justify-between sm:justify-end gap-4">
                           <span className={`px-3 py-1 rounded-full text-xs font-sans font-600 capitalize ${statusColors[order.status] ?? 'bg-gray-100 text-gray-600'}`}>
                             {order.status}
                           </span>
                           <span className="font-sans font-700 text-forest-900">${order.total.toFixed(2)}</span>
                         </div>
                       </div>
-                      <div className="p-5">
+                      <div className="p-4 sm:p-5">
                         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                           {order.items.map(item => (
                             <div key={item.product.id} className="flex items-center gap-3 text-sm">
@@ -380,7 +396,7 @@ export default function WholesalePortalPage() {
                             </div>
                           ))}
                         </div>
-                        <div className="mt-4 flex items-center gap-4 text-xs text-sage-500 font-body">
+                        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-sage-500 font-body">
                           <span className="flex items-center gap-1.5"><CreditCard className="w-3.5 h-3.5" /> {order.paymentMethod}</span>
                           <span className="flex items-center gap-1.5"><Package className="w-3.5 h-3.5" /> {order.status === 'delivered' ? 'Delivered' : order.status === 'shipped' ? 'In Transit' : 'Being Prepared'}</span>
                         </div>
@@ -389,6 +405,17 @@ export default function WholesalePortalPage() {
                   ))}
                 </div>
               )}
+            </motion.div>
+          )}
+
+          {activeTab === 'announcements' && (
+            <motion.div key="announcements" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+              <h2 className="font-display font-700 text-forest-900 text-2xl mb-6">Announcements &amp; Upcoming</h2>
+              <AnnouncementList
+                announcements={announcements}
+                loading={announcementsLoading}
+                error={announcementsError}
+              />
             </motion.div>
           )}
         </AnimatePresence>

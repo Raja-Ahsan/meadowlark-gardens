@@ -3,6 +3,9 @@ import { motion } from 'motion/react'
 import { Link } from 'react-router-dom'
 import { Tag, Truck, BarChart3, Send, CheckCircle, ArrowRight, ClipboardList, FileUp, Eye, EyeOff } from 'lucide-react'
 import { api } from '@/lib/api'
+import { compressImageForUpload } from '@/lib/imageCompress'
+
+const MAX_LICENSE_BYTES = 10 * 1024 * 1024
 
 const benefits = [
   { icon: Tag, title: 'Reduced pricing and Shipping Included', desc: 'Significantly reduced pricing across our entire catalog for approved partners.' },
@@ -56,6 +59,11 @@ export default function WholesaleApplyPage() {
     if (Object.keys(errs).length > 0 || !licenseFile) return
     setLoading(true)
     try {
+      const uploadFile = await compressImageForUpload(licenseFile)
+      if (uploadFile.size > MAX_LICENSE_BYTES) {
+        setErrors({ licenseDocument: 'This file is larger than 10MB. Please choose a smaller file or take a new photo.' })
+        return
+      }
       await api.submitWholesaleApplication({
         businessName: form.businessName,
         contactName: form.contactName,
@@ -64,13 +72,14 @@ export default function WholesaleApplyPage() {
         address: form.address,
         businessType: form.businessType,
         message: form.message || undefined,
-        licenseDocument: licenseFile,
+        licenseDocument: uploadFile,
         password: form.password,
         password_confirmation: form.passwordConfirmation,
       })
       setSubmitted(true)
     } catch (error) {
-      setErrors({ businessName: error instanceof Error ? error.message : 'Submission failed' })
+      const message = error instanceof Error ? error.message : 'Submission failed'
+      setErrors(/license|document|upload|file/i.test(message) ? { licenseDocument: message } : { businessName: message })
     } finally {
       setLoading(false)
     }
@@ -243,7 +252,7 @@ export default function WholesaleApplyPage() {
                     </span>
                     <input
                       type="file"
-                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp,application/pdf,image/*"
+                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp,.heic,.heif,application/pdf,image/*"
                       className="sr-only"
                       onChange={e => {
                         const file = e.target.files?.[0] ?? null

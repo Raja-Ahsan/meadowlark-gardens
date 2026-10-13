@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\ContactMessage;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class ContactController extends Controller
 {
@@ -19,6 +21,13 @@ class ContactController extends Controller
         ]);
 
         ContactMessage::create($data);
+
+        NotificationService::toAdmins(
+            'message',
+            'New message from '.$data['name'],
+            Str::limit($data['subject'], 120),
+            '/admin/contact'
+        );
 
         return response()->json(['message' => 'Thank you! We will get back to you soon.']);
     }

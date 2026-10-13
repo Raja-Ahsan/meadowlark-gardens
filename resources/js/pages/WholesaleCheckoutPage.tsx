@@ -306,9 +306,9 @@ export default function WholesaleCheckoutPage() {
         </Link>
         <h1 className="font-sans font-700 text-3xl text-forest-900 mb-8">Wholesale Checkout</h1>
 
-        <form onSubmit={handleSubmit} className="grid lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-6">
-            <section className="bg-white rounded-2xl border border-forest-100 p-6 shadow-sm">
+        <form onSubmit={handleSubmit} className="grid lg:grid-cols-3 gap-6 lg:gap-8 items-start">
+          <div className="lg:col-span-2 space-y-6 min-w-0">
+            <section className="bg-white rounded-2xl border border-forest-100 p-4 sm:p-6 shadow-sm">
               <h2 className="font-sans font-700 text-lg text-forest-900 mb-4">Business & billing</h2>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div><label className={labelClass}>First name *</label><input required className={inputClass} value={form.firstName} onChange={e => setForm(f => ({ ...f, firstName: e.target.value }))} /></div>
@@ -334,11 +334,12 @@ export default function WholesaleCheckoutPage() {
                   <label className={labelClass}>City *</label>
                   <SearchableSelect
                     required
+                    allowCustom
                     options={billingCityOptions}
                     value={form.city}
                     onChange={value => setForm(f => ({ ...f, city: value }))}
                     placeholder={form.state ? 'Select city' : 'Select state first'}
-                    searchPlaceholder="Search cities…"
+                    searchPlaceholder="Search or type your city…"
                     emptyMessage={form.state ? 'No cities found' : 'Select a state first'}
                     disabled={!form.state}
                   />
@@ -363,7 +364,7 @@ export default function WholesaleCheckoutPage() {
               </div>
             </section>
 
-            <section className="bg-white rounded-2xl border border-forest-100 p-6 shadow-sm">
+            <section className="bg-white rounded-2xl border border-forest-100 p-4 sm:p-6 shadow-sm">
               <label className="flex items-center gap-2 mb-4 text-sm font-600">
                 <input type="checkbox" checked={form.sameShipping} onChange={e => setForm(f => ({ ...f, sameShipping: e.target.checked }))} />
                 Shipping address same as billing
@@ -385,11 +386,12 @@ export default function WholesaleCheckoutPage() {
                   <div>
                     <label className={labelClass}>City</label>
                     <SearchableSelect
+                      allowCustom
                       options={shippingCityOptions}
                       value={form.shipCity}
                       onChange={value => setForm(f => ({ ...f, shipCity: value }))}
                       placeholder={form.shipState ? 'Select city' : 'Select state first'}
-                      searchPlaceholder="Search cities…"
+                      searchPlaceholder="Search or type your city…"
                       emptyMessage={form.shipState ? 'No cities found' : 'Select a state first'}
                       disabled={!form.shipState}
                     />
@@ -429,7 +431,7 @@ export default function WholesaleCheckoutPage() {
               <div className="mt-4"><label className={labelClass}>Order notes</label><textarea rows={2} className={inputClass} value={form.orderNotes} onChange={e => setForm(f => ({ ...f, orderNotes: e.target.value }))} /></div>
             </section>
 
-            <section className="bg-white rounded-2xl border border-forest-100 p-6 shadow-sm">
+            <section className="bg-white rounded-2xl border border-forest-100 p-4 sm:p-6 shadow-sm">
               <h2 className="font-sans font-700 text-lg text-forest-900 mb-4">Payment method</h2>
               {!paymentsLoaded ? (
                 <p className="text-sm text-sage-500">Loading payment options...</p>
@@ -457,8 +459,8 @@ export default function WholesaleCheckoutPage() {
             </section>
           </div>
 
-          <div className="space-y-4">
-            <div className="bg-white rounded-2xl border border-forest-100 p-6 shadow-sm sticky top-4">
+          <div className="space-y-4 min-w-0">
+            <div className="bg-white rounded-2xl border border-forest-100 p-4 sm:p-6 shadow-sm lg:sticky lg:top-4">
               <h2 className="font-sans font-700 text-lg text-forest-900 mb-4">Order summary</h2>
               <div className="space-y-3 mb-4 max-h-48 overflow-y-auto">
                 {items.map(i => {
@@ -468,7 +470,7 @@ export default function WholesaleCheckoutPage() {
                   return (
                     <div key={lineKey} className="text-sm">
                       <div className="flex justify-between gap-2">
-                        <span className="text-forest-800 min-w-0">{i.product.name} × {i.quantity}</span>
+                        <span className="text-forest-800 min-w-0 break-words">{i.product.name} × {i.quantity}</span>
                         <span className="font-600 shrink-0">${(price * i.quantity).toFixed(2)}</span>
                       </div>
                       {variationLabel && <p className="text-xs text-sage-500 mt-0.5">{variationLabel}</p>}
@@ -478,8 +480,8 @@ export default function WholesaleCheckoutPage() {
               </div>
 
               <div className="flex gap-2 mb-4">
-                <input className={inputClass} placeholder="Coupon code" value={couponCode} onChange={e => setCouponCode(e.target.value)} />
-                <button type="button" onClick={applyCoupon} className="px-4 py-2 bg-forest-100 text-forest-700 rounded-xl text-sm font-600 whitespace-nowrap flex items-center gap-1">
+                <input className={`${inputClass} min-w-0 flex-1`} placeholder="Coupon code" value={couponCode} onChange={e => setCouponCode(e.target.value)} />
+                <button type="button" onClick={applyCoupon} className="px-4 py-2 bg-forest-100 text-forest-700 rounded-xl text-sm font-600 whitespace-nowrap flex items-center gap-1 shrink-0">
                   <Tag className="w-4 h-4" /> Apply
                 </button>
               </div>

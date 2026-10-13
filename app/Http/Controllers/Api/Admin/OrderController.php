@@ -8,6 +8,7 @@ use App\Http\Controllers\Concerns\HandlesPaginatedListing;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Services\AdminOrderQueryService;
+use App\Services\NotificationService;
 use App\Services\OrderEmailService;
 use App\Services\OrderUpsFulfillmentService;
 use App\Support\ApiFormatter;
@@ -120,6 +121,18 @@ class OrderController extends Controller
         $order->refresh();
         $order->load(['items.product', 'items.variation']);
         OrderEmailService::sendForStatus($order, $data['status'], $previousStatus);
+
+        if ($data['status'] !== $previousStatus && $order->user_id) {
+            NotificationService::toUser(
+                $order->user,
+                'order',
+                'Order '.$order->order_number.' is now '.ucfirst($data['status']),
+                $order->tracking_number && in_array($data['status'], ['shipped', 'delivered'], true)
+                    ? 'Tracking number: '.$order->tracking_number
+                    : 'Your order status has been updated.',
+                $order->type === 'wholesale' ? '/wholesale/portal?tab=orders' : '/account'
+            );
+        }
 
         return response()->json([
             'message' => $shipmentCreated

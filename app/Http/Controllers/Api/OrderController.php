@@ -12,6 +12,7 @@ use App\Support\ApiFormatter;
 use App\Services\AuditService;
 use App\Services\AuthorizeNetService;
 use App\Services\EmailService;
+use App\Services\NotificationService;
 use App\Services\PaymentMethodService;
 use App\Services\ShippingQuoteService;
 use App\Services\TaxJarService;
@@ -495,6 +496,23 @@ class OrderController extends Controller
             }
 
             AuditService::log('order.created', $order, null, ['total' => $order->total], $userId);
+
+            $orderTotal = '$'.number_format((float) $order->total, 2);
+            NotificationService::toAdmins(
+                'order',
+                ($type === 'wholesale' ? 'New wholesale order ' : 'New order ').$order->order_number,
+                "{$customerName} placed an order for {$orderTotal}.",
+                '/admin/orders?search='.urlencode((string) $order->order_number)
+            );
+            if ($userId) {
+                NotificationService::toUser(
+                    User::find($userId),
+                    'order',
+                    'Order '.$order->order_number.' received',
+                    "Thank you! Your order for {$orderTotal} has been placed.",
+                    $type === 'wholesale' ? '/wholesale/portal?tab=orders' : '/account'
+                );
+            }
 
             $order = $order->load(['items.product', 'items.variation', 'user', 'statusHistories']);
 

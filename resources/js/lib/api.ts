@@ -4,6 +4,8 @@ import type {
   ListParams, PaginatedMeta, PaginatedResponse, ShippingZone,
 } from '@/types/admin'
 
+import { compressImageForUpload } from '@/lib/imageCompress'
+
 const API_BASE = '/api'
 
 export interface AuthUser {
@@ -25,6 +27,10 @@ export function setToken(token: string | null) {
   else localStorage.removeItem('mg_token')
 }
 
+export const UNAUTHORIZED_EVENT = 'mg:unauthorized'
+
+const UNAUTHORIZED_EXEMPT_PATHS = ['/auth/login', '/auth/register', '/auth/forgot-password', '/auth/reset-password']
+
 function buildQuery(params?: ListParams | Record<string, string | number | boolean | undefined>): string {
   if (!params) return ''
   const query = new URLSearchParams()
@@ -35,26 +41,60 @@ function buildQuery(params?: ListParams | Record<string, string | number | boole
   return qs ? `?${qs}` : ''
 }
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+const DEFAULT_REQUEST_TIMEOUT_MS = 45_000
+const ORDER_REQUEST_TIMEOUT_MS = 120_000
+
+export class RequestTimeoutError extends Error {
+  constructor() {
+    super('The server is taking too long to respond. Please check your connection and try again.')
+    this.name = 'RequestTimeoutError'
+  }
+}
+
+export function isRequestTimeout(e: unknown): boolean {
+  return e instanceof RequestTimeoutError
+}
+
+async function request<T>(
+  path: string,
+  options: RequestInit & { timeoutMs?: number } = {},
+): Promise<T> {
+  const { timeoutMs = DEFAULT_REQUEST_TIMEOUT_MS, ...fetchOptions } = options
   const headers: Record<string, string> = {
     Accept: 'application/json',
-    ...(options.body ? { 'Content-Type': 'application/json' } : {}),
-    ...(options.headers as Record<string, string> | undefined),
+    ...(fetchOptions.body ? { 'Content-Type': 'application/json' } : {}),
+    ...(fetchOptions.headers as Record<string, string> | undefined),
   }
 
   const token = getToken()
   if (token) headers.Authorization = `Bearer ${token}`
 
-  const response = await fetch(`${API_BASE}${path}`, { ...options, headers })
+  const controller = new AbortController()
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs)
+  let response: Response
+  try {
+    response = await fetch(`${API_BASE}${path}`, { ...fetchOptions, headers, signal: controller.signal })
+  } catch {
+    if (controller.signal.aborted) throw new RequestTimeoutError()
+    throw new Error('Network error. Please check your internet connection and try again.')
+  } finally {
+    window.clearTimeout(timer)
+  }
   const data = await response.json().catch(() => ({}))
 
   if (!response.ok) {
+    if (response.status === 401 && !UNAUTHORIZED_EXEMPT_PATHS.some(p => path.startsWith(p))) {
+      window.dispatchEvent(new Event(UNAUTHORIZED_EVENT))
+    }
     const errors = (data as { errors?: Record<string, string[]> }).errors
     if (errors && typeof errors === 'object') {
       const first = Object.values(errors).flat().find(Boolean)
       if (first) throw new Error(String(first))
     }
-    throw new Error((data as { message?: string }).message || 'Request failed')
+    const fallback = response.status >= 500
+      ? 'Something went wrong on our side. Please try again in a moment.'
+      : 'Request failed'
+    throw new Error((data as { message?: string }).message || fallback)
   }
 
   return data as T
@@ -292,7 +332,12 @@ export const api = {
     })
     const data = await response.json().catch(() => ({}))
     if (!response.ok) {
-      throw new Error(data.message || 'Request failed')
+      if (response.status === 413) {
+        throw new Error('The license file is too large to upload. Please choose a smaller file or take a new photo.')
+      }
+      const errors = (data as { errors?: Record<string, string[]> }).errors
+      const first = errors ? Object.values(errors).flat().find(Boolean) : undefined
+      throw new Error(first || data.message || 'Request failed')
     }
     return data as { message: string }
   },
@@ -306,21 +351,21 @@ export const api = {
       token?: string
       user?: AuthUser
     }>('/orders/retail', {
-      method: 'POST', body: JSON.stringify(payload),
+      method: 'POST', body: JSON.stringify(payload), timeoutMs: ORDER_REQUEST_TIMEOUT_MS,
     }),
 
   getWholesaleOrders: () => request<{ orders: Order[] }>('/wholesale/orders'),
 
   placeWholesaleOrder: (payload: WholesaleOrderPayload) =>
     request<{ message: string; order: Order }>('/wholesale/orders', {
-      method: 'POST', body: JSON.stringify(payload),
+      method: 'POST', body: JSON.stringify(payload), timeoutMs: ORDER_REQUEST_TIMEOUT_MS,
     }),
 
   getCustomerOrders: () => request<{ orders: Order[] }>('/customer/orders'),
 
   placeCustomerOrder: (payload: WholesaleOrderPayload) =>
     request<{ message: string; order: Order }>('/customer/orders', {
-      method: 'POST', body: JSON.stringify(payload),
+      method: 'POST', body: JSON.stringify(payload), timeoutMs: ORDER_REQUEST_TIMEOUT_MS,
     }),
 
   // Admin
@@ -513,8 +558,10 @@ export const api = {
   deleteReview: (id: string) =>
     request<{ message: string }>(`/admin/reviews/${id}`, { method: 'DELETE' }),
 
-  getAdminApplications: () =>
-    request<{ applications: WholesaleApplication[] }>('/admin/applications'),
+  getAdminApplications: (params?: ListParams) =>
+    request<PaginatedResponse<WholesaleApplication> & {
+      counts: Record<'all' | 'pending' | 'approved' | 'rejected', number>
+    }>(`/admin/applications${buildQuery(params)}`),
 
   getApplicationLicenseBlob: async (id: string): Promise<{ url: string; contentType: string }> => {
     const headers: Record<string, string> = { Accept: '*/*' }
@@ -615,6 +662,37 @@ export const api = {
   deletePlantType: (id: string) =>
     request<{ message: string }>(`/admin/plant-types/${id}`, { method: 'DELETE' }),
 
+  getAnnouncements: () =>
+    request<{ announcements: import('@/types').Announcement[] }>('/announcements'),
+
+  getWholesaleAnnouncements: () =>
+    request<{ announcements: import('@/types').Announcement[] }>('/wholesale/announcements'),
+
+  getNotifications: () =>
+    request<{ notifications: import('@/types').AppNotification[]; unreadCount: number }>('/notifications'),
+
+  markNotificationRead: (id: string) =>
+    request<{ message: string }>(`/notifications/${encodeURIComponent(id)}/read`, { method: 'POST' }),
+
+  markAllNotificationsRead: () =>
+    request<{ message: string }>('/notifications/read-all', { method: 'POST' }),
+
+  getAdminAnnouncements: (params?: ListParams) =>
+    request<PaginatedResponse<import('@/types').Announcement>>(`/admin/announcements${buildQuery(params)}`),
+
+  createAnnouncement: (payload: Partial<import('@/types').Announcement>) =>
+    request<{ message: string; announcement: import('@/types').Announcement }>('/admin/announcements', {
+      method: 'POST', body: JSON.stringify(payload),
+    }),
+
+  updateAnnouncement: (id: string, payload: Partial<import('@/types').Announcement>) =>
+    request<{ message: string; announcement: import('@/types').Announcement }>(`/admin/announcements/${id}`, {
+      method: 'PUT', body: JSON.stringify(payload),
+    }),
+
+  deleteAnnouncement: (id: string) =>
+    request<{ message: string }>(`/admin/announcements/${id}`, { method: 'DELETE' }),
+
   getShipping: () => request<{ zones: ShippingZone[] }>('/admin/shipping'),
 
   createShippingZone: (payload: Partial<ShippingZone>) =>
@@ -696,20 +774,28 @@ export const api = {
       body: JSON.stringify({ currentPassword, password, password_confirmation: passwordConfirmation }),
     }),
 
-  uploadFile: (file: File, folder = 'uploads') => {
+  uploadFile: async (file: File, folder = 'uploads') => {
+    const upload = await compressImageForUpload(file)
     const form = new FormData()
-    form.append('file', file)
+    form.append('file', upload)
     form.append('folder', folder)
+    const headers: Record<string, string> = { Accept: 'application/json' }
     const token = getToken()
-    return fetch(`${API_BASE}/upload`, {
-      method: 'POST',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      body: form,
-    }).then(async r => {
-      const data = await r.json()
-      if (!r.ok) throw new Error(data.message || 'Upload failed')
-      return data as { url: string; path: string }
-    })
+    if (token) headers.Authorization = `Bearer ${token}`
+    let r: Response
+    try {
+      r = await fetch(`${API_BASE}/upload`, { method: 'POST', headers, body: form })
+    } catch {
+      throw new Error('Upload failed. Please check your internet connection and try again.')
+    }
+    const data = await r.json().catch(() => ({}))
+    if (!r.ok) {
+      if (r.status === 413) throw new Error('This image is too large to upload. Please choose a smaller image.')
+      const errors = (data as { errors?: Record<string, string[]> }).errors
+      const first = errors ? Object.values(errors).flat().find(Boolean) : undefined
+      throw new Error(first || (data as { message?: string }).message || 'Upload failed')
+    }
+    return data as { url: string; path: string }
   },
 
   getProduct: (idOrSlug: string) =>

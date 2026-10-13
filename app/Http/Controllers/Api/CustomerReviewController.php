@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\Review;
+use App\Services\NotificationService;
 use App\Support\ApiFormatter;
 use App\Support\ReviewInsights;
 use Illuminate\Http\JsonResponse;
@@ -73,6 +74,13 @@ class CustomerReviewController extends Controller
             'is_wholesale' => $user->isWholesale(),
             'status' => 'pending',
         ]);
+
+        NotificationService::toAdmins(
+            'review',
+            'New review awaiting approval',
+            $user->name.' rated '.(Product::find($data['productId'])?->name ?? 'a product').' '.$data['rating'].'/5.',
+            '/admin/reviews?status=pending'
+        );
 
         return response()->json([
             'message' => 'Review submitted for approval.',

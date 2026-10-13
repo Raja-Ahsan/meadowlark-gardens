@@ -3,6 +3,7 @@ import { Package, Printer, X } from 'lucide-react'
 import Modal from '@/components/admin/Modal'
 import { api, getToken } from '@/lib/api'
 import { mediaUrl } from '@/lib/media'
+import { useDragScroll } from '@/hooks/useDragScroll'
 import type { Order, ProductVariation } from '@/types'
 
 const statusColors: Record<string, string> = {
@@ -72,6 +73,7 @@ export default function AdminOrderDetailModal({ orderId, open, onClose, onUpdate
   const [printPreview, setPrintPreview] = useState<{ title: string; html: string } | null>(null)
   const [printLoading, setPrintLoading] = useState(false)
   const printContentRef = useRef<HTMLDivElement>(null)
+  const lineItemsScrollRef = useDragScroll<HTMLDivElement>()
 
   useEffect(() => {
     if (!open || !orderId) return
@@ -228,7 +230,7 @@ export default function AdminOrderDetailModal({ orderId, open, onClose, onUpdate
             <div className="bg-cream-50 rounded-xl p-4 border border-forest-100">
               <p className="text-xs text-sage-500 uppercase tracking-wide font-600">Customer</p>
               <p className="font-600 text-forest-900 mt-1">{order.customerName || order.businessName}</p>
-              <p className="text-sm text-sage-600">{order.customerEmail}</p>
+              <p className="text-sm text-sage-600 break-all">{order.customerEmail}</p>
             </div>
             <div className="bg-cream-50 rounded-xl p-4 border border-forest-100">
               <p className="text-xs text-sage-500 uppercase tracking-wide font-600">Type</p>
@@ -288,7 +290,35 @@ export default function AdminOrderDetailModal({ orderId, open, onClose, onUpdate
               <h3 className="font-sans font-700 text-forest-900 text-sm">Line items</h3>
               <span className="text-xs text-sage-500">{order.items.length} product(s)</span>
             </div>
-            <div className="overflow-x-auto">
+            <ul className="sm:hidden divide-y divide-forest-50">
+              {order.items.map((item, idx) => {
+                const variationText = variationLabel(item.variation)
+                const sku = item.variation?.sku || item.product.sku || '—'
+                const unitPrice = item.unitPrice ?? item.product.price
+                const lineTotal = item.lineTotal ?? unitPrice * item.quantity
+                return (
+                  <li key={`${item.product.id}-${idx}`} className="flex gap-3 p-3">
+                    {item.product.image ? (
+                      <img src={mediaUrl(item.product.image)} alt="" className="w-14 h-14 rounded-lg object-cover border border-forest-100 shrink-0" />
+                    ) : (
+                      <div className="w-14 h-14 rounded-lg bg-forest-50 flex items-center justify-center shrink-0">
+                        <Package className="w-5 h-5 text-forest-400" />
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1 text-sm">
+                      <p className="font-600 text-forest-900 break-words">{item.product.name}</p>
+                      {variationText && <p className="text-xs text-sage-600">{variationText}</p>}
+                      <p className="text-xs text-sage-500 font-mono break-all">SKU: {sku}</p>
+                      <div className="flex items-center justify-between gap-2 mt-1">
+                        <span className="text-xs text-sage-600">{item.quantity} × ${unitPrice.toFixed(2)}</span>
+                        <span className="font-700 text-forest-900">${lineTotal.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+            <div className="hidden sm:block scroll-x" ref={lineItemsScrollRef}>
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-xs text-sage-500 border-b border-forest-50">
@@ -334,8 +364,8 @@ export default function AdminOrderDetailModal({ orderId, open, onClose, onUpdate
                         </td>
                         <td className="px-4 py-3 font-mono text-xs text-sage-600">{sku}</td>
                         <td className="px-4 py-3 text-center font-600">{item.quantity}</td>
-                        <td className="px-4 py-3 text-right">${unitPrice.toFixed(2)}</td>
-                        <td className="px-4 py-3 text-right font-700 text-forest-900">${lineTotal.toFixed(2)}</td>
+                        <td className="px-4 py-3 text-right whitespace-nowrap">${unitPrice.toFixed(2)}</td>
+                        <td className="px-4 py-3 text-right font-700 text-forest-900 whitespace-nowrap">${lineTotal.toFixed(2)}</td>
                       </tr>
                     )
                   })}
@@ -482,10 +512,10 @@ export default function AdminOrderDetailModal({ orderId, open, onClose, onUpdate
       )}
 
       {printPreview && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-2 sm:p-4">
           <div className="absolute inset-0 bg-forest-900/70 backdrop-blur-sm" onClick={() => setPrintPreview(null)} />
           <div className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl max-h-[92vh] flex flex-col overflow-hidden">
-            <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-forest-100 bg-cream-50">
+            <div className="flex items-center justify-between gap-3 px-3 sm:px-5 py-3 border-b border-forest-100 bg-cream-50">
               <h3 className="font-sans font-700 text-forest-900 text-base truncate">{printPreview.title}</h3>
               <div className="flex items-center gap-2 shrink-0">
                 <button
@@ -515,7 +545,7 @@ export default function AdminOrderDetailModal({ orderId, open, onClose, onUpdate
               ) : (
                 <div
                   ref={printContentRef}
-                  className="p-6 text-[#244526]"
+                  className="p-3 sm:p-6 text-[#244526]"
                   dangerouslySetInnerHTML={{ __html: htmlToPreviewMarkup(printPreview.html) }}
                 />
               )}

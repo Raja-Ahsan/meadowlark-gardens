@@ -8,6 +8,18 @@ interface UsePaginatedListOptions<T> {
   extraFilters?: Record<string, string>
 }
 
+const NON_FILTER_PARAMS = new Set(['page', 'per_page', 'search', 'sort_by', 'sort_dir'])
+
+/** Lets dashboard links open a list pre-filtered, e.g. /admin/products?stock_status=out */
+function filtersFromUrl(): Record<string, string> {
+  if (typeof window === 'undefined') return {}
+  const out: Record<string, string> = {}
+  new URLSearchParams(window.location.search).forEach((value, key) => {
+    if (!NON_FILTER_PARAMS.has(key) && value) out[key] = value
+  })
+  return out
+}
+
 export function usePaginatedList<T>({
   fetcher, defaultSort = 'created_at', defaultPerPage = 15, extraFilters = {},
 }: UsePaginatedListOptions<T>) {
@@ -16,11 +28,15 @@ export function usePaginatedList<T>({
     currentPage: 1, lastPage: 1, perPage: defaultPerPage, total: 0, from: null, to: null,
   })
   const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(() =>
+    typeof window === 'undefined' ? '' : new URLSearchParams(window.location.search).get('search') || '')
   const [page, setPage] = useState(1)
   const [sortBy, setSortBy] = useState(defaultSort)
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
-  const [filters, setFilters] = useState<Record<string, string>>(extraFilters)
+  const [filters, setFilters] = useState<Record<string, string>>(() => ({
+    ...extraFilters,
+    ...filtersFromUrl(),
+  }))
 
   const load = useCallback(async () => {
     setLoading(true)

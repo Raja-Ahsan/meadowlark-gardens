@@ -18,7 +18,12 @@ interface Props {
   className?: string
   id?: string
   name?: string
+  /** Let the user use the typed text when it isn't in the list (e.g. small towns). */
+  allowCustom?: boolean
 }
+
+/** Rendering thousands of rows freezes low-end phones; the search narrows the rest. */
+const MAX_VISIBLE_OPTIONS = 150
 
 /**
  * Select2-style searchable single select (no jQuery).
@@ -35,6 +40,7 @@ export default function SearchableSelect({
   className = '',
   id,
   name,
+  allowCustom = false,
 }: Props) {
   const autoId = useId()
   const selectId = id || autoId
@@ -44,8 +50,8 @@ export default function SearchableSelect({
   const [query, setQuery] = useState('')
 
   const selected = useMemo(
-    () => options.find(o => o.value === value) ?? null,
-    [options, value],
+    () => options.find(o => o.value === value) ?? (allowCustom && value ? { value, label: value } : null),
+    [options, value, allowCustom],
   )
 
   const filtered = useMemo(() => {
@@ -58,9 +64,22 @@ export default function SearchableSelect({
     )
   }, [options, query])
 
+  const visible = filtered.slice(0, MAX_VISIBLE_OPTIONS)
+  const hiddenCount = filtered.length - visible.length
+  const customValue = query.trim()
+  const showCustom = allowCustom
+    && customValue !== ''
+    && !filtered.some(o => o.label.toLowerCase() === customValue.toLowerCase())
+
+  const choose = (next: string) => {
+    onChange(next)
+    setOpen(false)
+    setQuery('')
+  }
+
   useEffect(() => {
     if (!open) return
-    const onDoc = (e: MouseEvent) => {
+    const onDoc = (e: MouseEvent | TouchEvent) => {
       if (!rootRef.current?.contains(e.target as Node)) {
         setOpen(false)
         setQuery('')
@@ -73,9 +92,11 @@ export default function SearchableSelect({
       }
     }
     document.addEventListener('mousedown', onDoc)
+    document.addEventListener('touchstart', onDoc, { passive: true })
     document.addEventListener('keydown', onKey)
     return () => {
       document.removeEventListener('mousedown', onDoc)
+      document.removeEventListener('touchstart', onDoc)
       document.removeEventListener('keydown', onKey)
     }
   }, [open])
@@ -100,11 +121,9 @@ export default function SearchableSelect({
         className="sr-only"
       >
         <option value="">{placeholder}</option>
-        {options.map(o => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
+        {selected && (
+          <option value={selected.value}>{selected.label}</option>
+        )}
       </select>
 
       <button
@@ -120,7 +139,7 @@ export default function SearchableSelect({
         }}
         className="w-full px-4 py-3 rounded-xl border border-forest-200 text-sm text-left bg-white focus:outline-none focus:ring-2 focus:ring-forest-500/30 disabled:opacity-50 flex items-center justify-between gap-2"
       >
-        <span className={selected ? 'text-forest-900' : 'text-sage-400'}>
+        <span className={`truncate ${selected ? 'text-forest-900' : 'text-sage-400'}`}>
           {selected ? selected.label : placeholder}
         </span>
         <ChevronDown className={`w-4 h-4 text-sage-500 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
@@ -135,19 +154,38 @@ export default function SearchableSelect({
               type="text"
               value={query}
               onChange={e => setQuery(e.target.value)}
+              onKeyDown={e => {
+                if (e.key !== 'Enter') return
+                e.preventDefault()
+                if (visible.length === 1) choose(visible[0].value)
+                else if (showCustom) choose(customValue)
+              }}
               placeholder={searchPlaceholder}
-              className="w-full text-sm py-1.5 outline-none bg-transparent text-forest-900 placeholder:text-sage-400"
+              className="w-full text-base sm:text-sm py-1.5 outline-none bg-transparent text-forest-900 placeholder:text-sage-400"
             />
           </div>
           <ul
             id={`${selectId}-list`}
             role="listbox"
-            className="max-h-56 overflow-y-auto py-1"
+            className="max-h-56 overflow-y-auto overscroll-contain py-1"
           >
-            {filtered.length === 0 ? (
+            {showCustom && (
+              <li>
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={false}
+                  className="w-full text-left px-4 py-2 text-sm text-forest-700 font-600 hover:bg-cream-50"
+                  onClick={() => choose(customValue)}
+                >
+                  Use “{customValue}”
+                </button>
+              </li>
+            )}
+            {visible.length === 0 && !showCustom ? (
               <li className="px-4 py-2 text-sm text-sage-500">{emptyMessage}</li>
             ) : (
-              filtered.map(o => {
+              visible.map(o => {
                 const active = o.value === value
                 return (
                   <li key={o.value}>
@@ -160,17 +198,18 @@ export default function SearchableSelect({
                           ? 'bg-forest-50 text-forest-800 font-600'
                           : 'text-forest-800 hover:bg-cream-50'
                       }`}
-                      onClick={() => {
-                        onChange(o.value)
-                        setOpen(false)
-                        setQuery('')
-                      }}
+                      onClick={() => choose(o.value)}
                     >
                       {o.label}
                     </button>
                   </li>
                 )
               })
+            )}
+            {hiddenCount > 0 && (
+              <li className="px-4 py-2 text-xs text-sage-500">
+                Type to search {hiddenCount} more…
+              </li>
             )}
           </ul>
         </div>

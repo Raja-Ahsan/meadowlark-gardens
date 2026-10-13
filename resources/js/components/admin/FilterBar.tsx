@@ -23,8 +23,8 @@ export default function FilterBar({
   const hasFilters = search || Object.values(filterValues).some(v => v)
 
   return (
-    <div className="flex flex-wrap items-center gap-3 p-4 bg-white border-b border-forest-100">
-      <div className="relative flex-1 min-w-[200px] max-w-md">
+    <div className="flex flex-wrap items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-white border-b border-forest-100">
+      <div className="relative w-full sm:w-auto sm:flex-1 sm:min-w-[200px] sm:max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-sage-400" />
         <input
           type="text"
@@ -39,7 +39,7 @@ export default function FilterBar({
           key={f.key}
           value={filterValues[f.key] || ''}
           onChange={e => onFilterChange?.(f.key, e.target.value)}
-          className="px-3 py-2.5 rounded-xl border border-forest-200 text-sm font-body bg-white focus:outline-none focus:ring-2 focus:ring-forest-500/30"
+          className="flex-1 min-w-[140px] sm:flex-none px-3 py-2.5 rounded-xl border border-forest-200 text-sm font-body bg-white focus:outline-none focus:ring-2 focus:ring-forest-500/30"
         >
           <option value="">{f.label}</option>
           {f.options.map(o => (

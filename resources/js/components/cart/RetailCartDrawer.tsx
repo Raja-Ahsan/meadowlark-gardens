@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
-import { ShoppingCart, X } from 'lucide-react'
+import { Minus, Plus, ShoppingCart, X } from 'lucide-react'
 import { useRetailCart } from '@/context/RetailCartContext'
 import { mediaUrl } from '@/lib/media'
 import { cartLineKey, formatVariationLabel, getCartLineImage, getCartLinePrice } from '@/lib/cart'
@@ -74,18 +74,33 @@ export default function RetailCartDrawer({ open, onClose }: Props) {
                         <p className="text-sage-500 text-xs mt-1">${price.toFixed(2)} × {item.quantity}</p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center h-8 bg-white border border-forest-200 rounded-lg overflow-hidden">
+                          <button
+                            type="button"
+                            onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.variation?.id)}
+                            disabled={item.quantity <= 1}
+                            className="w-8 h-full flex items-center justify-center text-forest-600 hover:bg-forest-50 hover:text-forest-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                            aria-label="Decrease quantity"
+                          >
+                            <Minus className="w-3.5 h-3.5" />
+                          </button>
+                          <span className="min-w-[1.75rem] h-full px-1 flex items-center justify-center border-x border-forest-100 text-sm font-sans font-600 text-forest-800 tabular-nums">
+                            {item.quantity}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.variation?.id)}
+                            className="w-8 h-full flex items-center justify-center text-forest-600 hover:bg-forest-50 hover:text-forest-800 transition-colors"
+                            aria-label="Increase quantity"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                         <button
-                          onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.variation?.id)}
-                          className="w-6 h-6 bg-white border border-forest-200 rounded-md flex items-center justify-center text-forest-600 hover:bg-forest-50 text-sm font-bold transition-colors"
-                        >–</button>
-                        <span className="text-sm font-sans font-600 w-5 text-center">{item.quantity}</span>
-                        <button
-                          onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.variation?.id)}
-                          className="w-6 h-6 bg-white border border-forest-200 rounded-md flex items-center justify-center text-forest-600 hover:bg-forest-50 text-sm font-bold transition-colors"
-                        >+</button>
-                        <button
+                          type="button"
                           onClick={() => removeItem(item.product.id, item.variation?.id)}
-                          className="ml-1 text-terra-400 hover:text-terra-600 transition-colors"
+                          className="w-8 h-8 flex items-center justify-center rounded-lg text-terra-400 hover:text-terra-600 hover:bg-terra-50 transition-colors"
+                          aria-label="Remove item"
                         >
                           <X className="w-4 h-4" />
                         </button>

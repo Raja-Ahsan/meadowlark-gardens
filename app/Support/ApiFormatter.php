@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\Announcement;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Coupon;
@@ -357,6 +358,22 @@ class ApiFormatter
             'metaTitle' => $type->meta_title,
             'metaDescription' => $type->meta_description,
             'updatedAt' => $type->updated_at?->toIso8601String(),
+        ];
+    }
+
+    public static function announcement(Announcement $announcement): array
+    {
+        return [
+            'id' => (string) $announcement->id,
+            'audience' => $announcement->audience,
+            'title' => $announcement->title,
+            'excerpt' => $announcement->excerpt,
+            'content' => $announcement->content ?? '',
+            'image' => $announcement->image,
+            'eventDate' => $announcement->event_date?->toDateString(),
+            'isPublished' => (bool) $announcement->is_published,
+            'createdAt' => $announcement->created_at?->toIso8601String(),
+            'updatedAt' => $announcement->updated_at?->toIso8601String(),
         ];
     }
 }
