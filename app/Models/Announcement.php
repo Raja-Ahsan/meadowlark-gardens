@@ -11,7 +11,12 @@ class Announcement extends Model
 
     public const AUDIENCE_WHOLESALE = 'wholesale';
 
+    /** Shown on both the retail site and the wholesale portal. */
+    public const AUDIENCE_ALL = 'all';
+
     public const AUDIENCES = [self::AUDIENCE_RETAIL, self::AUDIENCE_WHOLESALE];
+
+    public const STORED_AUDIENCES = [self::AUDIENCE_RETAIL, self::AUDIENCE_WHOLESALE, self::AUDIENCE_ALL];
 
     protected $fillable = [
         'audience',
@@ -33,7 +38,7 @@ class Announcement extends Model
 
     public function scopePublishedFor(Builder $query, string $audience): Builder
     {
-        return $query->where('audience', $audience)
+        return $query->whereIn('audience', [$audience, self::AUDIENCE_ALL])
             ->where('is_published', true)
             ->latest();
     }

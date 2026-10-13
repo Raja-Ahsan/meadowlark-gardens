@@ -242,7 +242,10 @@ export interface AppNotification {
   createdAt: string | null
 }
 
-export type AnnouncementAudience = 'retail' | 'wholesale'
+export type AnnouncementSide = 'retail' | 'wholesale'
+
+/** `all` = shown on both the retail site and the wholesale portal. */
+export type AnnouncementAudience = AnnouncementSide | 'all'
 
 export interface Announcement {
   id: string

@@ -1,5 +1,6 @@
 import { X } from 'lucide-react'
 import { ReactNode, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 
 interface ModalProps {
   open: boolean
@@ -25,7 +26,8 @@ export default function Modal({ open, onClose, title, children, size = 'lg' }: M
 
   if (!open) return null
 
-  return (
+  // Portaled to <body> so parent spacing utilities (e.g. space-y-*) can't offset the fixed overlay.
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="absolute inset-0 bg-forest-900/60 backdrop-blur-sm" onClick={onClose} />
       <div className={`relative w-full ${sizes[size]} bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[92dvh] sm:max-h-[90vh] flex flex-col`}>
@@ -37,6 +39,7 @@ export default function Modal({ open, onClose, title, children, size = 'lg' }: M
         </div>
         <div className="overflow-y-auto flex-1 p-4 sm:p-6">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

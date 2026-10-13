@@ -45,10 +45,16 @@ class AnnouncementController extends Controller
     public function update(Request $request, Announcement $announcement): JsonResponse
     {
         $wasPublished = (bool) $announcement->is_published;
+        $previousSides = $this->sidesOf($announcement->audience);
         $announcement->update($this->validated($request));
 
-        if (! $wasPublished && $announcement->is_published) {
-            $this->notifyAudience($announcement);
+        if ($announcement->is_published) {
+            $newSides = $wasPublished
+                ? array_values(array_diff($this->sidesOf($announcement->audience), $previousSides))
+                : $this->sidesOf($announcement->audience);
+            if ($newSides) {
+                $this->notifyAudience($announcement, $newSides);
+            }
         }
 
         return response()->json([
@@ -64,19 +70,28 @@ class AnnouncementController extends Controller
         return response()->json(['message' => 'Announcement deleted.']);
     }
 
-    private function notifyAudience(Announcement $announcement): void
+    /** @return list<string> */
+    private function sidesOf(string $audience): array
     {
-        $wholesale = $announcement->audience === 'wholesale';
+        return $audience === Announcement::AUDIENCE_ALL ? Announcement::AUDIENCES : [$audience];
+    }
 
-        NotificationService::toUsersWhere(
-            fn ($q) => $wholesale
-                ? $q->where('role', 'wholesale')->where('approved', true)
-                : $q->where('role', 'customer'),
-            'announcement',
-            $announcement->title,
-            Str::limit((string) $announcement->excerpt, 140),
-            $wholesale ? '/wholesale/portal?tab=announcements' : '/announcements'
-        );
+    /** @param  list<string>|null  $sides  Defaults to every side the announcement is shown on. */
+    private function notifyAudience(Announcement $announcement, ?array $sides = null): void
+    {
+        foreach ($sides ?? $this->sidesOf($announcement->audience) as $side) {
+            $wholesale = $side === Announcement::AUDIENCE_WHOLESALE;
+
+            NotificationService::toUsersWhere(
+                fn ($q) => $wholesale
+                    ? $q->where('role', 'wholesale')->where('approved', true)
+                    : $q->where('role', 'customer'),
+                'announcement',
+                $announcement->title,
+                Str::limit((string) $announcement->excerpt, 140),
+                $wholesale ? '/wholesale/portal?tab=announcements' : '/announcements'
+            );
+        }
     }
 
     protected function applySearch(Builder $query, string $search): void
@@ -90,7 +105,7 @@ class AnnouncementController extends Controller
     protected function applyFilters(Builder $query, Request $request): void
     {
         if (in_array($request->input('audience'), Announcement::AUDIENCES, true)) {
-            $query->where('audience', $request->input('audience'));
+            $query->whereIn('audience', [$request->input('audience'), Announcement::AUDIENCE_ALL]);
         }
     }
 
@@ -102,7 +117,7 @@ class AnnouncementController extends Controller
     private function validated(Request $request): array
     {
         $data = $request->validate([
-            'audience' => ['required', Rule::in(Announcement::AUDIENCES)],
+            'audience' => ['required', Rule::in(Announcement::STORED_AUDIENCES)],
             'title' => ['required', 'string', 'max:255'],
             'excerpt' => ['nullable', 'string', 'max:1000'],
             'content' => ['nullable', 'string'],

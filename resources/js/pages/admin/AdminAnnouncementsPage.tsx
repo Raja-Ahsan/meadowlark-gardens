@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Plus, Pencil, Trash2, Store, Building2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, Store, Building2, Check } from 'lucide-react'
 import DataTable, { Column } from '@/components/admin/DataTable'
 import FilterBar from '@/components/admin/FilterBar'
 import Modal from '@/components/admin/Modal'
@@ -9,19 +9,25 @@ import { api } from '@/lib/api'
 import { mediaUrl } from '@/lib/media'
 import { formatAnnouncementDate } from '@/lib/announcements'
 import { showToastError, showToastSuccess } from '@/lib/toast'
-import type { Announcement, AnnouncementAudience } from '@/types'
+import type { Announcement, AnnouncementAudience, AnnouncementSide } from '@/types'
 import type { PaginatedMeta } from '@/types/admin'
 
 const inputClass = 'w-full px-3 py-2 rounded-xl border border-forest-200 text-sm focus:outline-none focus:ring-2 focus:ring-forest-500/30'
 const labelClass = 'block text-xs font-sans font-600 text-forest-700 mb-1'
 
-const AUDIENCES: { id: AnnouncementAudience; label: string; hint: string; icon: typeof Store }[] = [
-  { id: 'retail', label: 'Retail', hint: 'Shown on the public Announcements page.', icon: Store },
-  { id: 'wholesale', label: 'Wholesale', hint: 'Shown only to approved wholesalers in the Wholesale Portal.', icon: Building2 },
+const AUDIENCES: { id: AnnouncementSide; label: string; hint: string; icon: typeof Store }[] = [
+  { id: 'retail', label: 'Retail', hint: 'Shown on the public Announcements page. Includes announcements sent to both sides.', icon: Store },
+  { id: 'wholesale', label: 'Wholesale', hint: 'Shown only to approved wholesalers in the Wholesale Portal. Includes announcements sent to both sides.', icon: Building2 },
 ]
 
-const emptyForm = (audience: AnnouncementAudience) => ({
-  audience,
+const sidesFromAudience = (audience: AnnouncementAudience): AnnouncementSide[] =>
+  audience === 'all' ? ['retail', 'wholesale'] : [audience]
+
+const audienceFromSides = (sides: AnnouncementSide[]): AnnouncementAudience =>
+  sides.length > 1 ? 'all' : sides[0]
+
+const emptyForm = (side: AnnouncementSide) => ({
+  sides: [side] as AnnouncementSide[],
   title: '',
   excerpt: '',
   content: '',
@@ -37,7 +43,7 @@ const sortKeyMap: Record<string, string> = {
 }
 
 export default function AdminAnnouncementsPage() {
-  const [audience, setAudience] = useState<AnnouncementAudience>('retail')
+  const [audience, setAudience] = useState<AnnouncementSide>('retail')
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<Announcement | null>(null)
   const [form, setForm] = useState(emptyForm('retail'))
@@ -103,7 +109,7 @@ export default function AdminAnnouncementsPage() {
   const openEdit = (item: Announcement) => {
     setEditing(item)
     setForm({
-      audience: item.audience,
+      sides: sidesFromAudience(item.audience),
       title: item.title,
       excerpt: item.excerpt || '',
       content: item.content || '',
@@ -115,18 +121,23 @@ export default function AdminAnnouncementsPage() {
   }
 
   const handleSave = async () => {
+    if (form.sides.length === 0) {
+      showToastError('Select at least one side to show this announcement on')
+      return
+    }
     if (!form.title.trim()) {
       showToastError('Title is required')
       return
     }
     setSaving(true)
     try {
-      const payload = { ...form, eventDate: form.eventDate || null }
+      const { sides, ...rest } = form
+      const payload = { ...rest, audience: audienceFromSides(sides), eventDate: form.eventDate || null }
       if (editing) await api.updateAnnouncement(editing.id, payload)
       else await api.createAnnouncement(payload)
       showToastSuccess(editing ? 'Announcement updated' : 'Announcement created')
       setModalOpen(false)
-      if (form.audience !== audience) setAudience(form.audience)
+      if (!sides.includes(audience)) setAudience(sides[0])
       else await load()
     } catch (e) {
       showToastError(e instanceof Error ? e.message : 'Save failed')
@@ -152,6 +163,24 @@ export default function AdminAnnouncementsPage() {
       label: 'Title',
       sortable: true,
       render: item => <span className="font-600">{item.title}</span>,
+    },
+    {
+      key: 'audience',
+      label: 'Shown on',
+      render: item => (
+        <div className="flex flex-wrap gap-1">
+          {sidesFromAudience(item.audience).map(side => (
+            <span
+              key={side}
+              className={`px-2 py-0.5 rounded-full text-xs font-600 whitespace-nowrap ${
+                side === 'retail' ? 'bg-cream-100 text-forest-700' : 'bg-forest-100 text-forest-800'
+              }`}
+            >
+              {side === 'retail' ? 'Retail' : 'Wholesale'}
+            </span>
+          ))}
+        </div>
+      ),
     },
     {
       key: 'eventDate',
@@ -220,7 +249,7 @@ export default function AdminAnnouncementsPage() {
           onClick={openCreate}
           className="self-start sm:self-auto shrink-0 flex items-center gap-2 px-4 py-2.5 bg-forest-700 text-white rounded-xl text-sm font-sans font-600 hover:bg-forest-800"
         >
-          <Plus className="w-4 h-4" /> Add {activeAudience.label} Announcement
+          <Plus className="w-4 h-4" /> Add Announcement
         </button>
       </div>
 
@@ -271,7 +300,7 @@ export default function AdminAnnouncementsPage() {
         sortDir={sortDir}
         onSort={handleSort}
         loading={loading}
-        emptyMessage={`No ${activeAudience.label.toLowerCase()} announcements yet. Click "Add ${activeAudience.label} Announcement".`}
+        emptyMessage={`No ${activeAudience.label.toLowerCase()} announcements yet. Click "Add Announcement".`}
         rowKey={item => item.id}
       />
 
@@ -282,25 +311,51 @@ export default function AdminAnnouncementsPage() {
         size="xl"
       >
         <div className="space-y-4">
-          <div>
-            <label className={labelClass}>Show on *</label>
-            <div className="grid grid-cols-2 gap-2">
-              {AUDIENCES.map(a => (
-                <button
-                  key={a.id}
-                  type="button"
-                  onClick={() => setForm(f => ({ ...f, audience: a.id }))}
-                  className={`flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-sans font-600 border transition-colors ${
-                    form.audience === a.id
-                      ? 'bg-forest-50 text-forest-800 border-forest-600'
-                      : 'bg-white text-sage-600 border-forest-200 hover:bg-forest-50'
-                  }`}
-                >
-                  <a.icon className="w-4 h-4" />
-                  {a.label} side
-                </button>
-              ))}
+          <div role="group" aria-labelledby="announcement-sides-label">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 mb-1.5">
+              <span id="announcement-sides-label" className="text-xs font-sans font-600 text-forest-700">Show on *</span>
+              <span className="text-xs text-sage-500">Select one side, or both to send to everyone.</span>
             </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {AUDIENCES.map(a => {
+                const selected = form.sides.includes(a.id)
+                return (
+                  <button
+                    key={a.id}
+                    type="button"
+                    role="checkbox"
+                    aria-checked={selected}
+                    onClick={() =>
+                      setForm(f => ({
+                        ...f,
+                        sides: selected ? f.sides.filter(s => s !== a.id) : [...f.sides, a.id],
+                      }))
+                    }
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-sans font-600 border-2 text-left transition-colors ${
+                      selected
+                        ? 'bg-forest-50 text-forest-800 border-forest-600'
+                        : 'bg-white text-sage-600 border-forest-100 hover:border-forest-300 hover:bg-forest-50/50'
+                    }`}
+                  >
+                    <span
+                      className={`w-5 h-5 shrink-0 rounded-md border-2 flex items-center justify-center transition-colors ${
+                        selected ? 'bg-forest-600 border-forest-600 text-white' : 'bg-white border-forest-200'
+                      }`}
+                    >
+                      {selected && <Check className="w-3.5 h-3.5" strokeWidth={3} />}
+                    </span>
+                    <a.icon className="w-4 h-4 shrink-0" />
+                    <span className="min-w-0">{a.label} side</span>
+                  </button>
+                )
+              })}
+            </div>
+            {form.sides.length === 0 && (
+              <p className="text-xs text-terra-600 mt-1.5">Select at least one side.</p>
+            )}
+            {form.sides.length > 1 && (
+              <p className="text-xs text-forest-600 mt-1.5">Will appear on the retail site and in the wholesale portal.</p>
+            )}
           </div>
 
           <div className="grid sm:grid-cols-[1fr_12rem] gap-4">
