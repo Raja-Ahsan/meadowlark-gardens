@@ -268,9 +268,11 @@ export default function AdminWholesalersPage() {
                             </a>
                           )}
                           {app.address && (
-                            <span className="flex items-center gap-2 min-w-0">
-                              <MapPin className="w-4 h-4 text-sage-400 shrink-0" />
-                              <span className="truncate" title={app.address}>{app.address}</span>
+                            <span className="flex items-start gap-2 min-w-0 sm:col-span-2 xl:col-span-1">
+                              <MapPin className="w-4 h-4 text-sage-400 shrink-0 mt-0.5" />
+                              <span className="whitespace-pre-line break-words" title={app.address.replace(/\n/g, ', ')}>
+                                {app.address}
+                              </span>
                             </span>
                           )}
                         </div>

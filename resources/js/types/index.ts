@@ -57,7 +57,14 @@ export interface WholesaleApplication {
   contactName: string
   email: string
   phone: string
+  /** Display address (structured when present, else legacy free-text). */
   address: string
+  addressLine1?: string | null
+  addressLine2?: string | null
+  city?: string | null
+  state?: string | null
+  postalCode?: string | null
+  country?: string | null
   businessType: string
   licenseDocument?: string | null
   estimatedMonthlyOrder?: string | null

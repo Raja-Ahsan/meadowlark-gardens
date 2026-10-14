@@ -1,11 +1,18 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { motion } from 'motion/react'
 import { Link } from 'react-router-dom'
 import { Tag, Truck, BarChart3, Send, CheckCircle, ArrowRight, ClipboardList, FileUp, Eye, EyeOff } from 'lucide-react'
 import { api } from '@/lib/api'
 import { compressImageForUpload } from '@/lib/imageCompress'
+import SearchableSelect from '@/components/ui/SearchableSelect'
+import { US_STATES, formatPostalCodeInput, isValidPostalCode, getCityOptionsForState } from '@/lib/usStates'
 
 const MAX_LICENSE_BYTES = 10 * 1024 * 1024
+
+/** Match Retail Checkout address field chrome exactly. */
+const inputClass = 'w-full px-4 py-3 rounded-xl border border-forest-200 text-sm focus:outline-none focus:ring-2 focus:ring-forest-500/30'
+const labelClass = 'block text-xs font-sans font-600 text-forest-700 mb-1.5'
+const STATE_OPTIONS = US_STATES.map(s => ({ value: s.code, label: `${s.name} (${s.code})` }))
 
 const benefits = [
   { icon: Tag, title: 'Reduced pricing and Shipping Included', desc: 'Significantly reduced pricing across our entire catalog for approved partners.' },
@@ -18,7 +25,11 @@ type FormFields = {
   contactName: string
   email: string
   phone: string
-  address: string
+  address1: string
+  address2: string
+  city: string
+  state: string
+  postalCode: string
   businessType: string
   message: string
   password: string
@@ -28,7 +39,8 @@ type FormFields = {
 export default function WholesaleApplyPage() {
   const [form, setForm] = useState<FormFields>({
     businessName: '', contactName: '', email: '', phone: '',
-    address: '', businessType: '', message: '',
+    address1: '', address2: '', city: '', state: '', postalCode: '',
+    businessType: '', message: '',
     password: '', passwordConfirmation: '',
   })
   const [licenseFile, setLicenseFile] = useState<File | null>(null)
@@ -38,13 +50,19 @@ export default function WholesaleApplyPage() {
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
 
+  const cityOptions = useMemo(() => getCityOptionsForState(form.state), [form.state])
+
   const validate = () => {
     const e: Partial<Record<keyof FormFields | 'licenseDocument', string>> = {}
     if (!form.businessName.trim()) e.businessName = 'Business name is required'
     if (!form.contactName.trim()) e.contactName = 'Contact name is required'
     if (!form.email.includes('@')) e.email = 'Valid email required'
     if (!form.phone.trim()) e.phone = 'Phone number is required'
-    if (!form.address.trim()) e.address = 'Address is required'
+    if (!form.address1.trim()) e.address1 = 'Address is required'
+    if (!form.state.trim()) e.state = 'State is required'
+    if (!form.city.trim()) e.city = 'City is required'
+    if (!form.postalCode.trim()) e.postalCode = 'ZIP code is required'
+    else if (!isValidPostalCode(form.postalCode)) e.postalCode = 'ZIP code must be at least 3 digits (numbers only).'
     if (!form.businessType) e.businessType = 'Please select a business type'
     if (!licenseFile) e.licenseDocument = 'Please attach your nursery or business license'
     if (form.password.length < 6) e.password = 'Password must be at least 6 characters'
@@ -69,7 +87,12 @@ export default function WholesaleApplyPage() {
         contactName: form.contactName,
         email: form.email,
         phone: form.phone,
-        address: form.address,
+        addressLine1: form.address1,
+        addressLine2: form.address2 || undefined,
+        city: form.city,
+        state: form.state,
+        postalCode: form.postalCode,
+        country: 'US',
         businessType: form.businessType,
         message: form.message || undefined,
         licenseDocument: uploadFile,
@@ -214,7 +237,71 @@ export default function WholesaleApplyPage() {
                   {field('Business Email', 'email', 'email', 'jane@business.com')}
                   {field('Phone Number', 'phone', 'tel', '(615) 555-0000')}
                 </div>
-                {field('Business Address', 'address', 'text', '123 Garden St, Nashville, TN 37201')}
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="sm:col-span-2">
+                    <label className={labelClass}>Address *</label>
+                    <input
+                      required
+                      className={`${inputClass}${errors.address1 ? ' border-terra-400' : ''}`}
+                      value={form.address1}
+                      onChange={e => setForm(f => ({ ...f, address1: e.target.value }))}
+                      placeholder="Street address"
+                    />
+                    {errors.address1 && <p className="text-terra-500 text-xs mt-1">{errors.address1}</p>}
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className={labelClass}>Apartment, suite, etc.</label>
+                    <input
+                      className={inputClass}
+                      value={form.address2}
+                      onChange={e => setForm(f => ({ ...f, address2: e.target.value }))}
+                      placeholder="Optional"
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>State *</label>
+                    <SearchableSelect
+                      required
+                      options={STATE_OPTIONS}
+                      value={form.state}
+                      onChange={value => setForm(f => ({ ...f, state: value, city: '' }))}
+                      placeholder="Select state"
+                      searchPlaceholder="Search states…"
+                      emptyMessage="No states found"
+                    />
+                    {errors.state && <p className="text-terra-500 text-xs mt-1">{errors.state}</p>}
+                  </div>
+                  <div>
+                    <label className={labelClass}>City *</label>
+                    <SearchableSelect
+                      required
+                      allowCustom
+                      options={cityOptions}
+                      value={form.city}
+                      onChange={value => setForm(f => ({ ...f, city: value }))}
+                      placeholder={form.state ? 'Select city' : 'Select state first'}
+                      searchPlaceholder="Search or type your city…"
+                      emptyMessage={form.state ? 'No cities found' : 'Select a state first'}
+                      disabled={!form.state}
+                    />
+                    {errors.city && <p className="text-terra-500 text-xs mt-1">{errors.city}</p>}
+                  </div>
+                  <div className="sm:col-span-2 sm:max-w-xs">
+                    <label className={labelClass}>ZIP code *</label>
+                    <input
+                      required
+                      inputMode="numeric"
+                      pattern="\d{3,10}"
+                      minLength={3}
+                      maxLength={10}
+                      className={`${inputClass}${errors.postalCode ? ' border-terra-400' : ''}`}
+                      value={form.postalCode}
+                      onChange={e => setForm(f => ({ ...f, postalCode: formatPostalCodeInput(e.target.value) }))}
+                      placeholder="e.g. 37201"
+                    />
+                    {errors.postalCode && <p className="text-terra-500 text-xs mt-1">{errors.postalCode}</p>}
+                  </div>
+                </div>
                 <div>
                   <label className="block text-sm font-sans font-600 text-forest-700 mb-1.5">
                     Business Type <span className="text-terra-500">*</span>

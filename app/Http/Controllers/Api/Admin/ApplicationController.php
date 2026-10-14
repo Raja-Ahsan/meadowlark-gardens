@@ -93,6 +93,7 @@ class ApplicationController extends Controller
             EmailService::send('wholesale_approved', $application->email, [
                 'name' => $application->contact_name,
                 'business_name' => $application->business_name,
+                'email' => $application->email,
             ]);
 
             NotificationService::toUser(

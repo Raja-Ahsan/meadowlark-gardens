@@ -112,7 +112,12 @@ interface WholesaleApplicationPayload {
   contactName: string
   email: string
   phone: string
-  address: string
+  addressLine1: string
+  addressLine2?: string
+  city: string
+  state: string
+  postalCode: string
+  country?: string
   businessType: string
   licenseDocument: File
   message?: string
@@ -314,7 +319,12 @@ export const api = {
     formData.append('contactName', payload.contactName)
     formData.append('email', payload.email)
     formData.append('phone', payload.phone)
-    formData.append('address', payload.address)
+    formData.append('addressLine1', payload.addressLine1)
+    if (payload.addressLine2) formData.append('addressLine2', payload.addressLine2)
+    formData.append('city', payload.city)
+    formData.append('state', payload.state)
+    formData.append('postalCode', payload.postalCode)
+    formData.append('country', payload.country || 'US')
     formData.append('businessType', payload.businessType)
     formData.append('licenseDocument', payload.licenseDocument)
     formData.append('password', payload.password)
