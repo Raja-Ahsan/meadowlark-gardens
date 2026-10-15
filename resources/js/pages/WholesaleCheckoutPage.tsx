@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ShoppingBag, Tag, CheckCircle } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
@@ -15,7 +15,7 @@ import {
 } from '@/lib/cart'
 import { showToastError, showToastSuccess } from '@/lib/toast'
 import SearchableSelect from '@/components/ui/SearchableSelect'
-import { US_STATES, formatPostalCodeInput, isValidPostalCode, getCityOptionsForState } from '@/lib/usStates'
+import { US_STATES, formatPostalCodeInput, isValidPostalCode, useCityOptionsForState } from '@/lib/usStates'
 
 const STATE_OPTIONS = US_STATES.map(s => ({ value: s.code, label: `${s.name} (${s.code})` }))
 
@@ -113,8 +113,8 @@ export default function WholesaleCheckoutPage() {
   const grandTotal = Math.max(0, subtotal - discount + shippingCost)
   const canSubmitOrder = Boolean(form.paymentMethod && shippingReady && meetsMinCartQty)
 
-  const billingCityOptions = useMemo(() => getCityOptionsForState(form.state), [form.state])
-  const shippingCityOptions = useMemo(() => getCityOptionsForState(form.shipState), [form.shipState])
+  const billingCityOptions = useCityOptionsForState(form.state)
+  const shippingCityOptions = useCityOptionsForState(form.shipState)
 
   useEffect(() => {
     api.getPaymentConfig()

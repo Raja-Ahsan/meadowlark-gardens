@@ -1,4 +1,4 @@
-import { City } from 'country-state-city'
+import { useEffect, useState } from 'react'
 
 /** US states and territories — value is the 2-letter code used by tax/shipping. */
 export const US_STATES: { code: string; name: string }[] = [
@@ -55,31 +55,76 @@ export const US_STATES: { code: string; name: string }[] = [
   { code: 'WY', name: 'Wyoming' },
 ]
 
-const cityOptionsCache = new Map<string, { value: string; label: string }[]>()
+type CityOption = { value: string; label: string }
 
-/** Searchable city options for a US state code (e.g. TN). */
-export function getCityOptionsForState(stateCode: string): { value: string; label: string }[] {
+const cityOptionsCache = new Map<string, CityOption[]>()
+let citiesByStatePromise: Promise<Record<string, string[]>> | null = null
+
+/**
+ * Lazy-load the US cities dataset (~250KB) only when a city picker needs it.
+ * Avoids shipping the 7–8MB world city pack from `country-state-city` (iPhone Safari OOM).
+ */
+function loadUsCitiesByState(): Promise<Record<string, string[]>> {
+  if (!citiesByStatePromise) {
+    citiesByStatePromise = import('@/data/usCitiesByState.json').then(
+      (mod) => (mod.default ?? mod) as Record<string, string[]>,
+    )
+  }
+  return citiesByStatePromise
+}
+
+/** Async city options for a US state code (e.g. TN). */
+export async function getCityOptionsForStateAsync(stateCode: string): Promise<CityOption[]> {
   const code = stateCode.trim().toUpperCase()
   if (!code) return []
 
   const cached = cityOptionsCache.get(code)
   if (cached) return cached
 
-  const cities = City.getCitiesOfState('US', code) ?? []
-  const seen = new Set<string>()
-  const options: { value: string; label: string }[] = []
-
-  for (const city of cities) {
-    const name = (city.name || '').trim()
-    if (!name) continue
-    const key = name.toLowerCase()
-    if (seen.has(key)) continue
-    seen.add(key)
-    options.push({ value: name, label: name })
-  }
-
-  options.sort((a, b) => a.label.localeCompare(b.label))
+  const map = await loadUsCitiesByState()
+  const cities = map[code] ?? []
+  const options = cities.map((name) => ({ value: name, label: name }))
   cityOptionsCache.set(code, options)
+  return options
+}
+
+/**
+ * Sync helper kept for callers that already have options cached.
+ * Returns [] until `getCityOptionsForStateAsync` / `useCityOptionsForState` has loaded data.
+ */
+export function getCityOptionsForState(stateCode: string): CityOption[] {
+  const code = stateCode.trim().toUpperCase()
+  if (!code) return []
+  return cityOptionsCache.get(code) ?? []
+}
+
+/** React hook: loads city options when `stateCode` is set (iPhone-safe async chunk). */
+export function useCityOptionsForState(stateCode: string): CityOption[] {
+  const code = stateCode.trim().toUpperCase()
+  const [options, setOptions] = useState<CityOption[]>(() => (code ? getCityOptionsForState(code) : []))
+
+  useEffect(() => {
+    if (!code) {
+      setOptions([])
+      return
+    }
+
+    let alive = true
+    const cached = getCityOptionsForState(code)
+    if (cached.length > 0) {
+      setOptions(cached)
+      return
+    }
+
+    getCityOptionsForStateAsync(code).then((next) => {
+      if (alive) setOptions(next)
+    })
+
+    return () => {
+      alive = false
+    }
+  }, [code])
+
   return options
 }
 

@@ -167,7 +167,7 @@ export default function SearchableSelect({
           <ul
             id={`${selectId}-list`}
             role="listbox"
-            className="max-h-56 overflow-y-auto overscroll-contain py-1"
+            className="max-h-56 overflow-y-auto overscroll-contain py-1 [-webkit-overflow-scrolling:touch]"
           >
             {showCustom && (
               <li>

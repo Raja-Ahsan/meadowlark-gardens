@@ -24,7 +24,7 @@ export default defineConfig({
                     if (!id.includes('node_modules')) return
                     if (id.includes('recharts') || id.includes('d3-')) return 'charts'
                     if (id.includes('quill') || id.includes('react-quill')) return 'editor'
-                    if (id.includes('country-state-city')) return 'geo'
+                    if (id.includes('usCitiesByState')) return 'us-cities'
                     if (id.includes('sweetalert2')) return 'sweetalert'
                     if (id.includes('motion') || id.includes('framer-motion')) return 'motion'
                     if (id.includes('react-router')) return 'router'

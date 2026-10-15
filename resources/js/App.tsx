@@ -1,4 +1,4 @@
-import { Suspense, lazy } from 'react'
+import { Suspense, lazy, type ComponentType } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from '@/context/AuthContext'
 import { CartProvider } from '@/context/CartContext'
@@ -6,57 +6,70 @@ import { RetailCartProvider } from '@/context/RetailCartContext'
 import { SiteSettingsProvider } from '@/context/SiteSettingsContext'
 import Layout from '@/components/layout/Layout'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
+import RouteErrorBoundary from '@/components/RouteErrorBoundary'
 import HomePage from '@/pages/HomePage'
 
-/** Keep first paint light — admin/heavy pages load on demand (critical for iPhone Safari). */
-const ShopPage = lazy(() => import('@/pages/ShopPage'))
-const ShopReviewsPage = lazy(() => import('@/pages/ShopReviewsPage'))
-const AboutPage = lazy(() => import('@/pages/AboutPage'))
-const PlantInformationPage = lazy(() => import('@/pages/PlantInformationPage'))
-const PlantTypeDetailPage = lazy(() => import('@/pages/PlantTypeDetailPage'))
-const HowWeGrowPage = lazy(() => import('@/pages/HowWeGrowPage'))
-const AnnouncementsPage = lazy(() => import('@/pages/AnnouncementsPage'))
-const ContactPage = lazy(() => import('@/pages/ContactPage'))
-const WholesaleApplyPage = lazy(() => import('@/pages/WholesaleApplyPage'))
-const WholesaleLoginPage = lazy(() => import('@/pages/WholesaleLoginPage'))
-const WholesalePortalPage = lazy(() => import('@/pages/WholesalePortalPage'))
-const WholesaleCheckoutPage = lazy(() => import('@/pages/WholesaleCheckoutPage'))
-const WholesaleProductDetailPage = lazy(() => import('@/pages/WholesaleProductDetailPage'))
-const CustomerLoginPage = lazy(() => import('@/pages/CustomerLoginPage'))
-const CustomerRegisterPage = lazy(() => import('@/pages/CustomerRegisterPage'))
-const AdminLoginPage = lazy(() => import('@/pages/AdminLoginPage'))
-const CustomerDashboardPage = lazy(() => import('@/pages/CustomerDashboardPage'))
-const ProductDetailPage = lazy(() => import('@/pages/ProductDetailPage'))
-const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage'))
-const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'))
-const LegalPageView = lazy(() => import('@/pages/LegalPageView'))
-const PrivacyPolicyPage = lazy(() => import('@/pages/PrivacyPolicyPage'))
-const CheckoutPage = lazy(() => import('@/pages/CheckoutPage'))
-const ShippingPolicyPage = lazy(() => import('@/pages/Shipping-Policy'))
-const CancellationPolicyPage = lazy(() => import('@/pages/Cancellation-Policy'))
-const RefundPolicyPage = lazy(() => import('@/pages/Refund-Policy'))
+/** Retry once — iOS Safari often fails the first dynamic import on flaky cellular. */
+function lazyWithRetry(factory: () => Promise<{ default: ComponentType<any> }>) {
+  return lazy(async () => {
+    try {
+      return await factory()
+    } catch {
+      await new Promise((r) => setTimeout(r, 400))
+      return factory()
+    }
+  })
+}
 
-const AdminLayout = lazy(() => import('@/components/admin/AdminLayout'))
-const AdminOverviewPage = lazy(() => import('@/pages/admin/AdminOverviewPage'))
-const AdminProductsPage = lazy(() => import('@/pages/admin/AdminProductsPage'))
-const AdminCategoriesPage = lazy(() => import('@/pages/admin/AdminCategoriesPage'))
-const AdminBrandsPage = lazy(() => import('@/pages/admin/AdminBrandsPage'))
-const AdminOrdersPage = lazy(() => import('@/pages/admin/AdminOrdersPage'))
-const AdminCustomersPage = lazy(() => import('@/pages/admin/AdminCustomersPage'))
-const AdminCouponsPage = lazy(() => import('@/pages/admin/AdminCouponsPage'))
-const AdminReviewsPage = lazy(() => import('@/pages/admin/AdminReviewsPage'))
-const AdminWholesalersPage = lazy(() => import('@/pages/admin/AdminWholesalersPage'))
-const AdminShippingPage = lazy(() => import('@/pages/admin/AdminShippingPage'))
-const AdminSettingsPage = lazy(() => import('@/pages/admin/AdminSettingsPage'))
-const AdminEmailTemplatesPage = lazy(() => import('@/pages/admin/AdminEmailTemplatesPage'))
-const AdminAttributesPage = lazy(() => import('@/pages/admin/AdminAttributesPage'))
-const AdminContactPage = lazy(() => import('@/pages/admin/AdminContactPage'))
-const AdminAuditLogsPage = lazy(() => import('@/pages/admin/AdminAuditLogsPage'))
-const AdminProfilePage = lazy(() => import('@/pages/admin/AdminProfilePage'))
-const AdminLegalPagesPage = lazy(() => import('@/pages/admin/AdminLegalPagesPage'))
-const AdminPlantTypesPage = lazy(() => import('@/pages/admin/AdminPlantTypesPage'))
-const AdminPlantTypeCategoriesPage = lazy(() => import('@/pages/admin/AdminPlantTypeCategoriesPage'))
-const AdminAnnouncementsPage = lazy(() => import('@/pages/admin/AdminAnnouncementsPage'))
+/** Keep first paint light — admin/heavy pages load on demand (critical for iPhone Safari). */
+const ShopPage = lazyWithRetry(() => import('@/pages/ShopPage'))
+const ShopReviewsPage = lazyWithRetry(() => import('@/pages/ShopReviewsPage'))
+const AboutPage = lazyWithRetry(() => import('@/pages/AboutPage'))
+const PlantInformationPage = lazyWithRetry(() => import('@/pages/PlantInformationPage'))
+const PlantTypeDetailPage = lazyWithRetry(() => import('@/pages/PlantTypeDetailPage'))
+const HowWeGrowPage = lazyWithRetry(() => import('@/pages/HowWeGrowPage'))
+const AnnouncementsPage = lazyWithRetry(() => import('@/pages/AnnouncementsPage'))
+const ContactPage = lazyWithRetry(() => import('@/pages/ContactPage'))
+const WholesaleApplyPage = lazyWithRetry(() => import('@/pages/WholesaleApplyPage'))
+const WholesaleLoginPage = lazyWithRetry(() => import('@/pages/WholesaleLoginPage'))
+const WholesalePortalPage = lazyWithRetry(() => import('@/pages/WholesalePortalPage'))
+const WholesaleCheckoutPage = lazyWithRetry(() => import('@/pages/WholesaleCheckoutPage'))
+const WholesaleProductDetailPage = lazyWithRetry(() => import('@/pages/WholesaleProductDetailPage'))
+const CustomerLoginPage = lazyWithRetry(() => import('@/pages/CustomerLoginPage'))
+const CustomerRegisterPage = lazyWithRetry(() => import('@/pages/CustomerRegisterPage'))
+const AdminLoginPage = lazyWithRetry(() => import('@/pages/AdminLoginPage'))
+const CustomerDashboardPage = lazyWithRetry(() => import('@/pages/CustomerDashboardPage'))
+const ProductDetailPage = lazyWithRetry(() => import('@/pages/ProductDetailPage'))
+const ForgotPasswordPage = lazyWithRetry(() => import('@/pages/ForgotPasswordPage'))
+const ResetPasswordPage = lazyWithRetry(() => import('@/pages/ResetPasswordPage'))
+const LegalPageView = lazyWithRetry(() => import('@/pages/LegalPageView'))
+const PrivacyPolicyPage = lazyWithRetry(() => import('@/pages/PrivacyPolicyPage'))
+const CheckoutPage = lazyWithRetry(() => import('@/pages/CheckoutPage'))
+const ShippingPolicyPage = lazyWithRetry(() => import('@/pages/Shipping-Policy'))
+const CancellationPolicyPage = lazyWithRetry(() => import('@/pages/Cancellation-Policy'))
+const RefundPolicyPage = lazyWithRetry(() => import('@/pages/Refund-Policy'))
+
+const AdminLayout = lazyWithRetry(() => import('@/components/admin/AdminLayout'))
+const AdminOverviewPage = lazyWithRetry(() => import('@/pages/admin/AdminOverviewPage'))
+const AdminProductsPage = lazyWithRetry(() => import('@/pages/admin/AdminProductsPage'))
+const AdminCategoriesPage = lazyWithRetry(() => import('@/pages/admin/AdminCategoriesPage'))
+const AdminBrandsPage = lazyWithRetry(() => import('@/pages/admin/AdminBrandsPage'))
+const AdminOrdersPage = lazyWithRetry(() => import('@/pages/admin/AdminOrdersPage'))
+const AdminCustomersPage = lazyWithRetry(() => import('@/pages/admin/AdminCustomersPage'))
+const AdminCouponsPage = lazyWithRetry(() => import('@/pages/admin/AdminCouponsPage'))
+const AdminReviewsPage = lazyWithRetry(() => import('@/pages/admin/AdminReviewsPage'))
+const AdminWholesalersPage = lazyWithRetry(() => import('@/pages/admin/AdminWholesalersPage'))
+const AdminShippingPage = lazyWithRetry(() => import('@/pages/admin/AdminShippingPage'))
+const AdminSettingsPage = lazyWithRetry(() => import('@/pages/admin/AdminSettingsPage'))
+const AdminEmailTemplatesPage = lazyWithRetry(() => import('@/pages/admin/AdminEmailTemplatesPage'))
+const AdminAttributesPage = lazyWithRetry(() => import('@/pages/admin/AdminAttributesPage'))
+const AdminContactPage = lazyWithRetry(() => import('@/pages/admin/AdminContactPage'))
+const AdminAuditLogsPage = lazyWithRetry(() => import('@/pages/admin/AdminAuditLogsPage'))
+const AdminProfilePage = lazyWithRetry(() => import('@/pages/admin/AdminProfilePage'))
+const AdminLegalPagesPage = lazyWithRetry(() => import('@/pages/admin/AdminLegalPagesPage'))
+const AdminPlantTypesPage = lazyWithRetry(() => import('@/pages/admin/AdminPlantTypesPage'))
+const AdminPlantTypeCategoriesPage = lazyWithRetry(() => import('@/pages/admin/AdminPlantTypeCategoriesPage'))
+const AdminAnnouncementsPage = lazyWithRetry(() => import('@/pages/admin/AdminAnnouncementsPage'))
 
 function RouteFallback() {
   return (
@@ -73,6 +86,7 @@ export default function App() {
         <RetailCartProvider>
           <SiteSettingsProvider>
             <BrowserRouter>
+              <RouteErrorBoundary>
               <Suspense fallback={<RouteFallback />}>
                 <Routes>
                   <Route element={<Layout />}>
@@ -96,6 +110,7 @@ export default function App() {
                     <Route path="/cancellation-policy" element={<CancellationPolicyPage />} />
                     <Route path="/login" element={<CustomerLoginPage />} />
                     <Route path="/register" element={<CustomerRegisterPage />} />
+                    <Route path="/wholesale" element={<Navigate to="/wholesale/apply" replace />} />
                     <Route path="/wholesale/apply" element={<WholesaleApplyPage />} />
                     <Route path="/wholesale/login" element={<WholesaleLoginPage />} />
                   </Route>
@@ -164,6 +179,7 @@ export default function App() {
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </Suspense>
+              </RouteErrorBoundary>
             </BrowserRouter>
           </SiteSettingsProvider>
         </RetailCartProvider>

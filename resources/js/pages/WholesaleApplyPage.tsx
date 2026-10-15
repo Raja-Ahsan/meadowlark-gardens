@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { motion } from 'motion/react'
 import { Link } from 'react-router-dom'
 import { Tag, Truck, BarChart3, Send, CheckCircle, ArrowRight, ClipboardList, FileUp, Eye, EyeOff } from 'lucide-react'
 import { api } from '@/lib/api'
 import { compressImageForUpload } from '@/lib/imageCompress'
 import SearchableSelect from '@/components/ui/SearchableSelect'
-import { US_STATES, formatPostalCodeInput, isValidPostalCode, getCityOptionsForState } from '@/lib/usStates'
+import { US_STATES, formatPostalCodeInput, isValidPostalCode, useCityOptionsForState } from '@/lib/usStates'
 
 const MAX_LICENSE_BYTES = 10 * 1024 * 1024
 
@@ -50,7 +50,7 @@ export default function WholesaleApplyPage() {
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  const cityOptions = useMemo(() => getCityOptionsForState(form.state), [form.state])
+  const cityOptions = useCityOptionsForState(form.state)
 
   const validate = () => {
     const e: Partial<Record<keyof FormFields | 'licenseDocument', string>> = {}
