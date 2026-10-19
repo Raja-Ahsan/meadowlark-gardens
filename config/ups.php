@@ -16,6 +16,17 @@ return [
 
     'enabled' => env('UPS_ENABLED'), // null = fall back to admin setting
 
+    /*
+    | Temporary checkout override: when true, checkout shows only Free Shipping
+    | ($0.00) and never calls the UPS Rating API. Credentials, admin UPS tools,
+    | and shipment creation code stay intact. Set UPS_FORCE_FREE_SHIPPING=false
+    | to restore live UPS rates at checkout.
+    */
+    'force_free_shipping_at_checkout' => filter_var(
+        env('UPS_FORCE_FREE_SHIPPING', true),
+        FILTER_VALIDATE_BOOLEAN
+    ),
+
     'client_id' => env('UPS_CLIENT_ID'),
     'client_secret' => env('UPS_CLIENT_SECRET'),
     'account_number' => env('UPS_ACCOUNT_NUMBER'),

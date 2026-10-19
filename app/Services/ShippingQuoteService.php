@@ -15,6 +15,12 @@ class ShippingQuoteService
 {
     public function __construct(private UpsShippingService $ups) {}
 
+    /** Temporary checkout override — Free Shipping only, no UPS Rating API. */
+    public function forceFreeShippingAtCheckout(): bool
+    {
+        return (bool) config('ups.force_free_shipping_at_checkout', false);
+    }
+
     /** @param array<string, mixed> $data */
     public function quote(array $data): array
     {
@@ -25,21 +31,30 @@ class ShippingQuoteService
         $weightLbs = $this->calculateWeightLbs($items);
         $freeShippingCoupon = (bool) ($data['freeShipping'] ?? false);
         $threshold = (float) Setting::get('ups_free_shipping_threshold', 75);
+        $forceFree = $this->forceFreeShippingAtCheckout();
 
-        $fingerprint = $this->fingerprint($shipTo, $items, $subtotal, $type, $freeShippingCoupon);
+        $fingerprint = $this->fingerprint($shipTo, $items, $subtotal, $type, $freeShippingCoupon || $forceFree);
+
+        // Temporary site-wide free shipping (UPS rates hidden; Rating API not called).
+        if ($forceFree) {
+            return $this->storeAndRespond(
+                [$this->freeShippingRate()],
+                'forced_free',
+                $weightLbs,
+                $subtotal,
+                $fingerprint,
+            );
+        }
 
         // Legitimate promotional free shipping only (coupon or configured threshold).
         if ($freeShippingCoupon || ($threshold > 0 && $subtotal >= $threshold)) {
-            $rates = [[
-                'carrier' => 'free',
-                'code' => 'FREE',
-                'name' => 'Free Shipping',
-                'cost' => 0.0,
-                'currency' => 'USD',
-                'etaDays' => null,
-            ]];
-
-            return $this->storeAndRespond($rates, 'promotion', $weightLbs, $subtotal, $fingerprint);
+            return $this->storeAndRespond(
+                [$this->freeShippingRate()],
+                'promotion',
+                $weightLbs,
+                $subtotal,
+                $fingerprint,
+            );
         }
 
         if (! $this->ups->isEnabled()) {
@@ -107,13 +122,14 @@ class ShippingQuoteService
         }
 
         $freeShipping = (bool) ($data['freeShipping'] ?? false);
+        $forceFree = $this->forceFreeShippingAtCheckout();
         $shipTo = $data['shippingAddress'] ?? [];
         $items = $data['items'] ?? [];
         $type = (string) ($data['type'] ?? 'retail');
         $subtotal = (float) ($data['subtotal'] ?? $this->estimateSubtotal($items, $type));
 
-        // Coupon free-shipping is the only path that may skip a UPS quote id.
-        if ($freeShipping) {
+        // Coupon free-shipping or temporary site-wide free shipping may skip UPS.
+        if ($freeShipping || $forceFree) {
             return [
                 'cost' => 0.0,
                 'carrier' => 'free',
@@ -167,8 +183,8 @@ class ShippingQuoteService
             }
         }
 
-        // Paid checkout may only use UPS (or promotional free from a valid quote).
-        if (! in_array($source, ['ups', 'promotion'], true)) {
+        // Paid checkout may only use UPS (or free from a valid quote / temporary override).
+        if (! in_array($source, ['ups', 'promotion', 'forced_free'], true)) {
             abort(422, 'Valid UPS shipping is required to place this order.');
         }
 
@@ -320,6 +336,19 @@ class ShippingQuoteService
         return $postal !== '' && $city !== '' && $state !== '';
     }
 
+    /** @return array{carrier: string, code: string, name: string, cost: float, currency: string, etaDays: null} */
+    private function freeShippingRate(): array
+    {
+        return [
+            'carrier' => 'free',
+            'code' => 'FREE',
+            'name' => 'Free Shipping',
+            'cost' => 0.0,
+            'currency' => 'USD',
+            'etaDays' => null,
+        ];
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -366,7 +395,8 @@ class ShippingQuoteService
             'quoteId' => $quoteId,
             'rates' => $rates,
             'source' => $source,
-            'upsEnabled' => $this->ups->isEnabled(),
+            // When force-free is on, checkout must not treat UPS rates as available.
+            'upsEnabled' => $source === 'forced_free' ? false : $this->ups->isEnabled(),
             'weightLbs' => $weightLbs,
             'subtotal' => $subtotal,
             'taxRate' => (float) Setting::get('tax_rate', 9.25),

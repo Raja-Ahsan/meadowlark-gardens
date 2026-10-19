@@ -49,6 +49,8 @@ class ShippingQuoteServiceTest extends TestCase
 
         config([
             'ups.enabled' => true,
+            // Existing UPS rate tests exercise live quoting; force-free is covered separately.
+            'ups.force_free_shipping_at_checkout' => false,
             'ups.client_id' => 'test-client',
             'ups.client_secret' => 'test-secret',
             'ups.account_number' => 'A123',
@@ -124,6 +126,53 @@ class ShippingQuoteServiceTest extends TestCase
             ['productId' => $product->id, 'quantity' => 3],
         ]);
         $this->assertSame(6.0, $lbs);
+    }
+
+    public function test_force_free_shipping_skips_ups_api_and_resolves_zero(): void
+    {
+        config(['ups.force_free_shipping_at_checkout' => true]);
+        Http::fake(); // any UPS call would fail as stray
+        $product = $this->makeProduct();
+        $addr = [
+            'addressLine1' => '1 Main',
+            'city' => 'Nashville',
+            'state' => 'TN',
+            'postalCode' => '37201',
+            'country' => 'US',
+        ];
+        $items = [['productId' => $product->id, 'quantity' => 1]];
+
+        $quote = app(ShippingQuoteService::class)->quote([
+            'shippingAddress' => $addr,
+            'items' => $items,
+            'subtotal' => 20,
+            'type' => 'retail',
+        ]);
+
+        $this->assertSame('forced_free', $quote['source']);
+        $this->assertFalse($quote['upsEnabled']);
+        $this->assertCount(1, $quote['rates']);
+        $this->assertSame('free', $quote['rates'][0]['carrier']);
+        $this->assertSame(0.0, $quote['rates'][0]['cost']);
+        Http::assertNothingSent();
+
+        $resolved = app(ShippingQuoteService::class)->resolveShippingCost([
+            'shippingAddress' => $addr,
+            'items' => $items,
+            'subtotal' => 20,
+            'type' => 'retail',
+            'shippingQuoteId' => $quote['quoteId'],
+            'shippingMethod' => [
+                'carrier' => 'free',
+                'code' => 'FREE',
+                'name' => 'Free Shipping',
+                'cost' => 0,
+            ],
+        ]);
+
+        $this->assertSame(0.0, $resolved['cost']);
+        $this->assertSame('free', $resolved['carrier']);
+        $this->assertSame('FREE', $resolved['code']);
     }
 
     public function test_quote_returns_ups_services_and_quote_id(): void

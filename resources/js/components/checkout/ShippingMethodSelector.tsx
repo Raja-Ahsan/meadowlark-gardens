@@ -87,10 +87,11 @@ export default function ShippingMethodSelector({
             return
           }
 
-          // Only accept UPS or promotional free rates — never flat/fallback.
-          const validRates = quote.rates.filter(
-            r => r.carrier === 'ups' || r.carrier === 'free' || quote.source === 'promotion',
-          )
+          // Only accept UPS or free rates (promo / temporary force-free) — never flat/fallback.
+          const validRates = quote.rates.filter(r => {
+            if (quote.source === 'forced_free') return r.carrier === 'free'
+            return r.carrier === 'ups' || r.carrier === 'free' || quote.source === 'promotion'
+          })
           if (validRates.length === 0) {
             setRates([])
             onSelect(null)
@@ -188,7 +189,7 @@ export default function ShippingMethodSelector({
               <div className="flex justify-between gap-2">
                 <span className="text-sm font-sans font-600 text-forest-900">{rate.name}</span>
                 <span className="text-sm font-600 shrink-0">
-                  {rate.cost === 0 ? 'FREE' : `$${rate.cost.toFixed(2)}`}
+                  {rate.cost === 0 ? '$0.00' : `$${rate.cost.toFixed(2)}`}
                 </span>
               </div>
               {rate.etaDays != null && (
