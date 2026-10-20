@@ -60,8 +60,8 @@ export default function WholesalePortalPage() {
   const [announcementsError, setAnnouncementsError] = useState('')
 
   useEffect(() => {
-    api.getCategories().then(({ categories: cats }) => setCategories(cats)).catch(() => { })
-    api.getProducts({ category: activeCategory })
+    api.getCategories({ channel: 'wholesale' }).then(({ categories: cats }) => setCategories(cats)).catch(() => { })
+    api.getProducts({ category: activeCategory, channel: 'wholesale' })
       .then(({ products: items }) => setProducts(items))
       .catch(() => setProducts([]))
   }, [activeCategory])

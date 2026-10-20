@@ -14,8 +14,11 @@ class ProductController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
+        $channel = $this->resolveChannel($request);
+
         $query = Product::with(['categoryRelation', 'brand'])
-            ->where('is_active', true);
+            ->where('is_active', true)
+            ->visibleOn($channel);
 
         $category = $request->input('category');
 
@@ -68,10 +71,13 @@ class ProductController extends Controller
         ]);
     }
 
-    public function categories(): JsonResponse
+    public function categories(Request $request): JsonResponse
     {
-        $total = Product::where('is_active', true)->count();
-        $onSale = Product::where('is_active', true)->whereNotNull('sale_price')->where('sale_price', '>', 0)->count();
+        $channel = $this->resolveChannel($request);
+
+        $base = Product::where('is_active', true)->visibleOn($channel);
+        $total = (clone $base)->count();
+        $onSale = (clone $base)->whereNotNull('sale_price')->where('sale_price', '>', 0)->count();
 
         $items = [
             ['name' => 'All', 'slug' => 'all', 'count' => $total],
@@ -82,8 +88,9 @@ class ProductController extends Controller
             ->orderBy('sort_order')
             ->orderBy('name')
             ->get()
-            ->each(function (Category $category) use (&$items) {
+            ->each(function (Category $category) use (&$items, $channel) {
                 $count = Product::where('is_active', true)
+                    ->visibleOn($channel)
                     ->where('category_id', $category->id)
                     ->count();
 
@@ -97,14 +104,21 @@ class ProductController extends Controller
         return response()->json(['categories' => $items]);
     }
 
-    public function show($product): JsonResponse
+    public function show(Request $request, $product): JsonResponse
     {
+        $channel = $this->resolveChannel($request);
+
         $model = is_numeric($product)
             ? Product::findOrFail($product)
             : Product::where('slug', $product)->orWhere('id', $product)->firstOrFail();
 
+        if (! $model->is_active || ! $model->isVisibleOn($channel)) {
+            abort(404, 'Product not found.');
+        }
+
         $related = Product::with(['categoryRelation', 'brand', 'images'])
             ->where('is_active', true)
+            ->visibleOn($channel)
             ->where('id', '!=', $model->id)
             ->when($model->category_id, fn ($q) => $q->where('category_id', $model->category_id))
             ->orderByAvailability()
@@ -114,6 +128,7 @@ class ProductController extends Controller
 
         $moreFromShop = Product::with(['categoryRelation', 'brand', 'images'])
             ->where('is_active', true)
+            ->visibleOn($channel)
             ->where('id', '!=', $model->id)
             ->orderByAvailability()
             ->orderByDesc('is_featured')
@@ -125,6 +140,14 @@ class ProductController extends Controller
             'related' => $related->map(fn ($p) => ApiFormatter::product($p))->values(),
             'moreFromShop' => $moreFromShop->map(fn ($p) => ApiFormatter::product($p))->values(),
         ]);
+    }
+
+    /** @return 'retail'|'wholesale' */
+    private function resolveChannel(Request $request): string
+    {
+        $channel = strtolower(trim((string) $request->input('channel', 'retail')));
+
+        return $channel === 'wholesale' ? 'wholesale' : 'retail';
     }
 
     private function applySort($query, Request $request): void

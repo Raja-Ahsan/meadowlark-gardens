@@ -20,7 +20,7 @@ class SitemapController extends Controller
             ['loc' => $base.'/wholesale/apply', 'priority' => '0.6'],
         ];
 
-        Product::where('is_active', true)->each(function (Product $p) use (&$urls, $base) {
+        Product::where('is_active', true)->visibleOn('retail')->each(function (Product $p) use (&$urls, $base) {
             $slug = $p->slug ?? $p->id;
             $urls[] = ['loc' => $base.'/product/'.$slug, 'priority' => '0.8'];
         });

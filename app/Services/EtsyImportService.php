@@ -157,6 +157,8 @@ class EtsyImportService
                 'manage_stock' => true,
                 'min_wholesale_qty' => 5,
                 'is_active' => true,
+                'show_on_retail' => true,
+                'show_on_wholesale' => true,
                 'is_featured' => $index < 8,
             ]);
 

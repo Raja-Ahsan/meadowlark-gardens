@@ -109,6 +109,12 @@ class ProductController extends Controller
         if ($request->has('is_featured')) {
             $query->where('is_featured', filter_var($request->is_featured, FILTER_VALIDATE_BOOLEAN));
         }
+        if ($request->has('show_on_retail')) {
+            $query->where('show_on_retail', filter_var($request->show_on_retail, FILTER_VALIDATE_BOOLEAN));
+        }
+        if ($request->has('show_on_wholesale')) {
+            $query->where('show_on_wholesale', filter_var($request->show_on_wholesale, FILTER_VALIDATE_BOOLEAN));
+        }
         if ($request->filled('stock_status')) {
             match ($request->stock_status) {
                 'low' => $query->where('manage_stock', true)->whereColumn('stock_quantity', '<=', 'low_stock_threshold'),
@@ -156,6 +162,8 @@ class ProductController extends Controller
             'tags' => ['nullable', 'array'],
             'isFeatured' => ['nullable', 'boolean'],
             'isActive' => ['nullable', 'boolean'],
+            'showOnRetail' => ['nullable', 'boolean'],
+            'showOnWholesale' => ['nullable', 'boolean'],
             'weight' => ['nullable', 'numeric', 'min:0'],
             'metaTitle' => ['nullable', 'string', 'max:255'],
             'metaDescription' => ['nullable', 'string', 'max:500'],
@@ -208,6 +216,12 @@ class ProductController extends Controller
             'tags' => $data['tags'] ?? [],
             'is_featured' => $data['isFeatured'] ?? false,
             'is_active' => $data['isActive'] ?? true,
+            'show_on_retail' => array_key_exists('showOnRetail', $data)
+                ? (bool) $data['showOnRetail']
+                : ($product?->show_on_retail ?? true),
+            'show_on_wholesale' => array_key_exists('showOnWholesale', $data)
+                ? (bool) $data['showOnWholesale']
+                : ($product?->show_on_wholesale ?? true),
             'weight' => $data['weight'] ?? null,
             'meta_title' => $data['metaTitle'] ?? null,
             'meta_description' => $data['metaDescription'] ?? null,

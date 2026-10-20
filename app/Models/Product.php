@@ -13,7 +13,8 @@ class Product extends Model
         'price', 'sale_price', 'wholesale_price', 'sale_wholesale_price',
         'image', 'description', 'short_description', 'badge',
         'in_stock', 'stock_quantity', 'low_stock_threshold', 'manage_stock',
-        'allow_backorder', 'tags', 'is_featured', 'is_active', 'weight',
+        'allow_backorder', 'tags', 'is_featured', 'is_active',
+        'show_on_retail', 'show_on_wholesale', 'weight',
         'meta_title', 'meta_description', 'min_wholesale_qty',
     ];
 
@@ -30,11 +31,39 @@ class Product extends Model
             'allow_backorder' => 'boolean',
             'is_featured' => 'boolean',
             'is_active' => 'boolean',
+            'show_on_retail' => 'boolean',
+            'show_on_wholesale' => 'boolean',
             'tags' => 'array',
             'stock_quantity' => 'integer',
             'low_stock_threshold' => 'integer',
             'min_wholesale_qty' => 'integer',
         ];
+    }
+
+    /**
+     * Catalog visibility for a storefront channel (retail | wholesale).
+     * Still requires is_active for public listings.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder<\App\Models\Product>  $query
+     * @return \Illuminate\Database\Eloquent\Builder<\App\Models\Product>
+     */
+    public function scopeVisibleOn($query, string $channel)
+    {
+        $channel = strtolower(trim($channel)) === 'wholesale' ? 'wholesale' : 'retail';
+
+        return $query->where(
+            $channel === 'wholesale' ? 'show_on_wholesale' : 'show_on_retail',
+            true
+        );
+    }
+
+    public function isVisibleOn(string $channel): bool
+    {
+        $channel = strtolower(trim($channel)) === 'wholesale' ? 'wholesale' : 'retail';
+
+        return $channel === 'wholesale'
+            ? (bool) $this->show_on_wholesale
+            : (bool) $this->show_on_retail;
     }
 
     public function categoryRelation(): BelongsTo

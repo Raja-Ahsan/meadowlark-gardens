@@ -12,6 +12,7 @@ import type { Attribute, Brand, Category } from '@/types/admin'
 const emptyForm: ProductPayload = {
   name: '', type: 'simple', price: 0, wholesalePrice: 0, image: '', description: '',
   inStock: true, minWholesaleQty: 25, stockQuantity: 0, isActive: true, isFeatured: false,
+  showOnRetail: true, showOnWholesale: true,
   images: [], variations: [],
 }
 
@@ -48,6 +49,8 @@ function productToForm(p: Product): ProductPayload {
     minWholesaleQty: p.minWholesaleQty,
     isFeatured: p.isFeatured,
     isActive: p.isActive ?? true,
+    showOnRetail: p.showOnRetail ?? true,
+    showOnWholesale: p.showOnWholesale ?? true,
     sku: p.sku,
     metaTitle: p.metaTitle,
     metaDescription: p.metaDescription,
@@ -327,6 +330,19 @@ export default function AdminProductsPage() {
         p.inStock ? 'bg-forest-100 text-forest-700' : 'bg-terra-100 text-terra-700'
       }`}>{p.inStock ? 'In Stock' : 'Out of Stock'}</span>
     )},
+    { key: 'visibility', label: 'Visibility', render: p => (
+      <div className="flex flex-wrap gap-1">
+        {(p.showOnRetail !== false) && (
+          <span className="px-2 py-0.5 rounded-full text-[10px] font-600 bg-sky-100 text-sky-800">Retail</span>
+        )}
+        {(p.showOnWholesale !== false) && (
+          <span className="px-2 py-0.5 rounded-full text-[10px] font-600 bg-indigo-100 text-indigo-800">Wholesale</span>
+        )}
+        {p.showOnRetail === false && p.showOnWholesale === false && (
+          <span className="px-2 py-0.5 rounded-full text-[10px] font-600 bg-sage-100 text-sage-600">Hidden</span>
+        )}
+      </div>
+    )},
     { key: 'actions', label: '', render: p => (
       <div className="flex gap-1">
         <button onClick={() => openEdit(p)} className="p-2 rounded-lg hover:bg-forest-50 text-forest-600"><Pencil className="w-4 h-4" /></button>
@@ -360,6 +376,12 @@ export default function AdminProductsPage() {
           ]},
           { key: 'is_active', label: 'Active', options: [
             { value: 'true', label: 'Active' }, { value: 'false', label: 'Inactive' },
+          ]},
+          { key: 'show_on_retail', label: 'Retail', options: [
+            { value: 'true', label: 'Shown on Retail' }, { value: 'false', label: 'Hidden from Retail' },
+          ]},
+          { key: 'show_on_wholesale', label: 'Wholesale', options: [
+            { value: 'true', label: 'Shown on Wholesale' }, { value: 'false', label: 'Hidden from Wholesale' },
           ]},
         ]}
         filterValues={list.filters}
@@ -637,8 +659,30 @@ export default function AdminProductsPage() {
             </div>
             <div className="flex flex-wrap gap-4 md:col-span-2">
               <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.inStock} onChange={e => setForm(f => ({ ...f, inStock: e.target.checked }))} /> In Stock</label>
-              <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.isFeatured} onChange={e => setForm(f => ({ ...f, isFeatured: e.target.checked }))} /> Featured</label>
-              <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.isActive} onChange={e => setForm(f => ({ ...f, isActive: e.target.checked }))} /> Active</label>
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!form.isFeatured} onChange={e => setForm(f => ({ ...f, isFeatured: e.target.checked }))} /> Featured</label>
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.isActive !== false} onChange={e => setForm(f => ({ ...f, isActive: e.target.checked }))} /> Active</label>
+            </div>
+            <div className="md:col-span-2 rounded-xl border border-forest-100 bg-cream-50/60 p-4 space-y-3">
+              <p className="text-xs font-sans font-700 text-forest-800 uppercase tracking-wide">Storefront visibility</p>
+              <p className="text-xs text-sage-600">Control where this product appears. Both are on by default.</p>
+              <div className="flex flex-wrap gap-4">
+                <label className="flex items-center gap-2 text-sm font-sans font-600 text-forest-800">
+                  <input
+                    type="checkbox"
+                    checked={form.showOnRetail !== false}
+                    onChange={e => setForm(f => ({ ...f, showOnRetail: e.target.checked }))}
+                  />
+                  Show on Retail Store
+                </label>
+                <label className="flex items-center gap-2 text-sm font-sans font-600 text-forest-800">
+                  <input
+                    type="checkbox"
+                    checked={form.showOnWholesale !== false}
+                    onChange={e => setForm(f => ({ ...f, showOnWholesale: e.target.checked }))}
+                  />
+                  Show on Wholesale Portal
+                </label>
+              </div>
             </div>
           </div>
         </div>

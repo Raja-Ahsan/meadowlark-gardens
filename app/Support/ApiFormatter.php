@@ -52,6 +52,8 @@ class ApiFormatter
             'tags' => $product->tags ?? [],
             'isFeatured' => (bool) ($product->is_featured ?? false),
             'isActive' => (bool) ($product->is_active ?? true),
+            'showOnRetail' => (bool) ($product->show_on_retail ?? true),
+            'showOnWholesale' => (bool) ($product->show_on_wholesale ?? true),
             'weight' => $product->weight ? (float) $product->weight : null,
             'metaTitle' => $product->meta_title,
             'metaDescription' => $product->meta_description,

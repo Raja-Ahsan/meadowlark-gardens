@@ -235,6 +235,8 @@ export interface ProductPayload {
   tags?: string[]
   isFeatured?: boolean
   isActive?: boolean
+  showOnRetail?: boolean
+  showOnWholesale?: boolean
   weight?: number
   metaTitle?: string
   metaDescription?: string
@@ -258,11 +260,12 @@ export const api = {
   logout: () => request<{ message: string }>('/auth/logout', { method: 'POST' }),
   getUser: () => request<{ user: AuthUser }>('/auth/user'),
 
-  getProducts: (params?: { category?: string; search?: string; sort?: string }) => {
+  getProducts: (params?: { category?: string; search?: string; sort?: string; channel?: 'retail' | 'wholesale'; featured?: boolean }) => {
     return request<{ products: Product[] }>(`/products${buildQuery(params)}`)
   },
 
-  getCategories: () => request<{ categories: ShopCategory[] }>('/products/categories'),
+  getCategories: (params?: { channel?: 'retail' | 'wholesale' }) =>
+    request<{ categories: ShopCategory[] }>(`/products/categories${buildQuery(params)}`),
 
   validateCoupon: (code: string, cartTotal: number, type: 'retail' | 'wholesale') =>
     request<{ valid: boolean; coupon: { code: string; type: string; discount: number; freeShipping: boolean } }>(
@@ -808,8 +811,10 @@ export const api = {
     return data as { url: string; path: string }
   },
 
-  getProduct: (idOrSlug: string) =>
-    request<{ product: Product; related: Product[]; moreFromShop: Product[] }>(`/products/${idOrSlug}`),
+  getProduct: (idOrSlug: string, params?: { channel?: 'retail' | 'wholesale' }) =>
+    request<{ product: Product; related: Product[]; moreFromShop: Product[] }>(
+      `/products/${idOrSlug}${buildQuery(params)}`,
+    ),
 
   getProductReviews: (productId: string, page = 1, category?: string) =>
     request<{

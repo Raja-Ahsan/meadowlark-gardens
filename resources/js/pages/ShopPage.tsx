@@ -31,12 +31,12 @@ export default function ShopPage() {
   const { addItem } = useRetailCart()
 
   useEffect(() => {
-    api.getCategories().then(({ categories: cats }) => setCategories(cats)).catch(() => {})
+    api.getCategories({ channel: 'retail' }).then(({ categories: cats }) => setCategories(cats)).catch(() => {})
   }, [])
 
   useEffect(() => {
     setLoading(true)
-    api.getProducts({ category: activeCategory, search, sort: sortBy })
+    api.getProducts({ category: activeCategory, search, sort: sortBy, channel: 'retail' })
       .then(({ products: items }) => setProducts(items))
       .catch(() => setProducts([]))
       .finally(() => setLoading(false))

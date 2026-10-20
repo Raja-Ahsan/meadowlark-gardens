@@ -15,7 +15,7 @@ export default function HomePage() {
   const { addItem } = useRetailCart()
 
   useEffect(() => {
-    api.getProducts().then(({ products }) => {
+    api.getProducts({ channel: 'retail' }).then(({ products }) => {
       setFeaturedProducts(products.filter(p => p.inStock).slice(0, 4))
     }).catch(() => setFeaturedProducts([]))
   }, [])

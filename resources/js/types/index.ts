@@ -22,6 +22,8 @@ export interface Product {
   tags?: string[]
   isFeatured?: boolean
   isActive?: boolean
+  showOnRetail?: boolean
+  showOnWholesale?: boolean
   metaTitle?: string
   metaDescription?: string
   images?: { id: string; path: string; alt?: string; isPrimary: boolean }[]

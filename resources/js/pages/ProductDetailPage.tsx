@@ -16,6 +16,7 @@ import type { PaginatedMeta } from '@/types/admin'
 export default function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>()
   const [product, setProduct] = useState<Product | null>(null)
+  const [loadingProduct, setLoadingProduct] = useState(true)
   const [related, setRelated] = useState<Product[]>([])
   const [moreFromShop, setMoreFromShop] = useState<Product[]>([])
   const [reviews, setReviews] = useState<CustomerReview[]>([])
@@ -63,18 +64,20 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     if (!slug) return
+    setLoadingProduct(true)
     setProduct(null)
     setReviews([])
     setInsights(null)
     setReviewMeta(null)
-    api.getProduct(slug).then(r => {
+    api.getProduct(slug, { channel: 'retail' }).then(r => {
       setProduct(r.product)
       setRelated(r.related ?? [])
       setMoreFromShop(r.moreFromShop ?? [])
       if (r.product.variations?.length) setSelectedVariation(r.product.variations[0])
       const imgs = r.product.images?.length ? r.product.images : [{ path: r.product.image, isPrimary: true, id: '1' }]
       setSelectedImage(imgs[0].path)
-    }).catch(() => {})
+    }).catch(() => setProduct(null))
+      .finally(() => setLoadingProduct(false))
     api.getShopProfile().then(r => setShop(r.shop)).catch(() => {})
     api.getShopReviews(1, 6).then(r => setShopReviews(r.reviews)).catch(() => {})
   }, [slug])
@@ -119,8 +122,17 @@ export default function ProductDetailPage() {
     }
   }
 
-  if (!product) {
+  if (loadingProduct) {
     return <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-forest-300 border-t-forest-700 rounded-full animate-spin" /></div>
+  }
+
+  if (!product) {
+    return (
+      <div className="min-h-[40vh] flex flex-col items-center justify-center gap-3 px-4 text-center pt-24">
+        <p className="text-forest-800 font-sans font-600">Product not found</p>
+        <Link to="/shop" className="text-sm text-forest-700 font-sans font-600 underline">Back to shop</Link>
+      </div>
+    )
   }
 
   const price = selectedVariation

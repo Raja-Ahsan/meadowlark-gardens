@@ -27,6 +27,7 @@ export default function WholesaleProductDetailPage() {
   const { addItem } = useCart()
 
   const [product, setProduct] = useState<Product | null>(null)
+  const [loadingProduct, setLoadingProduct] = useState(true)
   const [related, setRelated] = useState<Product[]>([])
   const [selectedVariation, setSelectedVariation] = useState<ProductVariation | null>(null)
   const [selectedImage, setSelectedImage] = useState('')
@@ -35,7 +36,9 @@ export default function WholesaleProductDetailPage() {
 
   useEffect(() => {
     if (!slug) return
-    api.getProduct(slug).then(r => {
+    setLoadingProduct(true)
+    setProduct(null)
+    api.getProduct(slug, { channel: 'wholesale' }).then(r => {
       setProduct(r.product)
       setRelated(r.related ?? [])
       const min = minWholesaleQty(r.product)
@@ -47,7 +50,8 @@ export default function WholesaleProductDetailPage() {
         ? r.product.images
         : [{ path: r.product.image, isPrimary: true, id: '1' }]
       setSelectedImage(imgs[0].path)
-    }).catch(() => {})
+    }).catch(() => setProduct(null))
+      .finally(() => setLoadingProduct(false))
   }, [slug])
 
   const handleLogout = async () => {
@@ -68,10 +72,24 @@ export default function WholesaleProductDetailPage() {
     setTimeout(() => setAddedMsg(''), 2500)
   }
 
-  if (!product) {
+  if (loadingProduct) {
     return (
       <div className="min-h-screen bg-cream-50 flex justify-center py-20">
         <div className="w-8 h-8 border-2 border-forest-300 border-t-forest-700 rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (!product) {
+    return (
+      <div className="min-h-screen bg-cream-50">
+        <WholesalePortalHeader onLogout={handleLogout} />
+        <div className="min-h-[40vh] flex flex-col items-center justify-center gap-3 px-4 text-center">
+          <p className="text-forest-800 font-sans font-600">Product not found</p>
+          <Link to="/wholesale/portal" className="text-sm text-forest-700 font-sans font-600 underline">
+            Back to wholesale catalog
+          </Link>
+        </div>
       </div>
     )
   }

@@ -253,6 +253,10 @@ class OrderController extends Controller
             foreach ($data['items'] as $item) {
                 $product = Product::findOrFail($item['productId']);
 
+                if (! $product->is_active || ! $product->isVisibleOn($type === 'wholesale' ? 'wholesale' : 'retail')) {
+                    abort(422, "{$product->name} is not available for this storefront.");
+                }
+
                 $variation = null;
                 if (! empty($item['variationId'])) {
                     $variation = ProductVariation::where('id', $item['variationId'])
